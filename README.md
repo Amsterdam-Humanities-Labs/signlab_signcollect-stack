@@ -5,8 +5,8 @@ collection platform: studio capture, media processing, the gloss database, and
 the public API.
 
 There is no code here. This repo exists so a new developer can see, in one
-place, what the seven repositories are, which of them talk to each other, and
-where each one runs.
+place, what the repositories are, which of them talk to each other, and where
+each one runs.
 
 Most repos are private; you need to be granted access to each one separately.
 
@@ -16,15 +16,18 @@ Most repos are private; you need to be granted access to each one separately.
 |---|---|---|---|
 | [signCollect-v2](https://github.com/rem0g/signCollect-v2) | JavaScript + PHP | Gloss management web interface | Private |
 | [sCAPI](https://github.com/rem0g/sCAPI) | PHP | Public read API — `api.signcollect.nl` | Private |
+| [sC-Animation-PP](https://github.com/rem0g/sC-Animation-PP) | PHP | Mocap animation post-processing manager | Private |
 | [pythonCron](https://github.com/rem0g/pythonCron) | Python | Scheduler + watchdog for every recurring job | Private |
 | [viconSync](https://github.com/rem0g/viconSync) | Python | Vicon mocap capture → storage → database | Private |
 | [blackmagic_control](https://github.com/rem0g/blackmagic_control) | Python | `bmcam` — control Blackmagic cameras over REST | Private |
 | [blackmagic_RD_sync](https://github.com/rem0g/blackmagic_RD_sync) | Python | Blackmagic clips → H.265 → research drive | Private |
 | [Sony-SDK-MACOS-API](https://github.com/rem0g/Sony-SDK-MACOS-API) | C++ | Multi-camera controller for Sony FX30 on macOS | **Public** |
+| [hh](https://github.com/rem0g/hh) | HTML + Python | Dutch health-content indexing — **dormant** | Private |
 
 Activity as of 2026-08-17: `viconSync` and `pythonCron` are actively worked on;
-`signCollect-v2` last changed 2026-07-06; the Blackmagic pair 2026-05; `sCAPI`
-2026-02-10; `Sony-SDK-MACOS-API` 2026-02-23.
+`signCollect-v2` last changed 2026-07-06; `blackmagic_RD_sync` 2026-05-08 and
+`blackmagic_control` 2026-05-06; `sC-Animation-PP` 2026-04-24; `Sony-SDK-MACOS-API`
+2026-02-23; `sCAPI` 2026-02-10. `hh` has not been touched since 2025-07-04.
 
 ## How they fit together
 
@@ -46,7 +49,12 @@ flowchart TB
     subgraph store["Storage"]
         web["/web/gebarenoverleg_media"]
         drive["Research drive<br/>(rclone mount)"]
-        db[("MySQL<br/>form_data,<br/>matched_transcriptions")]
+        db[("MySQL admin_gebarenoverleg<br/>form_data, vicon_files,<br/>matched_transcriptions")]
+    end
+
+    subgraph post["Human post-processing"]
+        app["sC-Animation-PP<br/>/web/animMIDI"]
+        ue["Unreal Engine<br/>(engineer's machine)"]
     end
 
     subgraph serve["Scheduling &amp; serving"]
@@ -62,6 +70,10 @@ flowchart TB
     cron -.schedules.-> vs
     cron -.schedules.-> web
     web --> db
+    db --> app
+    app -- "download FBX" --> ue
+    ue -- "upload processed FBX" --> app
+    app --> web
     db --> api --> ui
     ui --> db
 ```
@@ -69,7 +81,12 @@ flowchart TB
 The chain in words: cameras and the mocap rig produce raw media → the ingest
 repos pull it off the devices, transcode it and land it on shared storage →
 `pythonCron` drives the recurring matching/conversion jobs that turn files into
-database rows → `sCAPI` serves those rows and `signCollect-v2` edits them.
+database rows → engineers take FBX captures out through `sC-Animation-PP`,
+clean them up in Unreal and put them back → `sCAPI` serves the results and
+`signCollect-v2` edits them.
+
+`hh` is not in this diagram: it reads the same database but is not part of the
+capture-to-API path, and has been dormant since July 2025.
 
 ## What each one does
 
@@ -93,6 +110,21 @@ Read API over the sign video collection at `https://api.signcollect.nl`.
 Search across words, sentences and glosses, with theme grouping and pagination;
 plus the `getList*` / `get*Videos` endpoints. Single-word queries use
 lemma-based search, multi-word queries require all words to match.
+
+### sC-Animation-PP — animation post-processing manager
+
+The human step in the mocap pipeline. Engineers download original FBX captures,
+clean them up in Unreal Engine, and upload the processed versions back; the app
+tracks who has which capture date and what state each file is in.
+
+- Deploys to `/web/animMIDI`; PHP 7.4+ MVC with PDO, Tailwind via CDN, no build
+  step
+- Reads the `vicon_files` table — the `unreal/CC` subdirectory of what
+  `viconSync` lands on disk, which is what ties this repo to the capture side
+- Admins delegate a capture date to one user; downloads, uploads and status
+  changes are all logged with timestamps
+- BabylonJS viewer for 3D preview, plus side-by-side original vs processed
+  comparison with per-bone rotation compensation
 
 ### pythonCron — scheduling and supervision
 
@@ -159,7 +191,24 @@ Sony FX30 cameras over USB from macOS — synchronised record start/stop, proper
 monitoring, media formatting, file download, and settings presets. Built on the
 Sony Camera Remote SDK; the repo also documents the SDK connection patterns.
 
-The one public repo of the seven, and the only C++ one.
+The only public repo here, and the only C++ one.
+
+### hh — Dutch health-content indexing (dormant)
+
+Crawls medical content from `thuisarts.nl`, lemmatises it with OpenDutchWordnet,
+and presents it through a browsing/search interface: `crawl.py` →
+`json_to_db.py` → `create_unique_words_table.py` → `lemma_load.py`, with
+autocue and concept-list pages on top.
+
+It sits at the edge of the stack rather than inside it. The link is vocabulary:
+it queries glosses across Signbank and SignCollect in the same
+`admin_gebarenoverleg` database, and its lemma work overlaps with the
+`convert_zinString_to_LemmaList` job `pythonCron` runs. Nothing in the live
+capture-to-API path depends on it.
+
+All of its commits land on a single day, 2025-07-04. Its ~110 MB is mostly the
+vendored `OpenDutchWordnet` tree, not project code. Treat it as an archive: read
+it for the crawler and lemmatisation approach, don't expect it to run as-is.
 
 ## Cross-cutting things worth knowing
 
@@ -181,11 +230,20 @@ repo-specific working notes. Production runs under systemd on the main host,
 with units either hand-written or generated by `pythonCron`'s
 `wrapper_generator.py`.
 
-**Credentials.** Config files holding passwords are gitignored, with a
-committed `*.example.*` template alongside. `viconSync` resolves its password
-through `vicon_credentials.get_vicon_password()` (`$VICON_PASSWORD` or the
-untracked `monitor_config.json`) rather than inlining it; other repos in the
-stack have not been audited for this yet.
+**Credentials.** The intended pattern: config files holding passwords are
+gitignored, with a committed `*.example.*` template alongside. `viconSync`
+follows it — its password comes from `vicon_credentials.get_vicon_password()`
+(`$VICON_PASSWORD`, or the untracked `monitor_config.json`) and appears nowhere
+in the repo or its history.
+
+The PHP repos do not follow it yet. **The `admin_gebarenoverleg` MySQL password
+is committed in plaintext across several of them** — at minimum `sCAPI`,
+`sC-Animation-PP` (in a docs command line), `hh`, and two repos outside this
+index. All of them are private, so nothing is publicly exposed, but the same
+credential is checked into multiple repositories and every collaborator granted
+access to any one of them gets it. Rotating it means updating every copy at
+once, which is the argument for moving them to a shared untracked config first.
+Audit before widening access to any of these repos.
 
 **Shared storage paths.** `/web/gebarenoverleg_media` is the media root on the
 production host (`fbx/`, `studioFiles/`); the research drive is reached through
