@@ -11,10 +11,15 @@ each one runs.
 All of these repos live in the **Amsterdam-Humanities-Labs** organisation under
 a `signlab_` name prefix. Every organisation member has access automatically —
 there is nothing to request per repo. Prose in this document uses the short
-names (`viconSync`, not `signlab_viconSync`) for readability; the table above
-links each one to its actual location.
+names (`viconSync`, not `signlab_viconSync`) for readability; the tables link
+each one to its actual location.
 
-## The repositories
+The index covers **27 repositories** in two layers: the **core stack** below —
+the nine repos that carry data from camera to API, documented in depth — and
+the **[wider platform](#the-wider-platform)**, eighteen web tools and services
+built on top of that data.
+
+## The core stack
 
 | Repo | Language | Role | Visibility |
 |---|---|---|---|
@@ -28,10 +33,16 @@ links each one to its actual location.
 | [signlab_Sony-SDK-MACOS-API](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API) | C++ | Multi-camera controller for Sony FX30 on macOS | **Public** |
 | [signlab_hh](https://github.com/Amsterdam-Humanities-Labs/signlab_hh) | HTML + Python | Dutch health-content indexing — **dormant** | Private |
 
-Activity as of 2026-08-17: `viconSync` and `pythonCron` are actively worked on;
-`signCollect-v2` last changed 2026-07-06; `blackmagic_RD_sync` 2026-05-08 and
-`blackmagic_control` 2026-05-06; `sC-Animation-PP` 2026-04-24; `Sony-SDK-MACOS-API`
-2026-02-23; `sCAPI` 2026-02-10. `hh` has not been touched since 2025-07-04.
+Activity as of 2026-08-17, before the migration: `viconSync` and `pythonCron`
+are actively worked on; `signCollect-v2` last changed 2026-07-06;
+`blackmagic_RD_sync` 2026-05-08 and `blackmagic_control` 2026-05-06;
+`sC-Animation-PP` 2026-04-24; `Sony-SDK-MACOS-API` 2026-02-23; `sCAPI`
+2026-02-10. `hh` has not been touched since 2025-07-04.
+
+> GitHub's "last pushed" timestamps are no longer a guide to real activity. The
+> August 2026 move into the organisation, and the credential purge that went
+> with it, rewrote history on several repos and stamped them all with recent
+> dates. Use the dates above, or each repo's own commit log, instead.
 
 ## How they fit together
 
@@ -214,6 +225,64 @@ All of its commits land on a single day, 2025-07-04. Its ~110 MB is mostly the
 vendored `OpenDutchWordnet` tree, not project code. Treat it as an archive: read
 it for the crawler and lemmatisation approach, don't expect it to run as-is.
 
+## The wider platform
+
+Eighteen repos sit on top of the core stack: the annotation tools researchers
+work in, the studio-floor web apps, media fixers and 3D viewers. All are
+private and in the organisation. Almost all are PHP web apps deployed under
+`/web/<name>` on the production host, where the directory name is the repo name
+minus the `signlab_` prefix.
+
+### Annotation and glossing
+
+| Repo | Language | Role |
+|---|---|---|
+| [signlab_zin](https://github.com/Amsterdam-Humanities-Labs/signlab_zin) | PHP + Python | The main annotation tool — synchronise Dutch text, Signbank glosses and video into subtitle/gloss tracks. The largest repo here |
+| [signlab_annotation-tool](https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-tool) | JavaScript | Browser-only multi-tier timeline editor that saves ELAN `.eaf` files. No server component |
+| [signlab_annotation-editors](https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-editors) | PHP | Self-contained extracts of the two production editors (`subBeta8`, `3DAnn2`) lifted out of `zin` |
+
+### Studio capture and mocap
+
+| Repo | Language | Role |
+|---|---|---|
+| [signlab_mocapStudio](https://github.com/Amsterdam-Humanities-Labs/signlab_mocapStudio) | PHP | Motion Capture Studio UI — 3D recording pages, sentence/video checks, capture stats |
+| [signlab_studioIndex](https://github.com/Amsterdam-Humanities-Labs/signlab_studioIndex) | PHP | Studio Index — browse the studio archive by date with per-date completion status |
+| [signlab_studio_beta](https://github.com/Amsterdam-Humanities-Labs/signlab_studio_beta) | PHP | Camera Control — FX30 capture control, proxying, and capture/debug logs |
+| [signlab_mocap](https://github.com/Amsterdam-Humanities-Labs/signlab_mocap) | Python + PHP | Motion Capture NGT Recordings — capture lists, record matching, CSV/JSON→SQL importers |
+| [signlab_mocap_lab](https://github.com/Amsterdam-Humanities-Labs/signlab_mocap_lab) | PHP | Lab capture endpoints and reference media (images, topics, FBX uploads) |
+| [signlab_mocapDataPackage](https://github.com/Amsterdam-Humanities-Labs/signlab_mocapDataPackage) | PHP | Upload endpoint that receives and stores large zip packages of capture data |
+| [signlab_viconDashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_viconDashboard) | PHP + JS | Real-time dashboard for Vicon sessions — capture status, file completions, 3D viewer links |
+| [mocap_site](https://github.com/Amsterdam-Humanities-Labs/mocap_site) | HTML | Single-page Motion Capture Portal entry point. **Not yet renamed** — see the note below |
+
+### Video processing
+
+| Repo | Language | Role |
+|---|---|---|
+| [signlab_videoFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoFix) | PHP | Crop Fix Manager — track and apply per-video crop corrections |
+| [signlab_videoBackgroundFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoBackgroundFix) | PHP | Background and framing correction for studio clips, with preview frames and a job queue |
+
+### 3D viewers and assets
+
+| Repo | Language | Role |
+|---|---|---|
+| [signlab_s3b_glb](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_glb) | PHP | GLB viewer over the sign collection, backed by gloss and sense caches |
+| [signlab_s3b_server](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_server) | PHP + Python | SAM3D-body upload and hand-cluster clustering server, with a cluster viewer |
+| [signlab_s3b_viewer](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_viewer) | PHP | Standalone SAM 3D Body viewer over a small file API |
+| [signlab_mhr](https://github.com/Amsterdam-Humanities-Labs/signlab_mhr) | — | MHR avatar mesh/animation sources. The binaries exceed GitHub's 100 MB limit and are gitignored; the repo README covers the Git LFS setup |
+
+### Monitoring
+
+| Repo | Language | Role |
+|---|---|---|
+| [signlab_client_monitor_api](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_api) | PHP + Python | Registration and heartbeat API for long-running scripts and cron jobs |
+| [signlab_client_monitor_dashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard) | PHP + JS | Dashboard UI over the client monitor API |
+
+**`mocap_site` is the one repo without the prefix.** It was transferred into the
+organisation before the rename convention was applied, and renaming a repo
+requires organisation-owner rights. An owner needs to rename it to
+`signlab_mocap_site`; afterwards run
+`git -C /web/mocap_site remote set-url origin git@github.com:Amsterdam-Humanities-Labs/signlab_mocap_site.git`.
+
 ## Cross-cutting things worth knowing
 
 **Health monitoring.** Long-running scripts register with the Client Monitor API
@@ -269,7 +338,16 @@ an rclone mount. Several repos hardcode these absolute paths.
 
 ## Adding a repo to this index
 
-Add a row to the table, a subsection under "What each one does", and — if it
-moves data between existing components — an edge in the diagram. Keep the
-descriptions about *what the thing is for* and *how it connects*; anything that
-is only true inside one repo belongs in that repo's own README.
+Decide which layer it belongs to first.
+
+If it carries data along the camera-to-API path, it belongs in **the core
+stack**: add a row to that table, a subsection under "What each one does", and
+an edge in the diagram.
+
+If it is a web tool or service built on top of that data, it belongs in **the
+wider platform**: add a row to the right group table — one line, no subsection.
+Add a new group only when a repo fits none of the existing five.
+
+Either way, keep the description about *what the thing is for* and *how it
+connects*; anything that is only true inside one repo belongs in that repo's
+own README. New repos go into the organisation with a `signlab_` prefix.
