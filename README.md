@@ -12,6 +12,10 @@ each one runs.
 > Every repository in one document: what it is for, **live links you can try
 > right now**, how to use each interface, the endpoints behind it, and a
 > troubleshooting section. This README is the map; the manual is the handbook.
+>
+> 🧭 **[Open the interactive explorer →](https://claude.ai/code/artifact/e2000f09-da0e-4995-9b45-e043269f63b6)**
+> The same 28 repositories as a searchable, filterable map laid out along the
+> pipeline — click any repository for its detail and live links.
 
 All of these repos live in the **Amsterdam-Humanities-Labs** organisation under
 a `signlab_` name prefix. Every organisation member has access automatically —
