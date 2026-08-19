@@ -8,20 +8,24 @@ There is no code here. This repo exists so a new developer can see, in one
 place, what the repositories are, which of them talk to each other, and where
 each one runs.
 
-Most repos are private; you need to be granted access to each one separately.
+Most of these repos now live in the **Amsterdam-Humanities-Labs** organisation
+under a `signlab_` name prefix, where every org member has access automatically.
+Four are still personal repos under `rem0g` and are granted per person — the
+table below links each one to where it actually is. Prose in this document uses
+the short names (`viconSync`, not `signlab_viconSync`) for readability.
 
 ## The repositories
 
 | Repo | Language | Role | Visibility |
 |---|---|---|---|
-| [signCollect-v2](https://github.com/rem0g/signCollect-v2) | JavaScript + PHP | Gloss management web interface | Private |
+| [signlab_signCollect-v2](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2) | JavaScript + PHP | Gloss management web interface | Private |
 | [sCAPI](https://github.com/rem0g/sCAPI) | PHP | Public read API — `api.signcollect.nl` | Private |
 | [sC-Animation-PP](https://github.com/rem0g/sC-Animation-PP) | PHP | Mocap animation post-processing manager | Private |
-| [pythonCron](https://github.com/rem0g/pythonCron) | Python | Scheduler + watchdog for every recurring job | Private |
+| [signlab_pythonCron](https://github.com/Amsterdam-Humanities-Labs/signlab_pythonCron) | Python | Scheduler + watchdog for every recurring job | Private |
 | [viconSync](https://github.com/rem0g/viconSync) | Python | Vicon mocap capture → storage → database | Private |
-| [blackmagic_control](https://github.com/rem0g/blackmagic_control) | Python | `bmcam` — control Blackmagic cameras over REST | Private |
-| [blackmagic_RD_sync](https://github.com/rem0g/blackmagic_RD_sync) | Python | Blackmagic clips → H.265 → research drive | Private |
-| [Sony-SDK-MACOS-API](https://github.com/rem0g/Sony-SDK-MACOS-API) | C++ | Multi-camera controller for Sony FX30 on macOS | **Public** |
+| [signlab_blackmagic_control](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control) | Python | `bmcam` — control Blackmagic cameras over REST | Private |
+| [signlab_blackmagic_RD_sync](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync) | Python | Blackmagic clips → H.265 → research drive | Private |
+| [signlab_Sony-SDK-MACOS-API](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API) | C++ | Multi-camera controller for Sony FX30 on macOS | **Public** |
 | [hh](https://github.com/rem0g/hh) | HTML + Python | Dutch health-content indexing — **dormant** | Private |
 
 Activity as of 2026-08-17: `viconSync` and `pythonCron` are actively worked on;
@@ -90,7 +94,7 @@ capture-to-API path, and has been dormant since July 2025.
 
 ## What each one does
 
-### signCollect-v2 — gloss management interface
+### signlab_signCollect-v2 — gloss management interface
 
 A from-scratch rebuild of the gloss editor (`/web/menu_beta/`). Browse and edit
 glosses from the `form_data` table: paginated table, filters, inline editing,
@@ -126,7 +130,7 @@ tracks who has which capture date and what state each file is in.
 - BabylonJS viewer for 3D preview, plus side-by-side original vs processed
   comparison with per-bone rotation compensation
 
-### pythonCron — scheduling and supervision
+### signlab_pythonCron — scheduling and supervision
 
 Runs every recurring job on the production host and restarts the ones that
 fail. Two schedulers currently run side by side (a deliberate, transitional
@@ -160,7 +164,7 @@ runtime from `tailscale status`.
 
 Scheduled by `pythonCron`, which invokes `sync_vicon_rsync.py` directly.
 
-### blackmagic_control — `bmcam`
+### signlab_blackmagic_control — `bmcam`
 
 CLI and Python library for a Blackmagic camera's Camera Control REST API
 (a 6K Pro by default): recording start/stop, video format, media listing,
@@ -168,7 +172,7 @@ clip download. The camera serves port 80 but 404s on everything until **Web
 Media Manager** and **REST API** are switched on — that one-time setup step is
 the usual first stumble.
 
-### blackmagic_RD_sync — camera → research drive
+### signlab_blackmagic_RD_sync — camera → research drive
 
 Autonomous cycle that moves every `.braw` off the camera's USB disk: download
 through the `bmcam` server, transcode to H.265 via the Blackmagic RAW SDK piped
@@ -184,7 +188,7 @@ resume-aware.
 
 Depends on `blackmagic_control` being up — it is the client of that REST server.
 
-### Sony-SDK-MACOS-API — FX30 multi-camera control
+### signlab_Sony-SDK-MACOS-API — FX30 multi-camera control
 
 `fx30MultiRecord`: a REST API plus embedded HTML dashboard for driving several
 Sony FX30 cameras over USB from macOS — synchronised record start/stop, property
@@ -236,14 +240,26 @@ follows it — its password comes from `vicon_credentials.get_vicon_password()`
 (`$VICON_PASSWORD`, or the untracked `monitor_config.json`) and appears nowhere
 in the repo or its history.
 
-The PHP repos do not follow it yet. **The `admin_gebarenoverleg` MySQL password
-is committed in plaintext across several of them** — at minimum `sCAPI`,
-`sC-Animation-PP` (in a docs command line), `hh`, and two repos outside this
-index. All of them are private, so nothing is publicly exposed, but the same
-credential is checked into multiple repositories and every collaborator granted
-access to any one of them gets it. Rotating it means updating every copy at
-once, which is the argument for moving them to a shared untracked config first.
-Audit before widening access to any of these repos.
+The PHP and Python repos do not follow it yet. **The `admin_gebarenoverleg`
+MySQL password is committed in plaintext.** Verified on 2026-08-19 by matching
+the literal against tracked content:
+
+| Repo | Files | Where it lives |
+|---|---|---|
+| `signlab_zin` | 26 | org — readable by every member |
+| `hh` | 16 | `rem0g` |
+| `signlab_mocap` | 7 | org — readable by every member |
+| `sC-Animation-PP` | 3 | `rem0g` |
+| `signlab_client_monitor_api` | 3 | org — readable by every member |
+| `sCAPI` | 2 | `rem0g` |
+| `viconSync` | 1 | `rem0g` |
+
+Mostly inline connection strings in Python scripts, plus a few markdown docs.
+Three of those repos are in the organisation, where all 21 members can read
+them, so **this credential should be treated as compromised and rotated.**
+Rotation means updating 58 files at once, which is the argument for moving them
+to a shared untracked config first. Audit before moving any remaining repo into
+the organisation.
 
 **Shared storage paths.** `/web/gebarenoverleg_media` is the media root on the
 production host (`fbx/`, `studioFiles/`); the research drive is reached through
