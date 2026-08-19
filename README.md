@@ -8,6 +8,11 @@ There is no code here. This repo exists so a new developer can see, in one
 place, what the repositories are, which of them talk to each other, and where
 each one runs.
 
+> 📖 **[Read the Manual →](MANUAL.md)**
+> Every repository in one document: what it is for, **live links you can try
+> right now**, how to use each interface, the endpoints behind it, and a
+> troubleshooting section. This README is the map; the manual is the handbook.
+
 All of these repos live in the **Amsterdam-Humanities-Labs** organisation under
 a `signlab_` name prefix. Every organisation member has access automatically —
 there is nothing to request per repo. Prose in this document uses the short
@@ -77,62 +82,191 @@ are actively worked on; `signCollect-v2` last changed 2026-07-06;
 
 ## How they fit together
 
+Hardware is on the left of each row, the thing that reads it on the right.
+**Every repo node is clickable** — it opens that repository. Dashed edges are
+scheduling ("this triggers that"); solid edges are data moving.
+
 ```mermaid
 flowchart TB
-    subgraph capture["Studio capture"]
-        vicon["Vicon mocap PC<br/>(Windows, tailnet)"]
-        bm["Blackmagic 6K cameras"]
-        sony["Sony FX30 cameras"]
+    subgraph capture["🎥 Capture — hardware on the studio floor"]
+        vicon["<b>Vicon mocap PC</b><br/>Windows, on the tailnet<br/>skeleton capture → FBX/GLB"]
+        bm["<b>Blackmagic 6K cameras</b><br/>.braw onto a USB disk"]
+        sony["<b>Sony FX30 cameras</b><br/>USB to an operator's Mac"]
     end
 
-    subgraph ingest["Ingest &amp; transcode"]
-        vs["viconSync<br/>FBX/GLB over SSH"]
-        bmc["blackmagic_control<br/>bmcam REST server"]
-        rd["blackmagic_RD_sync<br/>.braw → H.265"]
-        ssdk["Sony-SDK-MACOS-API<br/>fx30MultiRecord"]
+    subgraph control["🎛️ Session control — what an operator has open"]
+        ms["<b>mocapStudio</b><br/>3dOpname — shows the sentence<br/>to sign, logs every take"]
+        sb["<b>studio_beta</b><br/>Camera Control — starts/stops<br/>takes, keeps the session log"]
+        ssdk["<b>Sony-SDK-MACOS-API</b><br/>fx30MultiRecord on :8080<br/>broadcasts record to all cameras"]
+        bmc["<b>blackmagic_control</b><br/>bmcam — REST control of the 6K"]
     end
 
-    subgraph store["Storage"]
-        web["/web/gebarenoverleg_media"]
-        drive["Research drive<br/>(rclone mount)"]
-        db[("MySQL admin_gebarenoverleg<br/>form_data, vicon_files,<br/>matched_transcriptions")]
+    subgraph ingest["📥 Ingest — getting media off the devices"]
+        vs["<b>viconSync</b><br/>SCP over SSH, rediscovers the<br/>Vicon PC via tailscale each run"]
+        rd["<b>blackmagic_RD_sync</b><br/>.braw → H.265, keeps SMPTE<br/>timecode, verifies then deletes"]
+        mdp["<b>mocapDataPackage</b><br/>upload.php — receives zipped<br/>capture packages"]
     end
 
-    subgraph post["Human post-processing"]
-        app["sC-Animation-PP<br/>/web/animMIDI"]
-        ue["Unreal Engine<br/>(engineer's machine)"]
+    subgraph store["💾 Storage and database"]
+        web["<b>/web/gebarenoverleg_media</b><br/>fbx/ · razerFiles/ · shogun_live/"]
+        drive["<b>Research drive</b><br/>rclone mount"]
+        db[("<b>MySQL admin_gebarenoverleg</b><br/>form_data · sentences<br/>vicon_captures · vicon_files<br/>matched_transcriptions")]
     end
 
-    subgraph serve["Scheduling &amp; serving"]
-        cron["pythonCron<br/>systemd wrappers + watchdog"]
-        api["sCAPI<br/>api.signcollect.nl"]
-        ui["signCollect-v2<br/>gloss editor"]
+    subgraph cronly["⏱️ Scheduling"]
+        cron["<b>pythonCron</b><br/>~16 services, systemd wrappers<br/>+ watchdog. Matches recordings<br/>to sentences, backs up, converts"]
     end
 
-    vicon --> vs --> web
+    subgraph review["🔍 Review — is the material complete?"]
+        vd["<b>viconDashboard</b><br/>live capture status<br/>🟢 complete 🟡 still growing 🔴 missing"]
+        si["<b>studioIndex</b><br/>browse the archive by date"]
+        mc["<b>mocap</b><br/>capture register + importers"]
+    end
+
+    subgraph fix["🎬 Media correction"]
+        vf["<b>videoFix</b><br/>per-video crop corrections"]
+        vbf["<b>videoBackgroundFix</b><br/>reframe + background,<br/>preview then queue the job"]
+    end
+
+    subgraph post["🧍 Human post-processing"]
+        app["<b>sC-Animation-PP</b><br/>delegates a capture date to one<br/>engineer, logs every transfer"]
+        ue["<b>Unreal Engine</b><br/>on the engineer's machine"]
+    end
+
+    subgraph annot["✍️ Annotation — where researchers work"]
+        zin["<b>zin</b><br/>the main tool — Dutch text,<br/>Signbank glosses and sign-by-sign<br/>against a video timeline → EAF/SRT"]
+        at["<b>annotation-tool</b><br/>browser-only, no login,<br/>nothing uploaded"]
+        ae["<b>annotation-editors</b><br/>the two editors, extracted<br/>to run standalone"]
+    end
+
+    subgraph serve["🌐 Serving"]
+        api["<b>sCAPI</b><br/>api.signcollect.nl — read API,<br/>lemma search over the collection"]
+        ui["<b>signCollect-v2</b><br/>gloss editor, syncs with Signbank"]
+    end
+
+    subgraph view3d["🧊 3D viewers"]
+        glb["<b>s3b_glb</b><br/>GLB viewer, cache-backed"]
+        s3s["<b>s3b_server</b><br/>SAM3D upload + hand clustering"]
+        s3v["<b>s3b_viewer</b><br/>minimal standalone viewer"]
+    end
+
+    subgraph mon["📡 Monitoring"]
+        cma["<b>client_monitor_api</b><br/>register + heartbeat.<br/>Never blocks the job it watches"]
+        cmd["<b>client_monitor_dashboard</b><br/>online · warning · offline"]
+    end
+
+    sony --> ssdk --> sb
     bm --> bmc --> rd --> drive
-    sony --> ssdk
+    vicon --> vs --> web
+    ms --> db
+    sb --> db
     vs --> db
+    mdp --> web
+
     cron -.schedules.-> vs
     cron -.schedules.-> web
+    cron -.matches recordings.-> db
+
     web --> db
+    db --> vd
+    db --> si
+    db --> mc
+    web --> vf --> web
+    web --> vbf --> web
+
     db --> app
     app -- "download FBX" --> ue
     ue -- "upload processed FBX" --> app
     app --> web
-    db --> api --> ui
-    ui --> db
+
+    db --> zin --> db
+    zin -.launches.-> ae
+    web --> glb
+    web --> s3s
+    web --> s3v
+
+    db --> api --> ui --> db
+
+    vs -.heartbeat.-> cma
+    rd -.heartbeat.-> cma
+    cron -.heartbeat.-> cma
+    cma --> cmd
+
+    click ms "https://github.com/Amsterdam-Humanities-Labs/signlab_mocapStudio" "mocapStudio"
+    click sb "https://github.com/Amsterdam-Humanities-Labs/signlab_studio_beta" "studio_beta"
+    click ssdk "https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API" "Sony-SDK-MACOS-API"
+    click bmc "https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control" "blackmagic_control"
+    click vs "https://github.com/Amsterdam-Humanities-Labs/signlab_viconSync" "viconSync"
+    click rd "https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync" "blackmagic_RD_sync"
+    click mdp "https://github.com/Amsterdam-Humanities-Labs/signlab_mocapDataPackage" "mocapDataPackage"
+    click cron "https://github.com/Amsterdam-Humanities-Labs/signlab_pythonCron" "pythonCron"
+    click vd "https://github.com/Amsterdam-Humanities-Labs/signlab_viconDashboard" "viconDashboard"
+    click si "https://github.com/Amsterdam-Humanities-Labs/signlab_studioIndex" "studioIndex"
+    click mc "https://github.com/Amsterdam-Humanities-Labs/signlab_mocap" "mocap"
+    click vf "https://github.com/Amsterdam-Humanities-Labs/signlab_videoFix" "videoFix"
+    click vbf "https://github.com/Amsterdam-Humanities-Labs/signlab_videoBackgroundFix" "videoBackgroundFix"
+    click app "https://github.com/Amsterdam-Humanities-Labs/signlab_sC-Animation-PP" "sC-Animation-PP"
+    click zin "https://github.com/Amsterdam-Humanities-Labs/signlab_zin" "zin"
+    click at "https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-tool" "annotation-tool"
+    click ae "https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-editors" "annotation-editors"
+    click api "https://github.com/Amsterdam-Humanities-Labs/signlab_sCAPI" "sCAPI"
+    click ui "https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2" "signCollect-v2"
+    click glb "https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_glb" "s3b_glb"
+    click s3s "https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_server" "s3b_server"
+    click s3v "https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_viewer" "s3b_viewer"
+    click cma "https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_api" "client_monitor_api"
+    click cmd "https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard" "client_monitor_dashboard"
 ```
 
-The chain in words: cameras and the mocap rig produce raw media → the ingest
-repos pull it off the devices, transcode it and land it on shared storage →
-`pythonCron` drives the recurring matching/conversion jobs that turn files into
-database rows → engineers take FBX captures out through `sC-Animation-PP`,
-clean them up in Unreal and put them back → `sCAPI` serves the results and
-`signCollect-v2` edits them.
+### The chain in words
 
-`hh` is not in this diagram: it reads the same database but is not part of the
-capture-to-API path, and has been dormant since July 2025.
+**Recording.** An operator opens `mocapStudio` to see which sentence to capture
+and `studio_beta` to run the cameras. `studio_beta` proxies to
+`Sony-SDK-MACOS-API`, which holds the USB connections to all the FX30s and
+broadcasts a single record command — there is no per-camera addressing, which is
+exactly why the process exists. The Vicon rig and the Blackmagic cameras record
+alongside them.
+
+**Ingest.** Nothing is pulled by hand. `viconSync` copies skeleton output off
+the Vicon PC (rediscovering its tailnet address every run, because a Windows
+reinstall changes it), `blackmagic_RD_sync` clears the 6K's USB disk by
+transcoding to H.265 and only deleting once the file is verified durable
+upstream, and `mocapDataPackage` accepts zipped packages posted from capture
+machines. Everything lands under `/web/gebarenoverleg_media` or the research
+drive.
+
+**Turning files into rows.** `pythonCron` runs the recurring work — matching
+recordings to sentences, backups, conversions — and restarts anything that
+dies. This is where loose files become `vicon_files` and `matched_transcriptions`
+records.
+
+**Checking and fixing.** `viconDashboard` is the live view of whether a session
+is complete; `studioIndex` and `mocap` are the by-date and register views. Where
+framing is wrong, `videoFix` records crop corrections and `videoBackgroundFix`
+reframes clips through a preview-then-queue workflow.
+
+**The human step.** `sC-Animation-PP` hands one capture date to one engineer,
+who cleans the FBX up in Unreal and uploads it back. Every transfer is logged —
+the audit trail matters as much as the file.
+
+**Annotation.** `zin` is where the linguistic work happens: Dutch text, Signbank
+glosses and sign-by-sign annotation lined up against the video, exported as EAF
+and SRT. `annotation-editors` is the same two editors extracted to run
+standalone. `annotation-tool` is the escape hatch — browser-only, no login,
+nothing uploaded, for material that is not in the database.
+
+**Serving.** `sCAPI` publishes the collection at `api.signcollect.nl` and
+`signCollect-v2` is the gloss editor over `form_data`, syncing two ways with
+Signbank.
+
+**Watching all of it.** Long-running scripts register with `client_monitor_api`
+and heartbeat; `client_monitor_dashboard` shows who has gone quiet. Monitoring is
+deliberately never fatal — if the API is unreachable a job logs a warning and
+carries on.
+
+`hh` is not in this diagram. It reads the same database but sits outside the
+capture-to-API path and has been dormant since July 2025. `mhr` is not in it
+either — it is avatar source assets, not a running service.
 
 ## What each one does
 
