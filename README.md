@@ -8,25 +8,25 @@ There is no code here. This repo exists so a new developer can see, in one
 place, what the repositories are, which of them talk to each other, and where
 each one runs.
 
-Most of these repos now live in the **Amsterdam-Humanities-Labs** organisation
-under a `signlab_` name prefix, where every org member has access automatically.
-Four are still personal repos under `rem0g` and are granted per person — the
-table below links each one to where it actually is. Prose in this document uses
-the short names (`viconSync`, not `signlab_viconSync`) for readability.
+All of these repos live in the **Amsterdam-Humanities-Labs** organisation under
+a `signlab_` name prefix. Every organisation member has access automatically —
+there is nothing to request per repo. Prose in this document uses the short
+names (`viconSync`, not `signlab_viconSync`) for readability; the table above
+links each one to its actual location.
 
 ## The repositories
 
 | Repo | Language | Role | Visibility |
 |---|---|---|---|
 | [signlab_signCollect-v2](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2) | JavaScript + PHP | Gloss management web interface | Private |
-| [sCAPI](https://github.com/rem0g/sCAPI) | PHP | Public read API — `api.signcollect.nl` | Private |
-| [sC-Animation-PP](https://github.com/rem0g/sC-Animation-PP) | PHP | Mocap animation post-processing manager | Private |
+| [signlab_sCAPI](https://github.com/Amsterdam-Humanities-Labs/signlab_sCAPI) | PHP | Public read API — `api.signcollect.nl` | Private |
+| [signlab_sC-Animation-PP](https://github.com/Amsterdam-Humanities-Labs/signlab_sC-Animation-PP) | PHP | Mocap animation post-processing manager | Private |
 | [signlab_pythonCron](https://github.com/Amsterdam-Humanities-Labs/signlab_pythonCron) | Python | Scheduler + watchdog for every recurring job | Private |
-| [viconSync](https://github.com/rem0g/viconSync) | Python | Vicon mocap capture → storage → database | Private |
+| [signlab_viconSync](https://github.com/Amsterdam-Humanities-Labs/signlab_viconSync) | Python | Vicon mocap capture → storage → database | Private |
 | [signlab_blackmagic_control](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control) | Python | `bmcam` — control Blackmagic cameras over REST | Private |
 | [signlab_blackmagic_RD_sync](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync) | Python | Blackmagic clips → H.265 → research drive | Private |
 | [signlab_Sony-SDK-MACOS-API](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API) | C++ | Multi-camera controller for Sony FX30 on macOS | **Public** |
-| [hh](https://github.com/rem0g/hh) | HTML + Python | Dutch health-content indexing — **dormant** | Private |
+| [signlab_hh](https://github.com/Amsterdam-Humanities-Labs/signlab_hh) | HTML + Python | Dutch health-content indexing — **dormant** | Private |
 
 Activity as of 2026-08-17: `viconSync` and `pythonCron` are actively worked on;
 `signCollect-v2` last changed 2026-07-06; `blackmagic_RD_sync` 2026-05-08 and
@@ -108,14 +108,14 @@ self-capture video recording, and studio videos linked through
 - `docs/spec.md` — the data model, worth reading before touching `form_data`
 - Auth is the shared `sessionObject` cookie on `.signcollect.nl`
 
-### sCAPI — the public API
+### signlab_sCAPI — the public API
 
 Read API over the sign video collection at `https://api.signcollect.nl`.
 Search across words, sentences and glosses, with theme grouping and pagination;
 plus the `getList*` / `get*Videos` endpoints. Single-word queries use
 lemma-based search, multi-word queries require all words to match.
 
-### sC-Animation-PP — animation post-processing manager
+### signlab_sC-Animation-PP — animation post-processing manager
 
 The human step in the mocap pipeline. Engineers download original FBX captures,
 clean them up in Unreal Engine, and upload the processed versions back; the app
@@ -147,7 +147,7 @@ Roughly 16 services: media conversion, mocap record matching (`matchVicon.py`,
 QR conversion. **This repo mirrors a live production system** — read its
 operational notes before running anything.
 
-### viconSync — Vicon mocap pipeline
+### signlab_viconSync — Vicon mocap pipeline
 
 Pulls motion-capture output off the Vicon PC and gets it into storage and the
 database. The Vicon PC rejoins the tailnet under a new address after every
@@ -197,7 +197,7 @@ Sony Camera Remote SDK; the repo also documents the SDK connection patterns.
 
 The only public repo here, and the only C++ one.
 
-### hh — Dutch health-content indexing (dormant)
+### signlab_hh — Dutch health-content indexing (dormant)
 
 Crawls medical content from `thuisarts.nl`, lemmatises it with OpenDutchWordnet,
 and presents it through a browsing/search interface: `crawl.py` →
@@ -240,26 +240,28 @@ follows it — its password comes from `vicon_credentials.get_vicon_password()`
 (`$VICON_PASSWORD`, or the untracked `monitor_config.json`) and appears nowhere
 in the repo or its history.
 
-The PHP and Python repos do not follow it yet. **The `admin_gebarenoverleg`
-MySQL password is committed in plaintext.** Verified on 2026-08-19 by matching
-the literal against tracked content:
+Every repo now follows it. On 2026-08-19 the `admin_gebarenoverleg` MySQL
+password was found committed in plaintext in 58 files across seven repos, and
+was purged from all of them — working files and full git history:
 
-| Repo | Files | Where it lives |
+| Repo | Files | How it was purged |
 |---|---|---|
-| `signlab_zin` | 26 | org — readable by every member |
-| `hh` | 16 | `rem0g` |
-| `signlab_mocap` | 7 | org — readable by every member |
-| `sC-Animation-PP` | 3 | `rem0g` |
-| `signlab_client_monitor_api` | 3 | org — readable by every member |
-| `sCAPI` | 2 | `rem0g` |
-| `viconSync` | 1 | `rem0g` |
+| `signlab_zin` | 26 | history replaced; reads `db_credentials.py` |
+| `signlab_hh` | 16 | history replaced; reads `db_credentials.{py,php}` |
+| `signlab_mocap` | 7 | history replaced; reads `db_credentials.py` |
+| `signlab_client_monitor_api` | 3 | history replaced; docs redacted |
+| `signlab_sC-Animation-PP` | 3+1 | path purged from history via filter-repo |
+| `signlab_sCAPI` | 2 | `mysql_config.php` untracked + purged |
+| `signlab_viconSync` | 1 | path purged from history via filter-repo |
 
-Mostly inline connection strings in Python scripts, plus a few markdown docs.
-Three of those repos are in the organisation, where all 21 members can read
-them, so **this credential should be treated as compromised and rotated.**
-Rotation means updating 58 files at once, which is the argument for moving them
-to a shared untracked config first. Audit before moving any remaining repo into
-the organisation.
+Each affected repo now carries a gitignored `db_credentials.py` (and
+`db_credentials.php` where PHP needs it) with a committed `*.example.*`
+template beside it. Deploying to a new host means copying the example and
+filling in the password.
+
+**The credential still needs rotating.** It was readable by all organisation
+members before the purge, so treat it as compromised regardless of the rewrite.
+Rotation is now a one-line change per host instead of an edit across 58 files.
 
 **Shared storage paths.** `/web/gebarenoverleg_media` is the media root on the
 production host (`fbx/`, `studioFiles/`); the research drive is reached through
