@@ -1,0 +1,142 @@
+# SignCollect on demovps — isolated demo deployment
+
+**Date:** 2026-09-01
+**Status:** approved, in implementation
+**Target:** demovps — `dev.taila8bdbd.ts.net` / `100.72.57.25`
+
+## Goal
+
+Serve the `signcollect.nl` web interface from demovps as a self-contained demo:
+the same pages, backed by an empty database, with **no network path back to
+production**. Mocap is excluded.
+
+## Scope
+
+In scope — the four destinations of the production landing page, minus mocap:
+
+| Component | Production path | Source |
+|---|---|---|
+| Landing page | `/web/index.html` | rsync — no repo exists |
+| signCollect v2 | `/web/menu_beta` | `signlab_signCollect-v2` |
+| Legacy menu | `/web/menu_old` | rsync — no repo exists |
+| Zin annotation tool | `/web/zin` | `signlab_zin` |
+| Read API | `/web/zin/api` | `signlab_sCAPI` |
+
+Out of scope: `mocap.signcollect.nl`; media files (3.2 GB); Signbank (Django
+`:8889`); ISS_Server (`:9102`); handshape_search (`:3212`); scryer (`:9090`);
+the ten WebSocket proxies; `/weng`; `dashboard.signcollect.nl`.
+
+## Accepted consequences
+
+These follow from the chosen options and are not defects:
+
+1. **Video does not play, anywhere.** No media copied, and no production access
+   to fall back on.
+2. **~38 uncommitted production files are absent** — code comes from GitHub, and
+   production carries uncommitted work including `users_api.php`,
+   `batch_add.php`, `labels_add.php`, `get_glosses.php`.
+3. **Anything calling an out-of-scope service fails.** Signbank sync, the
+   WebSocket editors, and handshape search have no backend here.
+4. `opnameViewTest.html` is a **dead link in production too** — the file does not
+   exist. Reproduced faithfully rather than fixed.
+
+## Topology
+
+Tailscale issues a certificate only for the node's own MagicDNS name, so the
+three production subdomains cannot become three hostnames here. Everything
+collapses onto one origin with path mounts — which also removes CORS and
+mixed-content concerns:
+
+```
+https://dev.taila8bdbd.ts.net/       -> /web             landing, menu_beta, menu_old, zin
+https://dev.taila8bdbd.ts.net/api/   -> /web/zin/api     was api.signcollect.nl
+https://dev.taila8bdbd.ts.net/media/ -> /web/media_stub  was media.signcollect.nl (404s)
+```
+
+## URL rewrite
+
+The code carries ~155 absolute URLs to production. Left alone, the browser would
+load pages from demovps and send calls — including writes — to the live site.
+They are all string constants, so a scripted rewrite is tractable.
+
+`scripts/rewrite-urls.sh`, applied after clone, in this order:
+
+| From | To |
+|---|---|
+| `https://api.signcollect.nl` | `/api` |
+| `https://media.signcollect.nl` | `/media` |
+| `https://signcollect.nl` | `` (empty — absolute becomes same-origin relative) |
+
+Order matters: the bare host rule runs **last** so it cannot consume the
+subdomains first. Applied to `.js`, `.php`, `.html`, `.css`; excluding
+`node_modules/`, `.git/`, and `docs/`.
+
+Not rewritten: Swift client code in `zin` (`URL(string: "https://signcollect.nl/...")`).
+It is not web-served, so rewriting it would be noise.
+
+## Configuration
+
+The repos gitignore their real configs, so these are authored fresh. None
+require production secrets:
+
+| File | Source | Contents |
+|---|---|---|
+| `/web/mysql_config.php` | none — untracked in production | local DB credentials |
+| `/web/zin/api/mysql_config.php` | `mysql_config.example.php` | local DB credentials |
+| `/web/zin/mysql_config.php` | template | local DB credentials |
+| `/web/zin/.env` | `.env.example` | Discord alerts — **dummy values** |
+| `/web/menu_beta/signbank_sync/config.php` | `config.example.php` | Signbank API — **dummy**, service is out of scope |
+
+## Database
+
+Schema only, no rows:
+
+```
+mysqldump --no-data --skip-add-drop-table --routines --events
+```
+
+97 base tables + 1 view; no routines, no triggers; 13 foreign keys. All InnoDB.
+Recreated on demovps as database `admin_gebarenoverleg`, user `user`, so the
+config files differ from production only in password.
+
+Collations are mixed in production — 56 `utf8mb4_0900_ai_ci`, 23
+`latin1_swedish_ci`, 17 `utf8mb4_unicode_ci`, 1 `utf8mb3_general_ci`. The dump
+preserves them verbatim. They are **not** normalised: the code may depend on
+existing comparison behaviour, and this is a faithful-copy exercise.
+
+Import wraps in `SET FOREIGN_KEY_CHECKS=0` so the 13 FKs do not constrain
+table order.
+
+## Isolation
+
+Two independent layers, because a regex rewrite cannot be proven exhaustive:
+
+1. **DNS null-route** — `signcollect.nl`, `api.`, `media.`, `mocap.` mapped to
+   `127.0.0.1` in demovps `/etc/hosts`.
+2. **Egress block** — nftables rule rejecting outbound traffic to production's
+   IP addresses.
+
+No carve-out for media. Anything the rewrite missed fails immediately and
+visibly instead of silently reaching production.
+
+The block is **verified empirically** — connection attempted from demovps to
+production and confirmed refused — not assumed from the presence of the rules.
+
+## Verification
+
+Per phase, evidence required before the phase is called done:
+
+- every in-scope page returns HTTP 200
+- `grep -r "signcollect\.nl"` over the deployed tree returns **only** the
+  documented Swift exclusion
+- a connection attempt from demovps to production is **refused**
+- `SHOW TABLES` returns 98 objects, and every table returns `COUNT(*) = 0`
+- the Apache error log is clean after exercising each entry point
+
+## Phases
+
+**Phase 1** — landing page, `menu_beta`, database schema, isolation layer, vhost.
+**Phase 2** — `zin`, `sCAPI` at `/api`, media stub.
+
+Phase 1 is validated before Phase 2 begins; `zin` is the bulk of both the code
+and the external-dependency risk.
