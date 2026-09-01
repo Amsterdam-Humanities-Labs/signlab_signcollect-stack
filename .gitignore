@@ -1,0 +1,5 @@
+# Cloned upstream sources - reproducible via scripts/clone.sh, not vendored here.
+build/
+# Real configs with credentials never get committed.
+config/*.local.php
+secrets.env
