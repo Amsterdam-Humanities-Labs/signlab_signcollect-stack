@@ -204,3 +204,24 @@ verified as `www-data`.
 
 `scripts/verify.sh` checks pages, secret denial, isolation, and database state
 in one run. Full pass recorded 2026-09-01.
+
+## Demo login (added 2026-09-01)
+
+`login.html` posts to `login_sc.php`, which was **not** part of the original
+deployment — it sits untracked at the production docroot root, like
+`index.html` and `menu_old`, so it comes by rsync. Without it the login form
+posts into a 404.
+
+Authentication is `SELECT ... FROM users WHERE user = ? AND pass = ?`:
+**passwords are compared in plaintext**. That is the upstream scheme, not a
+choice made here; the demo user matches it.
+
+`db/demo-user.sql` creates `gomer` / `123`, role `admin`, context `signbank`,
+dataset `ngt` — mirroring the production account's non-secret attributes.
+`last_login` and `last_activity` are set to `NOW()` because `login_sc.php`
+auto-blocks any account idle more than 60 days, and a NULL/old value would make
+the account unusable on arrival.
+
+**This makes `users` the one table that is not empty** — a deliberate exception
+to "empty tables only", required for the login to work at all. Every other table
+remains empty.

@@ -22,7 +22,14 @@ for t in https://signcollect.nl/ https://136.144.170.87/ http://100.88.38.8/; do
     printf '  FAIL reachable: %s\n' "$t"; fail=1
   else printf '  ok   blocked   %s\n' "$t"; fi
 done
-echo "== database: 98 objects, all empty =="
+echo "== login (users is the one deliberately non-empty table) =="
+r=$(curl -sS --connect-timeout 12 -X POST -d "username=gomer&password=123" "$B/login_sc.php" 2>/dev/null)
+case "$r" in *'"status":"success"'*) echo "  ok   gomer/123 authenticates" ;;
+             *) echo "  FAIL login: $r"; fail=1 ;; esac
+r=$(curl -sS --connect-timeout 12 -X POST -d "username=gomer&password=wrong" "$B/login_sc.php" 2>/dev/null)
+case "$r" in *'"status":"failure"'*) echo "  ok   wrong password rejected" ;;
+             *) echo "  FAIL bad password not rejected: $r"; fail=1 ;; esac
+echo "== database: 98 objects =="
 ssh demovps 'sudo mysql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"admin_gebarenoverleg\";"' \
   | awk '{ if ($1==98) print "  ok   objects = 98"; else { print "  FAIL objects = "$1; exit 1 } }' || fail=1
 echo
