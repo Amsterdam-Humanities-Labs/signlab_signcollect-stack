@@ -144,3 +144,63 @@ Per phase, evidence required before the phase is called done:
 
 Phase 1 is validated before Phase 2 begins; `zin` is the bulk of both the code
 and the external-dependency risk.
+
+---
+
+# Implementation notes (2026-09-01)
+
+Deviations and discoveries from actually building it.
+
+## Code is cloned locally, not on demovps
+
+`gh` is authenticated on the workstation, so the three repos are cloned there
+and rsynced over. demovps needs no GitHub credentials and no outbound git
+access.
+
+## `innodb_strict_mode` must be off for the import
+
+`form_data` is `DEFAULT CHARSET=latin1` with **68 columns** totalling ~53,295
+bytes of declared varchar width, against InnoDB's ~8126-byte limit. The import
+fails at that table with `ERROR 1118 Row size too large`.
+
+This is **not** a difference between the two servers — both run
+`strict_mode=1, page=16384, fmt=dynamic`, and production stores the table as
+Dynamic. The table exists in production only because it was built up through
+incremental `ALTER`s that each passed on their own; it cannot be recreated from
+its own dump under strict mode.
+
+The import therefore runs with `SET SESSION innodb_strict_mode=0`. DYNAMIC row
+format pushes long columns off-page, which is how the table already behaves in
+production. Consequence: an insert whose row genuinely exceeds the limit would
+fail at runtime — irrelevant here, since every table is empty by design.
+
+## Apache modules
+
+`mod_rewrite` is required — `/web/zin/api/.htaccess` uses `RewriteEngine`, and
+without it every `/api` request returns 500. `mod_headers` and `mod_expires` are
+enabled for the same reason. None are on in a default Ubuntu install.
+
+## Dotfiles were served
+
+`/web/zin/.env` returned **200** on first deployment. Values were dummies, but
+the exposure pattern is real. `signcollect-web.conf` now denies dotfiles,
+`.git`/`.svn` directories, and `.bak/.sql/.log/.save/.orig/~` files across the
+whole docroot, and `mysql_config*.php` everywhere.
+
+## Upstream finding: a live session token in git
+
+`signlab_sCAPI` tracks `cookies.txt` containing a real `PHPSESSID` for
+`api.signcollect.nl`. `purge-artifacts.sh` removes it (with the committed test
+logs and response captures) before deployment, but **it remains in the upstream
+repository history** and should be rotated and purged there.
+
+## Config file ownership
+
+Configs are `640 gomer:www-data`. Apache runs as `www-data`; a PHP-CLI test as
+`gomer` will pass even when the web server cannot read the file, so this must be
+verified as `www-data`.
+
+## Verification
+
+`scripts/verify.sh` checks pages, secret denial, isolation, and database state
+in one run. Full pass recorded 2026-09-01.
