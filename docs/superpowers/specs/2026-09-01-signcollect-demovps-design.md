@@ -95,13 +95,17 @@ Schema only, no rows:
 mysqldump --no-data --skip-add-drop-table --routines --events
 ```
 
-97 base tables + 1 view; no routines, no triggers; 13 foreign keys. All InnoDB.
+97 base tables + 1 view; no routines, no triggers; **1 event** (`cleanup_old_metrics`,
+a daily `DELETE` on `client_metrics` - harmless against empty tables, and the
+event scheduler is off by default on demovps); 13 foreign keys. All InnoDB.
 Recreated on demovps as database `admin_gebarenoverleg`, user `user`, so the
 config files differ from production only in password.
 
 Collations are mixed in production — 56 `utf8mb4_0900_ai_ci`, 23
 `latin1_swedish_ci`, 17 `utf8mb4_unicode_ci`, 1 `utf8mb3_general_ci`. The dump
-preserves them verbatim. They are **not** normalised: the code may depend on
+preserves them verbatim. `DEFINER` clauses are stripped and the view forced to
+`SQL SECURITY INVOKER`, since the production definer does not exist here.
+Collations are **not** normalised: the code may depend on
 existing comparison behaviour, and this is a faithful-copy exercise.
 
 Import wraps in `SET FOREIGN_KEY_CHECKS=0` so the 13 FKs do not constrain
