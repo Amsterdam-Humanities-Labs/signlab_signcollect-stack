@@ -53,6 +53,18 @@
 # is a second name for the same inodes and not a second copy to deploy.
 # The repository is private and stays private: it is video of identifiable
 # research participants.
+#
+# signlab_signcollect-lib is not a page, it is /web/lib - the one place the
+# database credentials are read from, and the first thing anything else
+# resolves. It ships as a component rather than as a Composer package on
+# purpose: there is no build step anywhere in install.sh, deploy.sh is
+# rsync -a --delete, and signlab_sC-Animation-PP already demonstrates the
+# failure mode - it has a composer.json whose vendor/ is gitignored and
+# therefore absent from the clone. A dependency that needs `composer install`
+# on the host is a deploy that 500s until someone remembers a step no script
+# performs. Listed first so it is on disk before the repos that include it,
+# which rsync does not require but a reader of this file reasonably expects.
+lib	signlab_signcollect-lib	main
 menu_beta	signlab_signCollect-v2	main
 zin	signlab_zin	main
 videoFix	signlab_videoFix	main
