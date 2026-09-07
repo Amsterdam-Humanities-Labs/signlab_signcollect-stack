@@ -8,7 +8,13 @@
 #
 # Kept as a separate list, not derived from the SQL, so scripts/seed-demo-data.sh
 # never has to parse SQL to know which files to move, and so a reviewer can see
-# in one place exactly which recordings leave production.
+# in one place exactly which recordings the demo carries.
+#
+# The videos themselves live in the private repo signlab_demo-media, which
+# scripts/repos.tsv deploys to /web/gebarenoverleg_media. This list and that
+# repository have to agree: seed-demo-data.sh checks every stem here against
+# the checkout and refuses to seed if one is missing, so adding a stem means
+# adding both MP4s there first.
 M20240418_0020
 M20240507_0012
 M20240507_0014

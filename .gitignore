@@ -11,6 +11,9 @@ web_extra/.env
 # Local credential, never committed (was stripped from history 2026-09-07).
 .dbpass.local
 
-# Demo media cache - 68MB of participant video, fetched by
-# scripts/seed-demo-data.sh from production. Deliberately not in history.
+# Retired. This was the 68MB cache seed-demo-data.sh used to fetch from
+# production; the video now ships from the private signlab_demo-media repo
+# (scripts/repos.tsv) and lands in build/, which is ignored above. The rule
+# stays so a leftover cache on an old workstation can never be committed here
+# by accident - participant video belongs in that repo and nowhere else.
 media/

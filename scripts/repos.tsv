@@ -40,6 +40,19 @@
 # sC-Animation-PP) serves the assets those editors load by absolute path -
 # environment.envbin and the 34MB PalmerPolo avatar - so the editors break
 # without it.
+# signlab_demo-media is not code. It is the 40 MP4s the demo rows point at -
+# 20 studio takes, raw and post cut each, 68MB - and it is listed here so the
+# deploy ships them the same way it ships everything else. It used to be the
+# one thing rsynced out of production at seed time, into a gitignored
+# workstation cache; a cold cache with production unreachable meant a demo
+# with data and no video. Its layout is production's own
+# (studioFilesMini/{raw,post}/), so mapping it onto /web/gebarenoverleg_media
+# needs no special case: rsync puts every file exactly where signCollect-v2's
+# main.js and getZinnen.php already look. The post cuts still get hard-linked
+# into /web/media_stub afterwards by scripts/seed-demo-data.sh, because that
+# is a second name for the same inodes and not a second copy to deploy.
+# The repository is private and stays private: it is video of identifiable
+# research participants.
 menu_beta	signlab_signCollect-v2	main
 zin	signlab_zin	main
 videoFix	signlab_videoFix	main
@@ -54,3 +67,4 @@ mocapStudio	signlab_mocapStudio	main
 mocap	signlab_mocap	main
 mocap_lab	signlab_mocap_lab	main
 viconDashboard	signlab_viconDashboard	main
+gebarenoverleg_media	signlab_demo-media	main

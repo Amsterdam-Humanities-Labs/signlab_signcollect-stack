@@ -7,30 +7,38 @@
 # This is the third seed layer - db/demo-data.sql (the rows) plus the MP4s
 # named in db/demo-media.txt (the videos those rows point at).
 #
-# WHY THE MEDIA IS NOT IN GIT
+# WHERE THE MEDIA COMES FROM
 #
-# The 20 recordings are 40 MP4s - a raw and a post cut each - and 68MB in
-# total. Two reasons not to commit them:
+# From git, like everything else this deploy ships. The 40 MP4s - a raw and a
+# post cut for each of the 20 takes, 68MB - live in the private repository
+# Amsterdam-Humanities-Labs/signlab_demo-media, which scripts/repos.tsv lists
+# as the gebarenoverleg_media component. So scripts/clone.sh fetches them and
+# scripts/deploy.sh puts them on the host, and by the time this script runs
+# they are already at /web/gebarenoverleg_media/studioFilesMini/{raw,post}/.
 #
-#   Size. 68MB of already-compressed video does not delta or pack; it would
-#   be six times the whole rest of the repo, permanently.
+# This used to rsync them out of production into a gitignored workstation
+# cache (media/demo/) and push from there. That made the deploy dependent on
+# signcollect.nl in a way nothing else was, and the dependency was invisible
+# while the cache was warm: a fresh checkout with production unreachable got a
+# fully populated interface in which no video played. The production fetch is
+# gone rather than kept behind a flag, because a fallback that dials
+# production is a fallback nobody runs and nobody tests, and "this deploy
+# never touches production" is worth more as a fact than as a default. The
+# files are still on production and the repository is how you get them; if it
+# ever needs re-filling, that is a deliberate, reviewed copy into
+# signlab_demo-media and not a step of the install.
 #
-#   They are recordings of identifiable research participants. A git object
-#   cannot be withdrawn once it is committed, and a demo dataset is exactly
-#   the kind of thing that gets re-cloned and passed around. Keeping the
-#   video out of history means the decision to move it stays reviewable, and
-#   revocable, every time this runs.
+# MEDIA_SRC overrides where the checkout is, for running this against a tree
+# clone.sh has not built.
 #
-# So the files are fetched from production into a gitignored cache
-# (media/demo/, override with MEDIA_CACHE) and pushed from there. The cache
-# makes the fetch a one-off: a second run copies nothing.
-#
-# WHY THE FETCH RUNS HERE AND NOT ON THE HOST
+# WHY THE PUSH RUNS HERE AND NOT ON THE HOST
 #
 # dev2 is firewalled from production by scripts/isolate.sh and verify.sh
-# asserts it stays that way, so the demo host cannot pull anything. Same shape
-# as scripts/clone.sh: this workstation reaches both ends, the demo host
-# reaches neither. Production is only ever read.
+# asserts it stays that way, and it has no GitHub credentials either. Same
+# shape as scripts/clone.sh: this workstation reaches git, the demo host
+# reaches nothing. The rsync below is normally a no-op - deploy.sh has just
+# sent the identical tree - and exists so this script also works on its own,
+# against a host deployed earlier.
 #
 # WHERE THE VIDEOS HAVE TO LAND
 #
@@ -41,7 +49,10 @@
 #     what actually plays: signCollect-v2 js/main.js and js/table.js build
 #     exactly this URL from matched_transcriptions.m_file (stem + .mp4, post/
 #     when post_processed=1, raw/ otherwise), and signlab_zin getZinnen.php
-#     hardcodes the same two prefixes.
+#     hardcodes the same two prefixes. It is also why signlab_demo-media is
+#     laid out as studioFilesMini/{raw,post}/ and mapped onto
+#     /web/gebarenoverleg_media - the repository holds production's own paths,
+#     so deploying it is an ordinary component rsync with no special case.
 #
 #   /media/<file>
 #     apache/signcollect-mounts.conf aliases /media to /web/media_stub,
@@ -51,19 +62,18 @@
 #     zinCrop, signlab_hh, signlab_mocapStudio, signlab_videoFix) reach for
 #     the /media spelling. They are hard-linked rather than copied: one inode,
 #     both names, no second 34MB on disk and no reliance on FollowSymLinks
-#     being inherited into the media_stub Directory block.
+#     being inherited into the media_stub Directory block. The linking stays
+#     here rather than moving into the deploy because it is a second name for
+#     files deploy.sh has already placed, not a second thing to place.
 #
 # Usage: HOST=demovps scripts/seed-demo-data.sh
-#        HOST=demovps NO_FETCH=1 scripts/seed-demo-data.sh   # cache only
 #        HOST=demovps SQL_ONLY=1 scripts/seed-demo-data.sh   # skip all media
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 HOST=${HOST:-demovps}
 DB=admin_gebarenoverleg
-PROD=${PROD:-signcollect.nl}
-CACHE=${MEDIA_CACHE:-media/demo}
-PROD_MEDIA=/web/gebarenoverleg_media/studioFilesMini
+MEDIA_SRC=${MEDIA_SRC:-build/signlab_demo-media/studioFilesMini}
 HOST_MEDIA=/web/gebarenoverleg_media/studioFilesMini
 
 [ -f db/demo-data.sql ]  || { echo "  db/demo-data.sql missing" >&2; exit 1; }
@@ -100,43 +110,33 @@ while IFS= read -r s; do
 done < db/demo-media.txt
 echo "== media (${#stems[@]} takes, raw + post) =="
 
-mkdir -p "$CACHE/raw" "$CACHE/post"
+[ -d "$MEDIA_SRC/raw" ] && [ -d "$MEDIA_SRC/post" ] || {
+  echo "  $MEDIA_SRC is not there - run scripts/clone.sh first, or set" >&2
+  echo "  MEDIA_SRC to a signlab_demo-media checkout's studioFilesMini/" >&2
+  exit 1
+}
 
-if [ -n "${NO_FETCH:-}" ]; then
-  echo "  NO_FETCH set - using whatever the cache already holds"
-else
-  # Only ask production for what is missing. rsync --files-from sends one
-  # request for the whole batch rather than one ssh per file, and --ignore-
-  # existing means a warm cache transfers nothing at all.
-  for dir in raw post; do
-    want=$(mktemp)
-    for s in "${stems[@]}"; do
-      [ -f "$CACHE/$dir/$s.mp4" ] || printf '%s.mp4\n' "$s" >> "$want"
-    done
-    if [ -s "$want" ]; then
-      printf '  fetching %s missing from %s/\n' "$(wc -l < "$want" | tr -d ' ')" "$dir"
-      rsync -a --files-from="$want" "$PROD:$PROD_MEDIA/$dir/" "$CACHE/$dir/"
-    else
-      printf '  %-4s cache complete\n' "$dir"
-    fi
-    rm -f "$want"
-  done
-fi
-
+# db/demo-media.txt is the list the SQL was written against; the checkout is
+# what is on disk. Checking one against the other here means a stem added to
+# the seed without its video fails loudly on this workstation instead of
+# quietly serving a 404 to a player on the demo.
 missing=0
 for s in "${stems[@]}"; do
   for dir in raw post; do
-    [ -f "$CACHE/$dir/$s.mp4" ] || { echo "  MISSING $dir/$s.mp4" >&2; missing=$((missing+1)); }
+    [ -f "$MEDIA_SRC/$dir/$s.mp4" ] || { echo "  MISSING $dir/$s.mp4" >&2; missing=$((missing+1)); }
   done
 done
-[ "$missing" -eq 0 ] || { echo "  $missing file(s) missing from the cache" >&2; exit 1; }
-echo "  cache holds $(du -sh "$CACHE" | cut -f1)"
+[ "$missing" -eq 0 ] || { echo "  $missing file(s) missing from $MEDIA_SRC" >&2; exit 1; }
+echo "  $MEDIA_SRC holds all $(( ${#stems[@]} * 2 )) files ($(du -sh "$MEDIA_SRC" | cut -f1))"
 
 echo "== push =="
-# The tree is not part of a component deploy, so deploy.sh does not create it.
+# deploy.sh has normally just sent this exact tree as the gebarenoverleg_media
+# component, so this transfers nothing; it is here so the script stands alone.
+# mkdir for the case where it has not - a host provisioned but not yet
+# deployed, or SQL seeded before the components went out.
 ssh "$HOST" "mkdir -p $HOST_MEDIA/raw $HOST_MEDIA/post /web/media_stub"
 for dir in raw post; do
-  rsync -a "$CACHE/$dir/" "$HOST:$HOST_MEDIA/$dir/"
+  rsync -a "$MEDIA_SRC/$dir/" "$HOST:$HOST_MEDIA/$dir/"
   echo "  $dir -> $HOST_MEDIA/$dir/"
 done
 
