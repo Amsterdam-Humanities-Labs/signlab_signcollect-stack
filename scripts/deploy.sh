@@ -35,8 +35,21 @@ echo "target host: $HOST"
 # signbank_sync/config.php is gitignored upstream and written per host by
 # host-config.sh. Without this exclude, --delete removes it and every page
 # load 500s in php_api/current_user.php.
-KEEP=(--exclude '.env' --exclude '.git' --exclude 'node_modules' --exclude 'api/' \
+KEEP=(--exclude '.env' --exclude '.git' --exclude 'node_modules' \
       --exclude 'signbank_sync/config.php')
+
+# api/ is excluded for signlab_zin ONLY - it is the signlab_sCAPI submodule
+# mounted at /api, which clone.sh does not populate, so an unguarded --delete
+# would replace a working API with an empty directory.
+#
+# It must be anchored to the transfer root. An unanchored 'api/' matches at
+# every depth, which silently stopped signlab_viconDashboard/api/ from ever
+# deploying: the dashboard rendered and every panel 404'd.
+per_component_excludes() {
+  case "$1" in
+    signlab_zin) printf '%s\n' "--exclude=/api/" ;;
+  esac
+}
 
 echo "== git-backed components =="
 while IFS=$'\t' read -r webdir repo branch; do
