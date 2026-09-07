@@ -9,12 +9,20 @@
 #
 # WHERE THE MEDIA COMES FROM
 #
-# From git, like everything else this deploy ships. The 40 MP4s - a raw and a
-# post cut for each of the 20 takes, 68MB - live in the private repository
+# From git, like everything else this deploy ships. The files - 292 of them,
+# 291MB - live in the private repository
 # Amsterdam-Humanities-Labs/signlab_demo-media, which scripts/repos.tsv lists
 # as the gebarenoverleg_media component. So scripts/clone.sh fetches them and
 # scripts/deploy.sh puts them on the host, and by the time this script runs
 # they are already at /web/gebarenoverleg_media/studioFilesMini/{raw,post}/.
+#
+# All five camera angles, and their thumbnails. The 20 takes are filmed from
+# L, M, R and - on thirteen of them - A and B, each a separate file named in
+# its own matched_transcriptions column and each with a .jpg beside the .mp4.
+# Only the M angle used to be here, which was invisible in the players that
+# ask for m_file and glaring in studioIndex, whose grid requests every angle's
+# thumbnail on load and got a wall of 404s. db/demo-media.txt lists all 86
+# angles and which cuts each one has.
 #
 # This used to rsync them out of production into a gitignored workstation
 # cache (media/demo/) and push from there. That made the deploy dependent on
@@ -101,14 +109,17 @@ if [ -n "${SQL_ONLY:-}" ]; then
   exit 0
 fi
 
-# The stems, comments and blank lines stripped. Read in a loop rather than
-# with mapfile: macOS still ships bash 3.2 and this runs from a workstation.
-stems=()
-while IFS= read -r s; do
-  case "$s" in ''|\#*) continue ;; esac
-  stems+=("$s")
+# db/demo-media.txt is <stem><TAB><cuts>, one line per camera angle. Read in a
+# loop rather than with mapfile: macOS still ships bash 3.2 and this runs from
+# a workstation. Two parallel arrays instead of an associative one for the same
+# reason - bash 3.2 has no declare -A.
+stems=(); cuts=(); post_stems=()
+while read -r stem c; do
+  case "$stem" in ''|\#*) continue ;; esac
+  stems+=("$stem"); cuts+=("$c")
+  case " $c " in *" post "*) post_stems+=("$stem") ;; esac
 done < db/demo-media.txt
-echo "== media (${#stems[@]} takes, raw + post) =="
+echo "== media (${#stems[@]} angles, ${#post_stems[@]} of them post-processed) =="
 
 [ -d "$MEDIA_SRC/raw" ] && [ -d "$MEDIA_SRC/post" ] || {
   echo "  $MEDIA_SRC is not there - run scripts/clone.sh first, or set" >&2
@@ -117,17 +128,27 @@ echo "== media (${#stems[@]} takes, raw + post) =="
 }
 
 # db/demo-media.txt is the list the SQL was written against; the checkout is
-# what is on disk. Checking one against the other here means a stem added to
-# the seed without its video fails loudly on this workstation instead of
+# what is on disk. Checking one against the other here means an angle added to
+# the seed without its files fails loudly on this workstation instead of
 # quietly serving a 404 to a player on the demo.
-missing=0
-for s in "${stems[@]}"; do
-  for dir in raw post; do
-    [ -f "$MEDIA_SRC/$dir/$s.mp4" ] || { echo "  MISSING $dir/$s.mp4" >&2; missing=$((missing+1)); }
+#
+# Both extensions, because studioIndex asks for both: the .mp4 on hover and the
+# .jpg thumbnail on every page load. The .jpg was the thing missing when this
+# repository held only the M angle - the videos played and the grid was 404s.
+missing=0; want=0
+i=0
+while [ $i -lt ${#stems[@]} ]; do
+  s=${stems[$i]}
+  for dir in ${cuts[$i]}; do
+    for ext in mp4 jpg; do
+      want=$((want+1))
+      [ -f "$MEDIA_SRC/$dir/$s.$ext" ] || { echo "  MISSING $dir/$s.$ext" >&2; missing=$((missing+1)); }
+    done
   done
+  i=$((i+1))
 done
 [ "$missing" -eq 0 ] || { echo "  $missing file(s) missing from $MEDIA_SRC" >&2; exit 1; }
-echo "  $MEDIA_SRC holds all $(( ${#stems[@]} * 2 )) files ($(du -sh "$MEDIA_SRC" | cut -f1))"
+echo "  $MEDIA_SRC holds all $want files ($(du -sh "$MEDIA_SRC" | cut -f1))"
 
 echo "== push =="
 # deploy.sh has normally just sent this exact tree as the gebarenoverleg_media
@@ -140,14 +161,17 @@ for dir in raw post; do
   echo "  $dir -> $HOST_MEDIA/$dir/"
 done
 
-# /media/<file> == post/<file>, as it is on production. ln -f so a re-run
-# relinks rather than failing, and only for the stems we seeded - media_stub
-# is not ours to mirror wholesale.
+# /media/<file> == post/<file>, as it is on production - that alias stands in
+# for media.signcollect.nl, whose DocumentRoot is post/. Thumbnails as well as
+# video: the same directory serves both there. ln -f so a re-run relinks rather
+# than failing, and only for what we seeded - media_stub is not ours to mirror
+# wholesale.
 ssh "$HOST" "set -e
-  for s in ${stems[*]}; do
+  for s in ${post_stems[*]}; do
     ln -f '$HOST_MEDIA/post/'\$s.mp4 /web/media_stub/\$s.mp4
+    ln -f '$HOST_MEDIA/post/'\$s.jpg /web/media_stub/\$s.jpg
   done"
-echo "  ${#stems[@]} post cuts hard-linked into /web/media_stub (serves /media/<stem>.mp4)"
+echo "  ${#post_stems[@]} post cuts hard-linked into /web/media_stub, mp4 and jpg (serves /media/<stem>.<ext>)"
 
 echo
-echo "done. Check one: curl -sI https://<domain>/gebarenoverleg_media/studioFilesMini/post/${stems[0]}.mp4"
+echo "done. Check one: curl -sI https://<domain>/gebarenoverleg_media/studioFilesMini/post/${post_stems[0]}.mp4"
