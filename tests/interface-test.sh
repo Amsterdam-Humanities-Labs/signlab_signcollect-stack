@@ -64,15 +64,30 @@ is() {
   for c in "$@"; do [ "$STATUS" = "$c" ] && { ok "$label ($STATUS)"; return; }; done
   bad "$label (got $STATUS, want ${*})"
 }
+# Build the session cookie the way login.html does: straight from the login
+# response, signature included. Hand-assembling one stopped working when the
+# cookie became signed - which is the point.
+cookie_from_login() {
+  python3 -c '
+import json,sys
+d=json.loads(sys.stdin.read())
+if d.get("status")!="success": sys.exit(1)
+print("sessionObject="+json.dumps({k:d.get(k,"") for k in
+      ("userId","username","role","expiresAt","sig")},separators=(",",":")))'
+}
+# An unsigned cookie, for the forgery test only.
 cookie_for() { printf 'sessionObject={"username":"%s","userId":"%s","role":"%s"}' "$1" "$2" "$3"; }
+login() { form /login_sc.php "" "username=$1&password=$2"; }
 
 section() { printf '\n\033[1m== %s ==\033[0m\n' "$1"; }
 
 # --- 1. authentication --------------------------------------------------
 section "authentication"
-r=$(form /login_sc.php "" "username=$ADMIN_USER&password=$ADMIN_PASS")
+ALOGIN=$(login "$ADMIN_USER" "$ADMIN_PASS")
+r=$ALOGIN
 case "$r" in *'"status":"success"'*) ok "admin login accepted" ;; *) bad "admin login: $r" ;; esac
-ADMIN_ID=$(printf '%s' "$r" | sed -nE 's/.*"userId":"?([0-9]+)"?.*/\1/p')
+case "$r" in *'"sig":"'*) ok "login returns a session signature" ;; *) note "login returns no signature (host not migrated)" ;; esac
+ADMIN_ID=$(printf '%s' "$ALOGIN" | sed -nE 's/.*"userId":"?([0-9]+)"?.*/\1/p')
 [ -n "$ADMIN_ID" ] && ok "admin userId returned ($ADMIN_ID)" || bad "no userId in login response"
 
 r=$(form /login_sc.php "" "username=$ADMIN_USER&password=definitely-wrong")
@@ -81,7 +96,7 @@ case "$r" in *'"status":"failure"'*) ok "wrong password refused" ;; *) bad "wron
 r=$(form /login_sc.php "" "username=no_such_user_$TS&password=x")
 case "$r" in *'"status":"failure"'*) ok "unknown user refused" ;; *) bad "unknown user not refused: $r" ;; esac
 
-ACOOK=$(cookie_for "$ADMIN_USER" "$ADMIN_ID" admin)
+ACOOK=$(printf '%s' "$ALOGIN" | cookie_from_login) || bad "could not build admin session cookie"
 
 # --- 2. unauthenticated access must be refused --------------------------
 section "unauthenticated access"
@@ -111,10 +126,10 @@ case "$body" in *'"error"'*) bad "add user returned error: $(printf '%s' "$body"
 body=$(form /menu_beta/users_api.php "$ACOOK" "action=list&requestingUserId=$ADMIN_ID")
 case "$body" in *"$TESTUSER"*) ok "new user appears in list" ;; *) bad "new user absent from list" ;; esac
 
-r=$(form /login_sc.php "" "username=$TESTUSER&password=$TESTPASS")
+r=$(login "$TESTUSER" "$TESTPASS")
 case "$r" in *'"status":"success"'*) ok "new user can log in" ;; *) bad "new user cannot log in: $r" ;; esac
 USER_ID=$(printf '%s' "$r" | sed -nE 's/.*"userId":"?([0-9]+)"?.*/\1/p')
-UCOOK=$(cookie_for "$TESTUSER" "${USER_ID:-0}" user)
+UCOOK=$(printf '%s' "$r" | cookie_from_login)
 
 # --- 5. labels ----------------------------------------------------------
 section "labels"
@@ -164,11 +179,17 @@ else
   case "$body" in *Unauthorized*) ok "non-admin refused add user" ;;
     *) bad "NON-ADMIN CAN CREATE USERS: $(printf '%s' "$body" | head -c 80)" ;; esac
 
-  # Escalation: users_api authorises on the POST field requestingUserId, not
-  # on the session. A non-admin who supplies an admin id gets admin powers.
+  # Escalation 1: borrow an admin id via the POST field requireAdmin used to trust.
   body=$(form /menu_beta/users_api.php "$UCOOK" "action=list&requestingUserId=$ADMIN_ID")
   case "$body" in *Unauthorized*) ok "non-admin cannot borrow an admin id" ;;
-    *) bad "ESCALATION: non-admin listed users by passing requestingUserId=$ADMIN_ID" ;; esac
+    *) bad "ESCALATION: non-admin listed users via requestingUserId=$ADMIN_ID" ;; esac
+
+  # Escalation 2: edit role in one's own cookie. The signature covers identity,
+  # and role is read from the database, so this must fail on both counts.
+  ESC=$(printf '%s' "$UCOOK" | sed 's/"role":"user"/"role":"admin"/')
+  body=$(form /menu_beta/users_api.php "$ESC" "action=list")
+  case "$body" in *Unauthorized*) ok "editing role in the cookie does not grant admin" ;;
+    *) bad "ESCALATION: cookie-edited role granted admin" ;; esac
 fi
 
 # --- 8. session forgery -------------------------------------------------
