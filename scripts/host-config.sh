@@ -2,15 +2,26 @@
 # Install the per-host config files that are gitignored upstream and so never
 # arrive with a clone.
 #
-# Runs AFTER deploy.sh, because these live inside deployed component
-# directories. Never overwrites an existing file - a host that already has a
-# real config keeps it.
+# Runs AFTER scripts/host-bootstrap.sh, because these live inside deployed
+# component directories - and because that script's `git clean` removes any
+# of them that upstream does not gitignore, so the order is load-bearing, not
+# merely conventional. Never overwrites an existing file: a host that already
+# has a real config keeps it.
 #
-# Usage: HOST=demovps scripts/host-config.sh
+# The two files it installs are read out of the host's own checkout of this
+# repo ($SRCDIR, put there by scripts/host-src.sh) rather than pushed from
+# here. That is not tidiness - assets/glosses_transformed.json is 11MB, and
+# it was the last thing in this script that a workstation had to carry.
+#
+# Usage: scripts/host-config.sh --host gomer@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-HOST=${HOST:-demovps}
+SC_USAGE='usage: scripts/host-config.sh --host <ssh-target>'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+sc_parse_common "$@"
+sc_require_host
 
 # A Signbank API key can be supplied for this host, and never through a
 # tracked file. Two ways, both outside git:
@@ -43,11 +54,10 @@ if ssh "$HOST" "test -f /web/menu_beta/signbank_sync/config.php &&
                 ! grep -q \"'base_url'.*127\\.0\\.0\\.1:9\" /web/menu_beta/signbank_sync/config.php"; then
   echo "  signbank_sync/config.php already present - left alone"
 else
-  scp -q config/signbank_sync.demo.php "$HOST:/tmp/sbconfig.php"
-  ssh "$HOST" 'mkdir -p /web/menu_beta/signbank_sync &&
-               mv /tmp/sbconfig.php /web/menu_beta/signbank_sync/config.php &&
-               sudo chown "$USER":www-data /web/menu_beta/signbank_sync/config.php &&
-               chmod 640 /web/menu_beta/signbank_sync/config.php'
+  ssh "$HOST" "mkdir -p /web/menu_beta/signbank_sync &&
+               cp $SRCDIR/config/signbank_sync.demo.php /web/menu_beta/signbank_sync/config.php &&
+               sudo chown \"\$USER\":www-data /web/menu_beta/signbank_sync/config.php &&
+               chmod 640 /web/menu_beta/signbank_sync/config.php"
   echo "  signbank_sync/config.php installed (demo values, no real credential)"
 fi
 
@@ -100,8 +110,8 @@ ssh "$HOST" 'set -e
 if ssh "$HOST" 'test -s /web/signbank_data/glosses_transformed.json'; then
   echo "  glosses_transformed.json present ($(ssh "$HOST" 'stat -c %s /web/signbank_data/glosses_transformed.json') bytes) in /web/signbank_data"
 else
-  rsync -a assets/glosses_transformed.json "$HOST:/web/signbank_data/glosses_transformed.json"
-  echo "  glosses_transformed.json seeded from assets/ ($(wc -c < assets/glosses_transformed.json) bytes)"
+  ssh "$HOST" "cp $SRCDIR/assets/glosses_transformed.json /web/signbank_data/glosses_transformed.json"
+  echo "  glosses_transformed.json seeded from the host's own assets/ ($(ssh "$HOST" 'stat -c %s /web/signbank_data/glosses_transformed.json') bytes)"
 fi
 ssh "$HOST" 'chmod 664 /web/signbank_data/glosses_transformed.json 2>/dev/null || true'
 

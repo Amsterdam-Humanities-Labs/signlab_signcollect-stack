@@ -12,9 +12,10 @@
 # From git, like everything else this deploy ships. The files - 292 of them,
 # 291MB - live in the private repository
 # Amsterdam-Humanities-Labs/signlab_demo-media, which scripts/repos.tsv lists
-# as the gebarenoverleg_media component. So scripts/clone.sh fetches them and
-# scripts/deploy.sh puts them on the host, and by the time this script runs
-# they are already at /web/gebarenoverleg_media/studioFilesMini/{raw,post}/.
+# as the gebarenoverleg_media component. The host clones it itself
+# (scripts/host-bootstrap.sh), so by the time this script runs they are
+# already at $WEBROOT/gebarenoverleg_media/studioFilesMini/{raw,post}/ and
+# there is nothing left here to transfer.
 #
 # All five camera angles, and their thumbnails. The 20 takes are filmed from
 # L, M, R and - on thirteen of them - A and B, each a separate file named in
@@ -36,17 +37,17 @@
 # ever needs re-filling, that is a deliberate, reviewed copy into
 # signlab_demo-media and not a step of the install.
 #
-# MEDIA_SRC overrides where the checkout is, for running this against a tree
-# clone.sh has not built.
+# THE PUSH THAT USED TO BE HERE
 #
-# WHY THE PUSH RUNS HERE AND NOT ON THE HOST
-#
-# dev2 is firewalled from production by scripts/isolate.sh and verify.sh
-# asserts it stays that way, and it has no GitHub credentials either. Same
-# shape as scripts/clone.sh: this workstation reaches git, the demo host
-# reaches nothing. The rsync below is normally a no-op - deploy.sh has just
-# sent the identical tree - and exists so this script also works on its own,
-# against a host deployed earlier.
+# This script used to rsync 291MB from a workstation checkout to the host on
+# every run, a transfer that was almost always a no-op because the deploy had
+# just sent the identical tree. The host has GitHub credentials of its own
+# now (scripts/host-auth.sh), so the media arrives the same way every other
+# component does and the push is gone rather than made conditional. What is
+# left is the check - that every angle db/demo-media.txt names is actually on
+# the host - which now runs there, over ssh, against the deployed tree
+# itself. Checking the real destination instead of a local copy of it is
+# strictly better evidence than the old check was.
 #
 # WHERE THE VIDEOS HAVE TO LAND
 #
@@ -60,7 +61,7 @@
 #     hardcodes the same two prefixes. It is also why signlab_demo-media is
 #     laid out as studioFilesMini/{raw,post}/ and mapped onto
 #     /web/gebarenoverleg_media - the repository holds production's own paths,
-#     so deploying it is an ordinary component rsync with no special case.
+#     so deploying it is an ordinary component clone with no special case.
 #
 #   /media/<file>
 #     apache/signcollect-mounts.conf aliases /media to /web/media_stub,
@@ -71,18 +72,24 @@
 #     the /media spelling. They are hard-linked rather than copied: one inode,
 #     both names, no second 34MB on disk and no reliance on FollowSymLinks
 #     being inherited into the media_stub Directory block. The linking stays
-#     here rather than moving into the deploy because it is a second name for
-#     files deploy.sh has already placed, not a second thing to place.
+#     here rather than moving into the bootstrap because it is a second name
+#     for files the clone has already placed, not a second thing to place.
 #
-# Usage: HOST=demovps scripts/seed-demo-data.sh
-#        HOST=demovps SQL_ONLY=1 scripts/seed-demo-data.sh   # skip all media
+# Usage: scripts/seed-demo-data.sh --host gomer@demo1
+#        SQL_ONLY=1 scripts/seed-demo-data.sh --host gomer@demo1   # skip media
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-HOST=${HOST:-demovps}
+SC_USAGE='usage: scripts/seed-demo-data.sh --host <ssh-target>
+
+  SQL_ONLY=1   apply the rows only, and leave the media alone'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+sc_parse_common "$@"
+sc_require_host
 DB=admin_gebarenoverleg
-MEDIA_SRC=${MEDIA_SRC:-build/signlab_demo-media/studioFilesMini}
-HOST_MEDIA=/web/gebarenoverleg_media/studioFilesMini
+WEBROOT=${WEBROOT:-/web}
+HOST_MEDIA=$WEBROOT/gebarenoverleg_media/studioFilesMini
 
 [ -f db/demo-data.sql ]  || { echo "  db/demo-data.sql missing" >&2; exit 1; }
 [ -f db/demo-media.txt ] || { echo "  db/demo-media.txt missing" >&2; exit 1; }
@@ -121,57 +128,59 @@ while read -r stem c; do
 done < db/demo-media.txt
 echo "== media (${#stems[@]} angles, ${#post_stems[@]} of them post-processed) =="
 
-[ -d "$MEDIA_SRC/raw" ] && [ -d "$MEDIA_SRC/post" ] || {
-  echo "  $MEDIA_SRC is not there - run scripts/clone.sh first, or set" >&2
-  echo "  MEDIA_SRC to a signlab_demo-media checkout's studioFilesMini/" >&2
-  exit 1
-}
-
-# db/demo-media.txt is the list the SQL was written against; the checkout is
-# what is on disk. Checking one against the other here means an angle added to
-# the seed without its files fails loudly on this workstation instead of
+# db/demo-media.txt is the list the SQL was written against; the deployed
+# tree is what is actually on the host. Checking one against the other means
+# an angle added to the seed without its files fails loudly here instead of
 # quietly serving a 404 to a player on the demo.
 #
-# Both extensions, because studioIndex asks for both: the .mp4 on hover and the
-# .jpg thumbnail on every page load. The .jpg was the thing missing when this
-# repository held only the M angle - the videos played and the grid was 404s.
-missing=0; want=0
-i=0
-while [ $i -lt ${#stems[@]} ]; do
-  s=${stems[$i]}
-  for dir in ${cuts[$i]}; do
-    for ext in mp4 jpg; do
-      want=$((want+1))
-      [ -f "$MEDIA_SRC/$dir/$s.$ext" ] || { echo "  MISSING $dir/$s.$ext" >&2; missing=$((missing+1)); }
+# Both extensions, because studioIndex asks for both: the .mp4 on hover and
+# the .jpg thumbnail on every page load. The .jpg was the thing missing when
+# this repository held only the M angle - the videos played and the grid was
+# a wall of 404s.
+#
+# The whole loop is sent to the host as one shell script on stdin, rather
+# than one ssh per file: 172 round trips over a flaky tailnet is not a check,
+# it is a way to make a deploy fail for reasons that have nothing to do with
+# the deploy.
+report=$({
+  printf 'set -u\nmiss=0; want=0\n'
+  i=0
+  while [ $i -lt ${#stems[@]} ]; do
+    s=${stems[$i]}
+    for dir in ${cuts[$i]}; do
+      for ext in mp4 jpg; do
+        printf 'want=$((want+1)); [ -f %s/%s/%s.%s ] || { echo "  MISSING %s/%s.%s"; miss=$((miss+1)); }\n' \
+          "$HOST_MEDIA" "$dir" "$s" "$ext" "$dir" "$s" "$ext"
+      done
     done
+    i=$((i+1))
   done
-  i=$((i+1))
-done
-[ "$missing" -eq 0 ] || { echo "  $missing file(s) missing from $MEDIA_SRC" >&2; exit 1; }
-echo "  $MEDIA_SRC holds all $want files ($(du -sh "$MEDIA_SRC" | cut -f1))"
+  printf 'echo "COUNT $want $miss $(du -sh %s 2>/dev/null | cut -f1)"\n' "$HOST_MEDIA"
+} | ssh "$HOST" 'bash -s')
 
-echo "== push =="
-# deploy.sh has normally just sent this exact tree as the gebarenoverleg_media
-# component, so this transfers nothing; it is here so the script stands alone.
-# mkdir for the case where it has not - a host provisioned but not yet
-# deployed, or SQL seeded before the components went out.
-ssh "$HOST" "mkdir -p $HOST_MEDIA/raw $HOST_MEDIA/post /web/media_stub"
-for dir in raw post; do
-  rsync -a "$MEDIA_SRC/$dir/" "$HOST:$HOST_MEDIA/$dir/"
-  echo "  $dir -> $HOST_MEDIA/$dir/"
-done
+echo "$report" | grep MISSING >&2 || true
+set -- $(echo "$report" | sed -n 's/^COUNT //p')
+want=${1:-0}; missing=${2:-1}; size=${3:-?}
+[ "$missing" -eq 0 ] || {
+  echo "  $missing of $want file(s) missing from $HOST:$HOST_MEDIA" >&2
+  echo "  the media is an ordinary component now - re-run the bootstrap on the host" >&2
+  exit 1; }
+echo "  $HOST:$HOST_MEDIA holds all $want files ($size)"
 
 # /media/<file> == post/<file>, as it is on production - that alias stands in
 # for media.signcollect.nl, whose DocumentRoot is post/. Thumbnails as well as
 # video: the same directory serves both there. ln -f so a re-run relinks rather
 # than failing, and only for what we seeded - media_stub is not ours to mirror
-# wholesale.
+# wholesale. Hard links, not copies: one inode, two names, no second 34MB on
+# disk and no reliance on FollowSymLinks being inherited into the media_stub
+# Directory block.
 ssh "$HOST" "set -e
+  mkdir -p $WEBROOT/media_stub
   for s in ${post_stems[*]}; do
-    ln -f '$HOST_MEDIA/post/'\$s.mp4 /web/media_stub/\$s.mp4
-    ln -f '$HOST_MEDIA/post/'\$s.jpg /web/media_stub/\$s.jpg
+    ln -f '$HOST_MEDIA/post/'\$s.mp4 $WEBROOT/media_stub/\$s.mp4
+    ln -f '$HOST_MEDIA/post/'\$s.jpg $WEBROOT/media_stub/\$s.jpg
   done"
-echo "  ${#post_stems[@]} post cuts hard-linked into /web/media_stub, mp4 and jpg (serves /media/<stem>.<ext>)"
+echo "  ${#post_stems[@]} post cuts hard-linked into $WEBROOT/media_stub, mp4 and jpg (serves /media/<stem>.<ext>)"
 
 echo
 echo "done. Check one: curl -sI https://<domain>/gebarenoverleg_media/studioFilesMini/post/${post_stems[0]}.mp4"

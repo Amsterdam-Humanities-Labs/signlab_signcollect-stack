@@ -5,18 +5,29 @@
 # only as a migration. Without this step users_api.php dies with
 # "Unknown column 'allowed_contexts'" and user management is unusable.
 #
+# The migrations are read off the host, not out of a workstation build/
+# directory. They ship inside signlab_signCollect-v2, which the host clones
+# to $WEBROOT/menu_beta itself; taking them from anywhere else would mean
+# applying a set of migrations that does not match the code being served.
+#
 # Applied migrations are recorded in schema_migrations so re-running is safe.
 # The migrations themselves are not all idempotent, so the table is the guard.
 #
-# Usage: HOST=demovps scripts/migrate.sh
+# Usage: scripts/migrate.sh --host gomer@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-HOST=${HOST:-demovps}
+SC_USAGE='usage: scripts/migrate.sh --host <ssh-target>'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+sc_parse_common "$@"
+sc_require_host
 DB=admin_gebarenoverleg
-SRC=build/signlab_signCollect-v2/migrations
+WEBROOT=${WEBROOT:-/web}
+SRC=$WEBROOT/menu_beta/migrations
 
-[ -d "$SRC" ] || { echo "  no migrations dir - run scripts/clone.sh first" >&2; exit 1; }
+ssh "$HOST" "test -d $SRC" || {
+  echo "  no $SRC on $HOST - run scripts/host-bootstrap.sh there first" >&2; exit 1; }
 
 ssh "$HOST" "sudo mysql $DB -e \"CREATE TABLE IF NOT EXISTS schema_migrations (
   name VARCHAR(255) PRIMARY KEY,
@@ -24,14 +35,16 @@ ssh "$HOST" "sudo mysql $DB -e \"CREATE TABLE IF NOT EXISTS schema_migrations (
 ) ENGINE=InnoDB;\""
 
 applied=$(ssh "$HOST" "sudo mysql -N $DB -e 'SELECT name FROM schema_migrations;'" || true)
+names=$(ssh "$HOST" "ls -1 $SRC/*.sql 2>/dev/null | xargs -r -n1 basename")
 
-for f in "$SRC"/*.sql; do
-  n=$(basename "$f")
+for n in $names; do
   if grep -qxF "$n" <<<"$applied"; then
     printf '  skip    %s\n' "$n"
     continue
   fi
-  if ssh "$HOST" "sudo mysql $DB" < "$f" 2>/tmp/mig.err; then
+  # Read on the host and piped into mysql there, so the file never crosses
+  # the network and the migration applied is provably the one deployed.
+  if ssh "$HOST" "sudo mysql $DB < $SRC/$n" 2>/tmp/mig.err; then
     ssh "$HOST" "sudo mysql $DB -e \"INSERT INTO schema_migrations (name) VALUES ('$n');\""
     printf '  applied %s\n' "$n"
   else

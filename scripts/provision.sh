@@ -5,20 +5,26 @@
 # Idempotent - every step checks before it acts, so re-running is safe and
 # only fills in what is missing. install.sh calls this first.
 #
-#   HOST    ssh target                     (default: demovps)
-#   DOMAIN  hostname the demo is served as (default: dev.taila8bdbd.ts.net)
+#   --host <ssh-target>   required
+#   --domain <name>       optional; read off the host with `tailscale status`
 #
 # TLS comes from `tailscale cert`, which only issues for the node's own
 # MagicDNS name - so DOMAIN must be that name, or the cert step is skipped
-# and you supply a certificate yourself.
+# and you supply a certificate yourself. That is also why DOMAIN defaults to
+# whatever the host calls itself rather than to a hostname written here: a
+# name this file guessed could never match a certificate the host can issue.
 #
 # The database password is generated on the target and written to /web/.env.
 # It is never printed here and never leaves the host.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-HOST=${HOST:-demovps}
-DOMAIN=${DOMAIN:-dev.taila8bdbd.ts.net}
+SC_USAGE='usage: scripts/provision.sh --host <ssh-target> [--domain <name>]'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+sc_parse_common "$@"
+sc_require_host
+sc_resolve_domain
 DB=admin_gebarenoverleg
 DBUSER=signcollect
 
@@ -41,9 +47,9 @@ ssh "$HOST" 'set -e
   # composer.json, requires only PHP extensions, which are above. What it is
   # for is composer dump-autoload, which writes the PSR-4 autoloader that
   # nine files under animMIDI/public/ require on their first line. That
-  # generation step is deliberately NOT here: it belongs to deploy.sh, whose
-  # rsync --delete removes the autoloader, and it can only run once the code
-  # is on the host, which at this point it is not.
+  # generation step is deliberately NOT here: it belongs to
+  # scripts/host-bootstrap.sh, which can only run it once the code is on the
+  # host, which at this point it is not.
   #
   # python3-psutil is the only third-party import in the scheduler pythonCron
   # runs here: lib/health_monitor uses it to kill stuck jobs and report
@@ -52,8 +58,14 @@ ssh "$HOST" 'set -e
   #
   # Both of these are machine-level, which is why they are in this file at
   # all: apt packages a host needs once, not artefacts of a deploy.
+  #
+  # rsync used to be on this list and is deliberately gone. Nothing installs
+  # it and nothing calls it: the docroot is built by the host itself out of
+  # git checkouts (scripts/host-bootstrap.sh), and the demo host this now
+  # targets does not permit rsync at all. git, by the same change, went from
+  # a convenience to the single most load-bearing package here.
   for p in apache2 php libapache2-mod-php php-mysql php-mbstring php-curl \
-           php-gd php-xml php-zip php-bz2 mysql-server git rsync curl \
+           php-gd php-xml php-zip php-bz2 mysql-server git curl \
            composer python3-psutil; do
     dpkg -s "$p" >/dev/null 2>&1 || need="$need $p"
   done
@@ -108,7 +120,7 @@ if [ "${objs:-0}" -eq 0 ]; then
   # latin1 varchar, whose inline row exceeds InnoDB's 8126-byte limit; with
   # strict mode on, MySQL 8 refuses it outright (ERROR 1118) instead of
   # letting DYNAMIC row format push the overflow off-page. Production and
-  # demovps both ended up with it as DYNAMIC, so this matches them.
+  # the earlier demo host both ended up with it as DYNAMIC, so this matches.
   { echo "SET SESSION innodb_strict_mode=OFF;"; cat db/schema.sql; } \
     | ssh "$HOST" "sudo mysql $DB"
   echo "  schema loaded"

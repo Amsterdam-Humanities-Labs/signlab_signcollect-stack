@@ -2,15 +2,15 @@
 # Deploy signlab_pythonCron - the job scheduler - onto the demo host.
 #
 # This is the only component that is not a directory under the docroot, so it
-# is the only one that does not go through repos.tsv + clone.sh + deploy.sh.
-# A repos.tsv row is not merely insufficient here, it is the wrong shape: that
-# file maps a repo to /web/<webdir> and deploy.sh knows no other destination,
-# so a row would rsync a systemd service into the docroot and publish its
-# source over HTTP. It gets its own script instead.
+# is the only one that does not go through repos.tsv + host-bootstrap.sh. A
+# repos.tsv row is not merely insufficient here, it is the wrong shape: that
+# file maps a repo to $WEBROOT/<webdir> and the bootstrap knows no other
+# destination, so a row would clone a systemd service into the docroot and
+# publish its source over HTTP. It gets its own script instead.
 #
-#   HOST     ssh target                     (default: demovps)
-#   DOMAIN   hostname the demo is served as (default: dev.taila8bdbd.ts.net)
-#   WEBROOT  docroot on the target          (default: /web)
+#   --host <ssh-target>   required
+#   --domain <name>       optional; read off the host with `tailscale status`
+#   WEBROOT               docroot on the target (default: /web)
 #
 # ---------------------------------------------------------------------------
 # Where it goes, and why
@@ -39,11 +39,11 @@
 #     and it is a bin/lib/share/etc hierarchy, not a place to drop an
 #     application directory. FHS additionally wants /usr shareable and
 #     read-only between hosts, which sits badly with a tree a deploy replaces.
-#     There is nothing built here - it is Python source, rsynced.
+#     There is nothing built here - it is Python source, copied into place.
 #
-# The split earns its keep beyond tidiness. /opt/pythonCron is rsync --delete
-# and root-owned: a deploy replaces it wholesale, and the service user cannot
-# rewrite its own code. /var/opt/pythonCron is never touched by the deploy,
+# The split earns its keep beyond tidiness. /opt/pythonCron is replaced
+# wholesale on each deploy and root-owned: the service user cannot rewrite its
+# own code. /var/opt/pythonCron is never touched by the deploy,
 # which matters because scheduler_state.db is the only record of when each job
 # last ran - delete it and every job reads as never-executed and therefore due
 # immediately, which for this job set means an unscheduled 7,500-request
@@ -79,12 +79,25 @@
 # contacted. That indirection is deliberate upstream: config.json belongs to a
 # root-owned systemd unit and the web server must not have to rewrite it.
 #
-# Usage: HOST=demovps DOMAIN=demo.example.org scripts/pythoncron.sh
+# ---------------------------------------------------------------------------
+# Where the code comes from
+#
+# The host clones it, exactly like every docroot component, and for the same
+# reasons: no rsync exists on the demo host, and nothing about this deploy
+# should require a particular workstation. The clone lands in a build
+# directory outside the docroot - it must not be served - and is rewritten
+# there before being copied into the root-owned /opt tree.
+#
+# Usage: scripts/pythoncron.sh --host gomer@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-HOST=${HOST:-demovps}
-DOMAIN=${DOMAIN:-dev.taila8bdbd.ts.net}
+SC_USAGE='usage: scripts/pythoncron.sh --host <ssh-target> [--domain <name>]'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+sc_parse_common "$@"
+sc_require_host
+sc_resolve_domain
 WEBROOT=${WEBROOT:-/web}
 
 ORG=Amsterdam-Humanities-Labs
@@ -99,26 +112,32 @@ PC_STATE=/var/opt/pythonCron
 echo "== pythonCron =="
 
 # --- 1. the code --------------------------------------------------------
-# Same idiom as clone.sh: hard reset rather than pull, so build/ is never a
-# tree somebody edited by hand.
-if [ -d "build/$REPO/.git" ]; then
-  git -C "build/$REPO" fetch --quiet origin "$BRANCH"
-  git -C "build/$REPO" checkout --quiet "$BRANCH"
-  git -C "build/$REPO" reset --hard --quiet "origin/$BRANCH"
-  act=updated
-else
-  gh repo clone "$ORG/$REPO" "build/$REPO" -- --branch "$BRANCH" --quiet
-  act=cloned
-fi
-printf '  %-8s %-24s %s\n' "$act" "$REPO" "$(git -C "build/$REPO" rev-parse --short HEAD)"
-
-# Not optional, even though nothing here is served over HTTP. Five files -
-# checkDisk.py, rclone_monitor.py, sync_mocap_files.py, python_client.py and
-# php_client.php - post monitoring results to https://signcollect.nl/... The
-# demo host is firewalled from production and none of those five is scheduled,
-# but "no code on this host names production" is worth keeping true as a fact
-# rather than as a consequence of two other things being true.
-DOMAIN="$DOMAIN" scripts/rewrite-urls.sh "build/$REPO"
+# Cloned on the host into a build directory, hard-reset rather than pulled so
+# it is never a tree somebody edited by hand.
+#
+# The rewrite is not optional, even though nothing here is served over HTTP.
+# Five files - checkDisk.py, rclone_monitor.py, sync_mocap_files.py,
+# python_client.py and php_client.php - post monitoring results to
+# https://signcollect.nl/... The demo host is firewalled from production and
+# none of those five is scheduled, but "no code on this host names
+# production" is worth keeping true as a fact rather than as a consequence of
+# two other things being true.
+BUILD=${BUILD:-'$HOME/.cache/signcollect-build'}
+ssh "$HOST" "set -e
+  mkdir -p $BUILD
+  d=$BUILD/$REPO
+  if [ -e \"\$d/.git\" ]; then act=updated; else
+    mkdir -p \"\$d\"; git -C \"\$d\" init --quiet
+    git -C \"\$d\" remote add origin https://github.com/$ORG/$REPO.git
+    act=cloned
+  fi
+  git -C \"\$d\" remote set-url origin https://github.com/$ORG/$REPO.git
+  git -C \"\$d\" fetch --quiet --depth 1 origin $BRANCH
+  git -C \"\$d\" reset --quiet --hard FETCH_HEAD
+  git -C \"\$d\" checkout --quiet -B $BRANCH FETCH_HEAD
+  git -C \"\$d\" clean --quiet -fdx
+  printf '  %-8s %-24s %s\\n' \"\$act\" $REPO \"\$(git -C \"\$d\" rev-parse --short HEAD)\"
+  DOMAIN=$DOMAIN $SRCDIR/scripts/rewrite-urls.sh \"\$d\" | tail -1 | sed 's/^/  /'"
 
 # --- 2. directories -----------------------------------------------------
 SVCUSER=$(ssh "$HOST" 'id -un')
@@ -128,27 +147,27 @@ ssh "$HOST" "set -e
   sudo install -d -o $SVCUSER -g $SVCUSER -m 755 $PC_STATE"
 echo "  $PC_HOME (root), $PC_CONF (root), $PC_STATE ($SVCUSER) ready"
 
-# root-owned, so rsync writes through sudo. The service user reads its code
-# and cannot rewrite it.
+# Root-owned, and replaced wholesale, so the copy runs under sudo. `rm -rf`
+# then `cp -a` rather than a syncing copy: /opt/pythonCron carries no state
+# worth preserving - scheduler_state.db lives in /var/opt/pythonCron, which
+# this deliberately never touches, because deleting it would make every job
+# read as never-executed and therefore due immediately, which for this job
+# set means an unscheduled 7,500-request rebuild against a third party.
 #
-# -rlpt, not the -a every other rsync in this repo uses, and then an explicit
-# chown. -a additionally means -og, and unlike every other rsync here this
-# one's receiver runs as root, so -og takes effect: it reproduces the
-# workstation's numeric uid and gid on the target. On this demo host that
-# happens to land on the deploy user, because OrbStack mirrors the macOS uid
-# and 501:50 really is gomer:staff there - which is how a tree that was meant
-# to be root-owned came out owned by the account the service runs as, looking
-# entirely correct. On a VPS where the deploy user is uid 1000 it would have
-# landed on some unrelated account or on nobody at all.
-#
-# So ownership is stated rather than inherited. --chown=root:root would say it
-# in one flag, but macOS now ships openrsync, which does not have it, and this
-# script has to run from a workstation. chown -R is the portable equivalent
-# and is a no-op on every run after the first.
-rsync -rlpt --delete --rsync-path='sudo rsync' \
-  --exclude '.git' --exclude '__pycache__' --exclude 'node_modules' \
-  "build/$REPO/" "$HOST:$PC_HOME/"
-ssh "$HOST" "sudo chown -R root:root $PC_HOME"
+# Ownership is stated rather than inherited. The old rsync had to be spelled
+# -rlpt precisely because -a implies -og and its receiver ran as root, so it
+# reproduced the workstation's numeric uid and gid on the target - which on
+# an OrbStack host happened to land on the deploy user and looked entirely
+# correct, and on a VPS where the deploy user is uid 1000 would have landed
+# on some unrelated account. cp -a from a checkout the deploy user owns has
+# the same trap, so the chown below is not decoration.
+ssh "$HOST" "set -e
+  sudo rm -rf $PC_HOME
+  sudo mkdir -p $PC_HOME
+  sudo cp -a $BUILD/$REPO/. $PC_HOME/
+  sudo rm -rf $PC_HOME/.git
+  sudo find $PC_HOME -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
+  sudo chown -R root:root $PC_HOME"
 echo "  code -> $PC_HOME"
 
 # --- 3. this host's job list -------------------------------------------
@@ -157,22 +176,19 @@ echo "  code -> $PC_HOME"
 # the deploy's own statement of which jobs the demo runs, and a stale copy is
 # a job list nobody wrote. The half an admin does tune - off / hourly / daily -
 # lives in $WEBROOT/signbank_data/.settings.json and is never touched here.
-sed "s|@WEBROOT@|$WEBROOT|g" config/pythoncron.demo.json > /tmp/pythoncron-config.json
-scp -q /tmp/pythoncron-config.json "$HOST:/tmp/pythoncron-config.json"
-rm -f /tmp/pythoncron-config.json
 ssh "$HOST" "set -e
+  sed 's|@WEBROOT@|$WEBROOT|g' $SRCDIR/config/pythoncron.demo.json > /tmp/pythoncron-config.json
   sudo install -o root -g root -m 644 /tmp/pythoncron-config.json $PC_CONF/config.json
   rm -f /tmp/pythoncron-config.json
   sudo ln -sfn $PC_CONF/config.json $PC_HOME/config.json"
 echo "  $PC_CONF/config.json installed ($(grep -c service_name config/pythoncron.demo.json) job), $PC_HOME/config.json -> it"
 
 # --- 4. the unit --------------------------------------------------------
-sed -e "s|@HOME@|$PC_HOME|g" -e "s|@STATE@|$PC_STATE|g" \
-    -e "s|@CONFIG@|$PC_CONF/config.json|g" -e "s|@USER@|$SVCUSER|g" \
-    -e "s|@WEBROOT@|$WEBROOT|g" \
-    config/python-scheduler.service.template > /tmp/$UNIT
-scp -q /tmp/$UNIT "$HOST:/tmp/$UNIT"; rm -f /tmp/$UNIT
 ssh "$HOST" "set -e
+  sed -e 's|@HOME@|$PC_HOME|g' -e 's|@STATE@|$PC_STATE|g' \
+      -e 's|@CONFIG@|$PC_CONF/config.json|g' -e 's|@USER@|$SVCUSER|g' \
+      -e 's|@WEBROOT@|$WEBROOT|g' \
+      $SRCDIR/config/python-scheduler.service.template > /tmp/$UNIT
   sudo install -o root -g root -m 644 /tmp/$UNIT /etc/systemd/system/$UNIT
   rm -f /tmp/$UNIT
   sudo systemctl daemon-reload
