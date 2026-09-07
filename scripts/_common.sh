@@ -155,7 +155,7 @@ sc_on_error() {           # sc_on_error <retry command>
 }
 sc_at_exit() {
   local rc=$?
-  [ -n "${SC_CLEANUP:-}" ] && eval "$SC_CLEANUP"
+  if [ -n "${SC_CLEANUP:-}" ]; then eval "$SC_CLEANUP"; fi
   if [ "$rc" -ne 0 ] && [ "${SC_REPORTED:-0}" != "1" ]; then
     {
       printf '\n  !! FAILED  %s\n' "${SC_WHAT:-$(basename "$0")}"

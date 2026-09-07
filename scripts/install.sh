@@ -125,6 +125,7 @@ scripts/preflight.sh || exit 1
 # redirect allow-lists in login.html / logout.html - so it is derived rather
 # than defaulted. After preflight, because preflight is what explains a host
 # with no tailscale in terms of what to type next.
+STEPNAME="working out what the demo is served as"
 sc_resolve_domain
 export HOST DOMAIN WEBROOT
 
