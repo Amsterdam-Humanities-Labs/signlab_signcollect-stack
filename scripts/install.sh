@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One command to stand the SignCollect demo up on a VPS - this one or a new one.
 #
-# Everything comes from GitHub: the seven component repos listed in
+# Everything comes from GitHub: the component repos listed in
 # repos.tsv, plus the vendored web_extra/ and apache/ trees in this repo.
 # Nothing is pulled from signcollect.nl, so this runs from any checkout.
 #
@@ -49,10 +49,12 @@ echo "== rewriting production URLs =="
 DOMAIN="$DOMAIN" scripts/rewrite-urls.sh build/*/
 
 # 3. Strip the parts of production the demo must not carry.
+#    The Motion Capture menu tile used to be stripped here as well, because
+#    mocap was out of scope. It is deployed now (see repos.tsv), so the tile
+#    stays and rewrite-urls.sh points it at /mocap_site on this host.
 echo
 echo "== purging artifacts =="
 scripts/purge-artifacts.sh build/*/ || true
-python3 scripts/remove-mocap-tile.py build/signlab_signCollect-v2/index.html || true
 
 # 4. Ship it.
 echo
@@ -62,6 +64,32 @@ HOST="$HOST" scripts/deploy.sh
 echo
 echo "== host config =="
 HOST="$HOST" scripts/host-config.sh
+
+# 5b. mocapStudio resolves mysql_config.php next to itself rather than at the
+#     docroot, and that file is gitignored upstream so a clone never has it.
+#     Symlinked, not copied, so there stays exactly one credential file on the
+#     host - the same trick host-config.sh uses for the annotation editors.
+#     Re-made every run: deploy.sh rsyncs mocapStudio with --delete.
+#
+#     viconDashboard/api/ needs shipping by hand for a different reason:
+#     deploy.sh excludes 'api/' from every component so that rsync --delete
+#     cannot wipe /web/zin/api (the sCAPI service it does not clone). That
+#     pattern has no leading slash, so it matches api/ at any depth and takes
+#     viconDashboard's four endpoints with it - the dashboard then renders but
+#     every panel 404s. Sent separately here rather than loosening the exclude,
+#     which is deploy.sh's to own.
+echo
+echo "== mocap config =="
+if [ -d build/signlab_viconDashboard/api ]; then
+  rsync -a --delete build/signlab_viconDashboard/api/ "$HOST:/web/viconDashboard/api/"
+  echo "  viconDashboard/api/ shipped (deploy.sh excludes api/ everywhere)"
+fi
+ssh "$HOST" 'if [ -d /web/mocapStudio ]; then
+    ln -sfn /web/mysql_config.php /web/mocapStudio/mysql_config.php
+    echo "  mocapStudio/mysql_config.php -> /web/mysql_config.php"
+  else
+    echo "  /web/mocapStudio absent - skipped"
+  fi'
 
 # 6. Schema migrations. db/schema.sql is a point-in-time dump; anything added
 #    since exists only in migrations/, and the interface breaks without them.

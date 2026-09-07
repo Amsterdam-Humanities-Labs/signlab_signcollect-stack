@@ -14,7 +14,26 @@
 #   signlab_sCAPI  - /api is Alias'd to /web/zin/api by signcollect-mounts.conf,
 #                    so the API ships inside signlab_zin. sCAPI is the separate
 #                    api.signcollect.nl service and is out of scope here.
-#   mocap*         - removed from the demo by design (see remove-mocap-tile.py).
+#   mocap*         - see below; the portal and what it actually reaches are
+#                    now deployed, the rest of the mocap stack is not.
+#
+# The mocap block is scoped to what mocap.signcollect.nl actually reaches.
+# That vhost's DocumentRoot is /web/mocap_site - a four-button portal - and
+# the buttons go to animMIDI (already listed), mocapStudio and viconDashboard.
+# mocapStudio in turn fetches /mocap/*.php and ../mocap_lab/*.php, so those two
+# come along or its page loads to an empty form. Everything else under /web
+# with "mocap" or "s3b" in the name is unreachable from that portal:
+#
+#   s3b_glb, s3b_server, s3b_viewer, mocapDataPackage, animDB - nothing in the
+#     portal's reachable set references them (grep across mocap_site,
+#     mocapStudio, viconDashboard, mocap, mocap_lab finds zero hits), and
+#     s3b_server + s3b_glb are 1.2 GB between them.
+#   blendBaking, sam3dBabylon, sam3dbody_live, razerUpload, renderServer - no
+#     git remote exists for any of them, so a clone-from-GitHub deploy cannot
+#     reach them at all. blendBaking is the one the portal does link to, via
+#     avatar.signcollect.nl, which is an Apache reverse proxy to a Vite dev
+#     server on localhost:5173 - a separate service, out of scope like
+#     ISS_Server and Signbank. That button is a dead link here.
 #
 # annotation-editors is the source of truth for subBeta8 and 3DAnn3; zin and hh
 # link to it rather than carrying their own copies. animMIDI (the repo is named
@@ -30,3 +49,8 @@ hh	signlab_hh	master
 annotation-tool	signlab_annotation-tool	main
 annotation-editors	signlab_annotation-editors	main
 animMIDI	signlab_sC-Animation-PP	main
+mocap_site	mocap_site	main
+mocapStudio	signlab_mocapStudio	main
+mocap	signlab_mocap	main
+mocap_lab	signlab_mocap_lab	main
+viconDashboard	signlab_viconDashboard	main

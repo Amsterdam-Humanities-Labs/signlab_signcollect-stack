@@ -31,7 +31,17 @@ for tree in "$@"; do
       # 1. subdomains first - the bare-host rule below would eat their suffix.
       s{https?://api\.signcollect\.nl}{/api}g;
       s{https?://media\.signcollect\.nl}{/media}g;
-      s{https?://mocap\.signcollect\.nl}{/mocap-removed}g;
+      # The DocumentRoot of mocap.signcollect.nl is /web/mocap_site, and the demo
+      # deploys that directory under the one origin - so the subdomain
+      # becomes the path it already lives at. NOT /mocap: that path is the
+      # separate signlab_mocap component, which mocapStudio fetches from.
+      s{https?://mocap\.signcollect\.nl}{/mocap_site}g;
+      # avatar.signcollect.nl is an Apache reverse proxy to a Vite dev server
+      # on localhost:5173 over on production - a service, not a docroot, out of
+      # scope like ISS_Server. Left to the bare-host rule it would become
+      # "avatar.<DOMAIN>", a name that does not exist and whose failure looks
+      # like a DNS fault; this makes it a plain 404 instead.
+      s{https?://avatar\.signcollect\.nl}{/avatar-not-deployed}g;
       # 2. WebSockets -> loopback. ISS_Server is out of scope, so these must
       #    fail locally and fast rather than dial production.
       s{wss?://signcollect\.nl}{ws://127.0.0.1:9102}g;

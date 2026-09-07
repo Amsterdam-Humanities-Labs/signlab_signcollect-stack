@@ -1,6 +1,6 @@
 # signcollect-demovps
 
-Deploys the `signcollect.nl` web interface (minus mocap) onto a demo VPS as a
+Deploys the `signcollect.nl` web interface onto a demo VPS as a
 fully isolated demo instance. Default target is **demovps**
 (`dev.taila8bdbd.ts.net`).
 
@@ -22,16 +22,17 @@ The individual steps are also runnable on their own.
 
 ## Layout
 
-- `scripts/repos.tsv` - the seven interface repos and their `/web` directories
+- `scripts/repos.tsv` - the interface repos and their `/web` directories
 - `scripts/clone.sh`  - fetch components from GitHub into `build/`
 - `scripts/rewrite-urls.sh` - repoint production URLs at this demo (`DOMAIN=`)
-- `scripts/purge-artifacts.sh`, `remove-mocap-tile.py` - strip what must not ship
+- `scripts/purge-artifacts.sh` - strip what must not ship
 - `scripts/deploy.sh` - rsync `build/` + `web_extra/` to the target (`HOST=`)
 - `scripts/isolate.sh` - null-route and firewall production off the demo host
 - `scripts/verify.sh`  - assert the result, by command output not assumption
+- `tests/`     - HTTP end-to-end suites (`BASE=https://host tests/<name>.sh`)
 - `apache/`    - docroot and path-mount config for the target
 - `web_extra/` - the parts of production that have **no upstream repo**
-                 (`menu_old`, `nmm`, `downloadVideos`, root `.html`) plus the
+                 (`nmm`, `downloadVideos`, root `.html`) plus the
                  demo-only login/session files. Vendored so a fresh checkout
                  can redeploy; splitting them into real repos is tracked in
                  the stack issue tracker.

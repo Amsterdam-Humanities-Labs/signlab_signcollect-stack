@@ -19,7 +19,14 @@ TS6=fd7a:115c:a1e0::bf35:2608
 
 # --- layer 1: DNS ---
 sudo sed -i '/# signcollect-isolation/d' /etc/hosts
+# Every name production answers to, not only the ones the code happens to
+# mention. mocap stays on this list even though mocap is now deployed here:
+# the demo serves it from /web/mocap_site under its own hostname, and the
+# production subdomain must remain unreachable. avatar/signbank/api-lg are
+# further vhosts on the same production host - avatar.signcollect.nl in
+# particular is linked from the mocap portal.
 for h in signcollect.nl api.signcollect.nl media.signcollect.nl mocap.signcollect.nl \
+         avatar.signcollect.nl signbank.signcollect.nl api-lg.signcollect.nl \
          dashboard.signcollect.nl cloud.taila8bdbd.ts.net; do
   echo "127.0.0.1 $h # signcollect-isolation" | sudo tee -a /etc/hosts >/dev/null
 done
