@@ -1,4 +1,9 @@
 <?php
+
+// signcollect-lib's install-root resolver: sc_path(), sc_dir(), sc_root().
+// Vendored shim - it finds /web/lib/paths.php, or falls back to /web.
+require_once __DIR__ . '/../sc_paths.php';
+
 require_once('../mysql_config.php');
 
 header('Content-Type: application/json');
@@ -89,7 +94,7 @@ try {
             // Convert .wav to .mp4
             $videoFile = str_replace('.wav', '.mp4', $result['video_file']);
             $result['videoCenter'] = json_encode([['file' => $videoFile]]);
-            $result['video_path'] = '/web/gebarenoverleg_media/studioFilesMini/post/' . $videoFile;
+            $result['video_path'] = sc_dir('media_post') . $videoFile;
         } else {
             $result['videoCenter'] = null;
             $result['video_path'] = null;
