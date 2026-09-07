@@ -18,18 +18,29 @@
  * should not block it - the isolation that matters is from the production
  * instance, not from the outside world.
  *
- * There is still no credential in this file, and there must never be one:
- * it is tracked in git. api_key stays an inert placeholder that
- * signbank_config() recognises as "no key" (key_source 'none'), which makes
- * the connector page say so rather than send nonsense to Signbank. The real
- * key is installed separately by scripts/host-config.sh into
- * <state_dir>/.signbank_key, outside the repo and outside apache's served
- * set, or typed into the connector page by an admin.
+ * This file DOES carry a credential, deliberately: the demo Signbank key, so
+ * that a fresh checkout deploys a working connector with no manual step. It is
+ * a demo key for a demo instance and is treated as public.
+ *
+ * The production Signbank credential must never be committed anywhere. Note
+ * signbank_sync/config.production.php in signlab_signCollect-v2 already
+ * violates that - it is tracked and holds a live token. That is a known leak
+ * awaiting rotation, not a precedent to follow.
+ *
+ * A key installed at <state_dir>/.signbank_key - by scripts/host-config.sh or
+ * typed into the connector page by an admin - overrides the one here at
+ * runtime (key_source 'runtime'). That is how a host uses a different key
+ * without editing tracked files.
  */
 return [
     'base_url'         => 'https://signbank.cls.ru.nl',
     'public_url'       => 'https://signbank.cls.ru.nl',
-    'api_key'          => 'demo-instance-no-signbank-access',
+    // The demo Signbank key, committed deliberately so a fresh checkout
+    // deploys a working connector with no manual step. It is a demo key for
+    // signbank.cls.ru.nl, not the production credential - that one must never
+    // be committed. An admin-set key in <state_dir>/.signbank_key overrides
+    // this at runtime; see signbank_config() in signbank_sync/client.php.
+    'api_key'          => 'NiJzO6etgbVGgX8c',
     'auth_scheme'      => 'bearer',
     'dataset_id'       => '5',
     'dataset_acronym'  => 'NGT',
@@ -40,9 +51,11 @@ return [
     'enumerate_timeout_seconds' => 180,
 
     // Everything the connector owns and may write: the runtime API key, the
-    // refresh state, and the gloss dump itself (/web/glosses_transformed.json
-    // is a symlink into here, because /web is not writable by www-data and an
-    // atomic rename needs write permission on the directory).
+    // refresh state, and the gloss dump itself. It is a directory of its own
+    // because /web is not writable by www-data and replacing the dump
+    // atomically needs write permission on the containing directory.
+    // /web/glosses_transformed.json used to symlink in here; that link was
+    // removed so a consumer reading the old path fails loudly.
     'state_dir'        => '/web/signbank_data',
 
     // The full refresh is spawned as a detached CLI process by the connector
