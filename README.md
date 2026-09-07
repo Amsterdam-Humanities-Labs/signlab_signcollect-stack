@@ -66,6 +66,7 @@ the `signlab_` prefix.
 | [signlab_mhr](https://github.com/Amsterdam-Humanities-Labs/signlab_mhr) | 3D & assets | — | MHR avatar mesh/animation sources. The binaries exceed GitHub's 100 MB limit and are gitignored; the repo README covers the Git LFS setup |
 | [signlab_client_monitor_api](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_api) | Monitoring | PHP + Python | Registration and heartbeat API for long-running scripts and cron jobs |
 | [signlab_client_monitor_dashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard) | Monitoring | PHP + JS | Dashboard UI over the client monitor API |
+| [interface_deploy](interface_deploy) | Deployment | Bash + PHP | Stands the SignCollect interface up on a demo VPS — provisions LAMP, clones the seven interface repos, rewrites production URLs, isolates the host. **Lives in this repo, not its own** |
 
 **`mocap_site` is the one repo without the prefix.** It was transferred into the
 organisation before the rename convention was applied, and renaming a repo
