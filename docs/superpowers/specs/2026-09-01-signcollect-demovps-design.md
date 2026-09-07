@@ -1,8 +1,18 @@
 # SignCollect on demovps — isolated demo deployment
 
 **Date:** 2026-09-01
-**Status:** approved, in implementation
+**Status:** implemented; the deploy mechanism below is superseded
 **Target:** demovps — `dev.taila8bdbd.ts.net` / `100.72.57.25`
+
+> **Superseded, 2026-09-07.** demovps has been decommissioned and the two
+> demo hosts are now dev2 and dev-1. More importantly, the mechanism this
+> document specifies — clone on a workstation, rewrite there, rsync up — is
+> gone. The host clones from GitHub itself and runs `rewrite-urls.sh`
+> locally, so the claim below that a demo host "needs no GitHub credentials
+> and no outbound git" is no longer true: it needs both, and
+> `scripts/host-auth.sh` gives it them. Everything else here — what is in
+> scope, why the URL rewrite exists, what isolation means — still holds.
+> See `README.md` for the current shape.
 
 ## Goal
 
