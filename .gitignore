@@ -10,3 +10,7 @@ web_extra/.env
 
 # Local credential, never committed (was stripped from history 2026-09-07).
 .dbpass.local
+
+# Demo media cache - 68MB of participant video, fetched by
+# scripts/seed-demo-data.sh from production. Deliberately not in history.
+media/

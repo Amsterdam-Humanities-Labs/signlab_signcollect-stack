@@ -1,0 +1,31 @@
+# Studio takes needed by db/demo-data.sql, one stem per line.
+#
+# matched_transcriptions.m_file is recorded with a .wav extension (the audio
+# track it was matched on); the video the interface plays is the same stem
+# with .mp4, under studioFilesMini/{raw,post}/. Both variants exist for every
+# stem here - the post one is what the player picks when post_processed=1, the
+# raw one is what it falls back to.
+#
+# Kept as a separate list, not derived from the SQL, so scripts/seed-demo-data.sh
+# never has to parse SQL to know which files to move, and so a reviewer can see
+# in one place exactly which recordings leave production.
+M20240418_0020
+M20240507_0012
+M20240507_0014
+M20240507_0015
+M20240513_0089
+M20240603_0118
+M20240612_0015
+M20240910_0598
+M20240913_0969
+M20241218_1689
+M20260126_1567
+M20260126_1569
+M20260127_2042
+M20260127_2212
+M20260224_5425
+M20260224_5441
+M20260227_5950
+M20260227_5955
+M20260227_5981
+M20260227_5998
