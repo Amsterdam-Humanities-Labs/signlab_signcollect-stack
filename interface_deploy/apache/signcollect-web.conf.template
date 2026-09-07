@@ -1,6 +1,6 @@
 # SignCollect demo docroot. AllowOverride All matches production, where the
 # apps rely on .htaccess for rewrites.
-<Directory /web>
+<Directory @WEBROOT@>
     Options +FollowSymLinks -Indexes
     AllowOverride All
     Require all granted
@@ -26,8 +26,8 @@
     # like the credential rules below, which apply server-wide. pythonCron is
     # a Python service and lives at /opt/pythonCron, outside any DocumentRoot;
     # a server-wide .py rule would not break it today, because nothing maps a
-    # URL there, but a rule that could only ever be wrong outside /web has no
-    # business being evaluated outside /web.
+    # URL there, but a rule that could only ever be wrong outside @WEBROOT@ has no
+    # business being evaluated outside @WEBROOT@.
     <FilesMatch "\.py$">
         Require all denied
     </FilesMatch>
@@ -53,11 +53,11 @@
 </FilesMatch>
 
 # The mocap components add a Python flavour of the same thing. Kept even
-# though the blanket .py deny inside <Directory /web> above now covers it:
+# though the blanket .py deny inside <Directory @WEBROOT@> above now covers it:
 # that rule is scoped to a directory and this one to a filename, so a copy of
 # this file reachable through some other DocumentRoot is still denied.
 #
-# /web/mocap/db_credentials.py holds the database password for the scripts in
+# @WEBROOT@/mocap/db_credentials.py holds the database password for the scripts in
 # that directory. It is gitignored upstream, so the demo receives only
 # db_credentials.example.py - but a production-shaped host has the real one,
 # and Apache serves an unhandled .py as plain text. Globbed like the
@@ -69,7 +69,7 @@
 </Files>
 
 # Never serve dotfiles - .env, .git metadata, editor leftovers.
-<DirectoryMatch "^/web/.*/\.(git|svn)">
+<DirectoryMatch "^@WEBROOT@/.*/\.(git|svn)">
     Require all denied
 </DirectoryMatch>
 <FilesMatch "^\.">

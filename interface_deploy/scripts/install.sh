@@ -34,18 +34,35 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-SC_USAGE='usage: scripts/install.sh --host <ssh-target> [--domain <name>] [--no-provision]
+SC_USAGE='usage: scripts/install.sh --host <ssh-target> [--domain <name>]
+                          [--webroot <path>] [--no-provision]
 
-  --host   <target>  ssh target for the demo host, e.g. gomer@demo1  (required)
-  --domain <name>    hostname the demo is served as.  Optional: it is read
+  --host    <target> ssh target for the demo host, e.g. gomer@demo1  (required)
+  --domain  <name>   hostname the demo is served as.  Optional: it is read
                      from the host with `tailscale status --self`, which is
                      the only name `tailscale cert` will issue for anyway.
+  --webroot <path>   absolute path to install into.  Default /web.  It becomes
+                     apache DocumentRoot, the parent of the /api and /media
+                     mounts, and SC_WEB_ROOT in the env file - so the PHP
+                     resolver and the deploy always agree on one location.
+                     Choose it at install time; moving it later means moving
+                     the tree and re-running with the new value.
+  --local            run everything on this machine instead of over ssh. Use
+                     it when you are already on the demo host: clone the stack
+                     repo, cd into interface_deploy, and run this. --host is
+                     then only a label.
   --no-provision     skip step 0 when the server is known-good.
 
 HOST and DOMAIN are still honoured as environment variables.
 
 Example, taking a bare Ubuntu box to a working demo:
-  scripts/install.sh --host gomer@100.69.94.19'
+  scripts/install.sh --host gomer@100.69.94.19
+
+  Somewhere other than /web:
+    scripts/install.sh --host gomer@100.69.94.19 --webroot /srv/signcollect/web
+
+  Run on the demo host itself, no ssh:
+    scripts/install.sh --local --webroot /srv/signcollect/web'
 # shellcheck source=scripts/_common.sh
 . scripts/_common.sh
 
@@ -63,7 +80,7 @@ sc_require_host
 # redirect allow-lists in login.html / logout.html - so it is derived rather
 # than defaulted.
 sc_resolve_domain
-export HOST DOMAIN
+export HOST DOMAIN WEBROOT
 
 echo "=== installing SignCollect demo ==="
 echo "  host:   $HOST"

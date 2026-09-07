@@ -50,26 +50,26 @@ SIGNBANK_API_KEY=${SIGNBANK_API_KEY:-}
 # so it is replaced.
 # The pattern matches the setting, not the word: this file's own comments
 # mention the discard port, and matching those would reinstall on every run.
-if ssh "$HOST" "test -f /web/menu_beta/signbank_sync/config.php &&
-                ! grep -q \"'base_url'.*127\\.0\\.0\\.1:9\" /web/menu_beta/signbank_sync/config.php"; then
+if ssh "$HOST" "test -f $WEBROOT/menu_beta/signbank_sync/config.php &&
+                ! grep -q \"'base_url'.*127\\.0\\.0\\.1:9\" $WEBROOT/menu_beta/signbank_sync/config.php"; then
   echo "  signbank_sync/config.php already present - left alone"
 else
-  ssh "$HOST" "mkdir -p /web/menu_beta/signbank_sync &&
-               cp $SRCDIR/config/signbank_sync.demo.php /web/menu_beta/signbank_sync/config.php &&
-               sudo chown \"\$USER\":www-data /web/menu_beta/signbank_sync/config.php &&
-               chmod 640 /web/menu_beta/signbank_sync/config.php"
+  ssh "$HOST" "mkdir -p $WEBROOT/menu_beta/signbank_sync &&
+               cp $SRCDIR/config/signbank_sync.demo.php $WEBROOT/menu_beta/signbank_sync/config.php &&
+               sudo chown \"\$USER\":www-data $WEBROOT/menu_beta/signbank_sync/config.php &&
+               chmod 640 $WEBROOT/menu_beta/signbank_sync/config.php"
   echo "  signbank_sync/config.php installed (demo values, no real credential)"
 fi
 
-# /web/signbank_data - everything the Signbank connector owns and writes: the
+# $WEBROOT/signbank_data - everything the Signbank connector owns and writes: the
 # runtime API key, the refresh schedule and state, and the gloss dump itself.
 #
-# It exists because /web is gomer:staff 755 and the web server is www-data:
+# It exists because $WEBROOT is gomer:staff 755 and the web server is www-data:
 # rewriting the dump atomically means renaming a temp file over it, and
-# rename(2) needs write permission on the *directory*. Making /web itself
+# rename(2) needs write permission on the *directory*. Making $WEBROOT itself
 # writable by www-data would let any PHP bug drop a file at the docroot root,
-# so instead one directory is www-data's and /web/glosses_transformed.json is
-# a symlink into it (apache has +FollowSymLinks on /web).
+# so instead one directory is www-data's and $WEBROOT/glosses_transformed.json is
+# a symlink into it (apache has +FollowSymLinks on $WEBROOT).
 #
 # Two users write here: www-data, for the "refresh now" button, and the
 # deploy user, for the scheduled job pythonCron runs. Either may have to
@@ -77,19 +77,19 @@ fi
 # directory is setgid www-data and everything in it is group-writable, and
 # the deploy user joins that group. Group membership rather than a 0777
 # directory: the files stay unwritable by anyone else.
-ssh "$HOST" 'set -e
-  sudo install -d -o www-data -g www-data -m 2775 /web/signbank_data
-  sudo chgrp -R www-data /web/signbank_data
-  sudo chmod -R g+rwX  /web/signbank_data
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
+  sudo install -d -o www-data -g www-data -m 2775 $WEBROOT/signbank_data
+  sudo chgrp -R www-data $WEBROOT/signbank_data
+  sudo chmod -R g+rwX  $WEBROOT/signbank_data
   id -nG "$USER" | tr " " "\n" | grep -qx www-data || sudo usermod -aG www-data "$USER"'
-echo "  /web/signbank_data ready (www-data:www-data 2775, $HOST deploy user in group www-data)"
+echo "  $WEBROOT/signbank_data ready (www-data:www-data 2775, $HOST deploy user in group www-data)"
 
 # The gloss dump itself. It used to sit at the docroot root and every
 # consumer read it there; it now lives in the connector's directory, which is
 # the only place the web server can replace it atomically. Each consumer has
-# been repointed at /web/signbank_data/glosses_transformed.json (the browser
+# been repointed at $WEBROOT/signbank_data/glosses_transformed.json (the browser
 # ones at /signbank_data/...), so nothing is left resolving the old path and
-# /web/glosses_transformed.json is removed rather than symlinked - a link
+# $WEBROOT/glosses_transformed.json is removed rather than symlinked - a link
 # would keep a missed consumer working silently and hide that it was missed.
 #
 # A regular file still at the old path is moved, never deleted: on a host
@@ -97,65 +97,65 @@ echo "  /web/signbank_data ready (www-data:www-data 2775, $HOST deploy user in g
 # refreshed it, it is newer than the vendored seed. That is also why the seed
 # from assets/ is no longer copied unconditionally - a deploy must not
 # overwrite a fresh dump with a stale one.
-ssh "$HOST" 'set -e
-  if [ -L /web/glosses_transformed.json ]; then
-    rm -f /web/glosses_transformed.json
-  elif [ -f /web/glosses_transformed.json ]; then
-    if [ ! -f /web/signbank_data/glosses_transformed.json ]; then
-      mv /web/glosses_transformed.json /web/signbank_data/glosses_transformed.json
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
+  if [ -L $WEBROOT/glosses_transformed.json ]; then
+    rm -f $WEBROOT/glosses_transformed.json
+  elif [ -f $WEBROOT/glosses_transformed.json ]; then
+    if [ ! -f $WEBROOT/signbank_data/glosses_transformed.json ]; then
+      mv $WEBROOT/glosses_transformed.json $WEBROOT/signbank_data/glosses_transformed.json
     else
-      rm -f /web/glosses_transformed.json
+      rm -f $WEBROOT/glosses_transformed.json
     fi
   fi'
-if ssh "$HOST" 'test -s /web/signbank_data/glosses_transformed.json'; then
-  echo "  glosses_transformed.json present ($(ssh "$HOST" 'stat -c %s /web/signbank_data/glosses_transformed.json') bytes) in /web/signbank_data"
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'test -s $WEBROOT/signbank_data/glosses_transformed.json'; then
+  echo "  glosses_transformed.json present ($(ssh "$HOST" "export WEBROOT='$WEBROOT'; "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes) in $WEBROOT/signbank_data"
 else
-  ssh "$HOST" "cp $SRCDIR/assets/glosses_transformed.json /web/signbank_data/glosses_transformed.json"
-  echo "  glosses_transformed.json seeded from the host's own assets/ ($(ssh "$HOST" 'stat -c %s /web/signbank_data/glosses_transformed.json') bytes)"
+  ssh "$HOST" "cp $SRCDIR/assets/glosses_transformed.json $WEBROOT/signbank_data/glosses_transformed.json"
+  echo "  glosses_transformed.json seeded from the host's own assets/ ($(ssh "$HOST" "export WEBROOT='$WEBROOT'; "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes)"
 fi
-ssh "$HOST" 'chmod 664 /web/signbank_data/glosses_transformed.json 2>/dev/null || true'
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'chmod 664 $WEBROOT/signbank_data/glosses_transformed.json 2>/dev/null || true'
 
 # The API key. A key already on the host is left alone - it may have been
 # replaced by an admin on the connector page, and this script must not
 # silently roll that back.
-if ssh "$HOST" 'test -s /web/signbank_data/.signbank_key'; then
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'test -s $WEBROOT/signbank_data/.signbank_key'; then
   echo "  signbank API key already present - left alone"
 elif [ -n "$SIGNBANK_API_KEY" ]; then
   # Piped over stdin, so the key never appears in a command line or in the
   # remote shell's history.
   printf '%s\n' "$SIGNBANK_API_KEY" |
-    ssh "$HOST" 'umask 027 && cat > /web/signbank_data/.signbank_key &&
-                 sudo chown www-data:www-data /web/signbank_data/.signbank_key &&
-                 sudo chmod 640 /web/signbank_data/.signbank_key'
+    ssh "$HOST" "export WEBROOT='$WEBROOT'; "'umask 027 && cat > $WEBROOT/signbank_data/.signbank_key &&
+                 sudo chown www-data:www-data $WEBROOT/signbank_data/.signbank_key &&
+                 sudo chmod 640 $WEBROOT/signbank_data/.signbank_key'
   echo "  signbank API key installed (value not shown)"
 else
   echo "  no SIGNBANK_API_KEY given - connector will report 'geen sleutel' until an admin sets one"
 fi
 
-# /web/.session_secret - signs the session cookie. Without it session.php
+# $WEBROOT/.session_secret - signs the session cookie. Without it session.php
 # falls back to accepting an unsigned cookie, which is what let a hand-written
 # {"userId":38} impersonate that user. Generated once and never rotated here:
 # rotating it logs everyone out.
-if ssh "$HOST" 'test -s /web/.session_secret'; then
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'test -s $WEBROOT/.session_secret'; then
   echo "  .session_secret already present - left alone"
 else
-  ssh "$HOST" 'umask 027 && openssl rand -hex 32 > /web/.session_secret &&
-               sudo chown "$USER":www-data /web/.session_secret &&
-               chmod 640 /web/.session_secret'
+  ssh "$HOST" "export WEBROOT='$WEBROOT'; "'umask 027 && openssl rand -hex 32 > $WEBROOT/.session_secret &&
+               sudo chown "$USER":www-data $WEBROOT/.session_secret &&
+               chmod 640 $WEBROOT/.session_secret'
   echo "  .session_secret generated (value not shown)"
 fi
 
 # The annotation editors are each their own docroot with a zin/ beneath, so
 # they resolve mysql_config.php one level above zin/ and again at zin/api/.
-# Symlinks to the real /web/mysql_config.php rather than copies, so there is
+# Symlinks to the real $WEBROOT/mysql_config.php rather than copies, so there is
 # still one credential file on the host.
 for ed in subBeta8 3DAnn3; do
   ssh "$HOST" "set -e
-    d=/web/annotation-editors/$ed
+    d=$WEBROOT/annotation-editors/$ed
     [ -d \"\$d\" ] || exit 0
     mkdir -p \"\$d/zin/api\" \"\$d/zin/cache\" \"\$d/zin/eaf/zin\"
-    ln -sfn /web/mysql_config.php \"\$d/mysql_config.php\"
-    ln -sfn /web/mysql_config.php \"\$d/zin/api/mysql_config.php\"
+    ln -sfn $WEBROOT/mysql_config.php \"\$d/mysql_config.php\"
+    ln -sfn $WEBROOT/mysql_config.php \"\$d/zin/api/mysql_config.php\"
     chmod 775 \"\$d/zin/cache\" \"\$d/zin/eaf/zin\" 2>/dev/null || true"
   echo "  annotation-editors/$ed: mysql_config symlinked, runtime dirs ready"
 done
