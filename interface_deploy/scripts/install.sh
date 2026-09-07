@@ -1,151 +1,162 @@
 #!/usr/bin/env bash
 # One command to stand the SignCollect demo up on a VPS - this one or a new one.
 #
-# Everything comes from GitHub: the component repos listed in
-# repos.tsv, plus the vendored web_extra/ and apache/ trees in this repo.
-# Nothing is pulled from signcollect.nl, so this runs from any checkout.
+#   scripts/install.sh --host gomer@demo1
 #
-#   HOST    ssh target for the VPS            (default: demovps)
-#   DOMAIN  hostname the demo is served as    (default: dev.taila8bdbd.ts.net)
+# That is the whole thing. See README.md for what a host needs first (ssh
+# access, passwordless sudo, tailscale joined, GitHub reachable).
 #
-# Redeploying onto a different VPS is exactly:
-#   HOST=demo2 DOMAIN=demo2.example.org scripts/install.sh
+# WHAT THIS IS NOW
 #
-# A bare Ubuntu host is fine: step 0 installs the LAMP stack, creates the
-# docroot and database, issues the TLS cert and writes the apache config.
+# An SSH orchestrator, and nothing else. No file of the deployed tree passes
+# through this workstation any more:
+#
+#   workstation:  push to GitHub  ->  ssh host, run the bootstrap
+#   host:         clone 17 repos  ->  rewrite-urls.sh  ->  purge  ->  serve
+#
+# It used to clone the components here, rewrite their production URLs here,
+# and rsync 500MB up on every run. rsync is not installed on the new demo
+# host and is not going to be; the workstation was a single point of failure
+# for a deploy anybody should be able to run; and macOS, being
+# case-insensitive, silently dropped two of signlab_hh's 7661 files on every
+# single deploy because it tracks vitamine-D.json and vitamine-d.json side by
+# side. Cloning on the host fixes all three at once.
+#
+# The reason the copy existed at all was the URL rewrite - the deployed tree
+# is deliberately not the git tree, because a plain checkout would serve
+# https://api.signcollect.nl and give the demo a route back to production.
+# That rewrite now runs on the host, in scripts/host-bootstrap.sh, between
+# the clone and the first request. scripts/verify.sh still asserts the
+# isolation it buys.
+#
 # Every step is idempotent, so this is also the normal way to redeploy an
 # already-running demo.
-#
-# Pass --no-provision to skip step 0 when the server is known-good.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-HOST=${HOST:-demovps}
-DOMAIN=${DOMAIN:-dev.taila8bdbd.ts.net}
+SC_USAGE='usage: scripts/install.sh --host <ssh-target> [--domain <name>] [--no-provision]
+
+  --host   <target>  ssh target for the demo host, e.g. gomer@demo1  (required)
+  --domain <name>    hostname the demo is served as.  Optional: it is read
+                     from the host with `tailscale status --self`, which is
+                     the only name `tailscale cert` will issue for anyway.
+  --no-provision     skip step 0 when the server is known-good.
+
+HOST and DOMAIN are still honoured as environment variables.
+
+Example, taking a bare Ubuntu box to a working demo:
+  scripts/install.sh --host gomer@100.69.94.19'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+
 provision=1
-[ "${1:-}" = "--no-provision" ] && provision=0
+sc_parse_common "$@"
+for a in ${sc_args+"${sc_args[@]}"}; do
+  case "$a" in
+    --no-provision) provision=0 ;;
+    *) sc_die "unknown argument: $a" ;;
+  esac
+done
+sc_require_host
+# Asks the host its own MagicDNS name unless --domain said otherwise. Getting
+# this wrong does not fail loudly - DOMAIN lands in cookie domains and in the
+# redirect allow-lists in login.html / logout.html - so it is derived rather
+# than defaulted.
+sc_resolve_domain
+export HOST DOMAIN
+
 echo "=== installing SignCollect demo ==="
 echo "  host:   $HOST"
 echo "  domain: $DOMAIN"
 echo
 
-# 0. Server. LAMP, docroot, database, TLS, apache - all idempotent.
+# 0. Server. LAMP, docroot, database, TLS, apache - all idempotent. This is
+#    also where git arrives, which everything after it needs.
 if [ $provision -eq 1 ]; then
-  HOST="$HOST" DOMAIN="$DOMAIN" scripts/provision.sh
+  scripts/provision.sh
   echo
 else
   echo "(skipping provision)"
 fi
 
-# 1. Obtain the code. Fresh clones each run would be slower but this keeps
-#    build/ reusable; clone.sh hard-resets so it is never a stale tree.
-scripts/clone.sh
-
-# 2. Point the code at this demo. Rewriting build/ in place means a redeploy
-#    to a different DOMAIN must re-run clone.sh first - which install.sh
-#    always does, in that order, for exactly this reason.
+# 1. Credentials for GitHub. The host clones ~17 private org repos now, so it
+#    needs a login of its own; this hands it one from your gh token. Proven
+#    on dev2 and reused unchanged.
+scripts/host-auth.sh
 echo
-echo "== rewriting production URLs =="
-DOMAIN="$DOMAIN" scripts/rewrite-urls.sh build/*/
 
-# 3. Strip the parts of production the demo must not carry.
-#    The Motion Capture menu tile used to be stripped here as well, because
-#    mocap was out of scope. It is deployed now (see repos.tsv), so the tile
-#    stays and rewrite-urls.sh points it at /mocap_site on this host.
+# 2. This repo, on the host. scripts/, web_extra/, assets/, db/, config/ and
+#    apache/ all have to be reachable from the host for the bootstrap to run
+#    there rather than here.
+scripts/host-src.sh
 echo
-echo "== purging artifacts =="
-scripts/purge-artifacts.sh build/*/ || true
 
-# 4. Ship it.
+# 3. The docroot. Clone, rewrite, purge, place - all on the host.
+echo "== bootstrap (on $HOST) =="
+ssh "$HOST" "DOMAIN='$DOMAIN' ${WEBROOT:+WEBROOT='$WEBROOT'} $SRCDIR/scripts/host-bootstrap.sh"
+
+# 3b. Cut the demo off from production. This used to be a step you were
+#     expected to remember, and on a host where it had been forgotten the
+#     only symptom was verify.sh's isolation block turning red at the very
+#     end - after everything else had passed, which is the point in a deploy
+#     where a failure is least likely to be read. A demo that can still reach
+#     signcollect.nl is not a demo, so it is part of the install now.
+#
+#     Runs on the host, as the host: it writes /etc/hosts and loads an
+#     nftables table there. The chain policy stays ACCEPT and only
+#     production's addresses are rejected, so it cannot cut our own SSH.
 echo
-HOST="$HOST" scripts/deploy.sh
+echo "== isolation from production =="
+ssh "$HOST" "$SRCDIR/scripts/isolate.sh" | sed 's/^/  /'
 
-# 5. Per-host configs that are gitignored upstream, so a clone never has them.
+# 4. Per-host configs that are gitignored upstream, so a clone never has them.
 echo
 echo "== host config =="
-HOST="$HOST" scripts/host-config.sh
+scripts/host-config.sh
 
-# 5b. mocapStudio and animMIDI both resolve mysql_config.php next to
-#     themselves rather than at the docroot, and that file is gitignored
-#     upstream in each, so a clone never has it. Symlinked, not copied, so
-#     there stays exactly one credential file on the host - the same trick
-#     host-config.sh uses for the annotation editors. Re-made every run:
-#     deploy.sh rsyncs both components with --delete.
+# 5. Scheduled jobs. pythonCron is not a docroot component - it is a systemd
+#    service - so it has neither a repos.tsv row nor a place in the bootstrap,
+#    and clones itself to /opt instead. See scripts/pythoncron.sh.
 #
-#     animMIDI joined this list once its Composer autoloader existed. Before
-#     that, every page under animMIDI/public/ died on line 2 requiring
-#     vendor/autoload.php and no request ever reached a database call; with
-#     the autoloader in place the next thing an authenticated admin hit was
-#     app/config/Database.php requiring ../../mysql_config.php, which is the
-#     identical gap one layer down. The two are separate bugs that looked
-#     like one because the first hid the second.
+#    After host-config.sh, not before: the one job it schedules writes the
+#    Signbank gloss dump, which needs /web/signbank_data to exist and the
+#    deploy user to be in group www-data, and both are that script's doing.
 #
-#     viconDashboard/api/ needs shipping by hand for a different reason:
-#     deploy.sh excludes 'api/' from every component so that rsync --delete
-#     cannot wipe /web/zin/api (the sCAPI service it does not clone). That
-#     pattern has no leading slash, so it matches api/ at any depth and takes
-#     viconDashboard's four endpoints with it - the dashboard then renders but
-#     every panel 404s. Sent separately here rather than loosening the exclude,
-#     which is deploy.sh's to own.
+#    Not fatal. A demo whose scheduler failed to install is still a demo -
+#    the connector's "Ververs nu" button does not go through pythonCron - and
+#    stopping here would leave the deploy unverified.
 echo
-echo "== mocap config =="
-if [ -d build/signlab_viconDashboard/api ]; then
-  rsync -a --delete build/signlab_viconDashboard/api/ "$HOST:/web/viconDashboard/api/"
-  echo "  viconDashboard/api/ shipped (deploy.sh excludes api/ everywhere)"
-fi
-ssh "$HOST" 'for c in mocapStudio animMIDI; do
-    if [ -d "/web/$c" ]; then
-      ln -sfn /web/mysql_config.php "/web/$c/mysql_config.php"
-      echo "  $c/mysql_config.php -> /web/mysql_config.php"
-    else
-      echo "  /web/$c absent - skipped"
-    fi
-  done'
-
-# 5c. Scheduled jobs. pythonCron is not a docroot component - it is a systemd
-#     service - so it has neither a repos.tsv row nor a deploy.sh rsync, and
-#     runs its own clone-to-/opt script instead. See scripts/pythoncron.sh for
-#     where it lands and why.
-#
-#     After host-config.sh, not before: the one job it schedules writes the
-#     Signbank gloss dump, which needs /web/signbank_data to exist and the
-#     deploy user to be in group www-data, and both of those are that script's
-#     doing. It also needs the job itself on disk, which is deploy.sh's.
-#
-#     Not fatal. A demo whose scheduler failed to install is still a demo -
-#     the connector's "Ververs nu" button does not go through pythonCron - and
-#     stopping here would leave the deploy unverified.
-echo
-if HOST="$HOST" DOMAIN="$DOMAIN" scripts/pythoncron.sh; then :; else
+if scripts/pythoncron.sh; then :; else
   echo "  WARNING: pythonCron not installed - the Signbank refresh will not run on a schedule."
   echo "  The connector page still refreshes on demand. Re-run:"
-  echo "    HOST=$HOST DOMAIN=$DOMAIN scripts/pythoncron.sh"
+  echo "    scripts/pythoncron.sh --host $HOST --domain $DOMAIN"
 fi
 
 # 6. Schema migrations. db/schema.sql is a point-in-time dump; anything added
 #    since exists only in migrations/, and the interface breaks without them.
+#    They are read off the host now, out of the deployed menu_beta checkout,
+#    because that is where signlab_signCollect-v2 lands.
 echo
 echo "== migrations =="
-HOST="$HOST" scripts/migrate.sh
+scripts/migrate.sh
 
 # 7. Demo data. After migrations, because those can still add columns these
 #    rows write into.
 #
-#    The media comes from the signlab_demo-media component, cloned by step 1
-#    like any other repo - nothing here reaches signcollect.nl. It used to
-#    rsync from production into a local cache, which meant a fresh checkout
-#    could only be seeded from a workstation with production access.
+#    The media no longer moves: signlab_demo-media is an ordinary component,
+#    so the bootstrap has already cloned its 291MB straight into
+#    /web/gebarenoverleg_media. All this does is the SQL and the hard links
+#    into media_stub.
 #
 #    Not fatal: a missing or incomplete checkout should leave the demo up with
-#    an empty database rather than abort the deploy before it has been verified.
+#    an empty database rather than abort the deploy before it is verified.
 echo
 echo "== demo data =="
-if HOST="$HOST" scripts/seed-demo-data.sh; then :; else
+if scripts/seed-demo-data.sh; then :; else
   echo "  WARNING: seeding failed - the interface is deployed but has no demo data."
-  echo "  Check build/signlab_demo-media exists, then re-run:"
-  echo "    scripts/clone.sh && HOST=$HOST scripts/seed-demo-data.sh"
+  echo "  Re-run: scripts/seed-demo-data.sh --host $HOST"
 fi
 
 echo
 echo "== verify =="
-scripts/verify.sh "https://$DOMAIN" || true
+scripts/verify.sh --host "$HOST" "https://$DOMAIN" || true

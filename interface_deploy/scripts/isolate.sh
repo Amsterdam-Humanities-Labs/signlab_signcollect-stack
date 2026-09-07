@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Cut every network path from demovps to production signcollect.nl.
+# Cut every network path from a demo host to production signcollect.nl.
+#
+# Runs ON the demo host, as that host: it edits /etc/hosts and loads an
+# nftables table there. scripts/verify.sh asserts, from the outside, that it
+# has been run.
 #
 # Two layers, because a URL rewrite is a regex and cannot be proven exhaustive:
 #   1. DNS null-route in /etc/hosts

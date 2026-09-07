@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Tests for the two things a demo host needs that no rsync can supply: a
+# Tests for the two things a demo host needs that no clone can supply: a
 # Composer autoloader for animMIDI, and pythonCron installed as a service.
 #
 # What it asserts:
 #
 #   - every entry point under animMIDI/public/ answers. All nine required
 #     vendor/autoload.php on their first line, so all nine were a 500 until
-#     deploy.sh started generating one; and behind that sat a second, hidden
+#     the deploy started generating one; and behind that sat a second, hidden
 #     failure, the gitignored mysql_config.php, which only an authenticated
 #     request reaches. Both are checked, anonymous and as an admin, because
 #     fixing only the first looks identical from the outside.
@@ -135,9 +135,11 @@ case "$body" in *"Connection failed"*|*"Fatal error"*|*"vendor/autoload"*)
 # ========================================================================
 section "pythonCron: where it lives"
 on "code in $PC_HOME"               "test -f $PC_HOME/scheduler_v2.py"
-# Root-owned, and so is what is in it: rsync -a would have carried the
-# workstation's uid across, which on this host coincidentally lands on the
-# deploy user and elsewhere lands on nobody.
+# Root-owned, and so is what is in it. Ownership has to be stated by the
+# deploy rather than inherited from the copy: the tree is assembled in the
+# deploy user's own build directory before it is copied into /opt, so
+# anything that preserved ownership would leave the service able to rewrite
+# its own code.
 on "$PC_HOME is root-owned"         "test \"\$(stat -c %U $PC_HOME)\" = root"
 on "and so is the code inside it"   "test \"\$(stat -c %U $PC_HOME/scheduler_v2.py)\" = root"
 on "the service user cannot rewrite its own code" "! test -w $PC_HOME/scheduler_v2.py"

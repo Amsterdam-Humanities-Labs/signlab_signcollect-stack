@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Give a demo host read access to the private GitHub repos, using YOUR gh login.
 #
-# The deploy is moving from "rsync a built tree up" to "the host clones from
-# GitHub itself", so every host needs credentials for ~17 private repos. This
+# The deploy no longer rsyncs a built tree up - the host clones from GitHub
+# itself - so every host needs credentials for ~17 private repos. This
 # installs gh there and hands it a token taken from the workstation's existing
 # `gh auth token` - no machine user, no per-repo deploy keys, no second account.
 #
@@ -17,11 +17,15 @@
 #
 # Idempotent: a host that can already reach GitHub is left alone.
 #
-# Usage: HOST=gomer@dev2 scripts/host-auth.sh
+# Usage: scripts/host-auth.sh --host gomer@dev2
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-HOST=${HOST:-demovps}
+SC_USAGE='usage: scripts/host-auth.sh --host <ssh-target>'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+sc_parse_common "$@"
+sc_require_host
 
 command -v gh >/dev/null 2>&1 || {
   echo "gh is not installed on this workstation - it is the source of the token" >&2

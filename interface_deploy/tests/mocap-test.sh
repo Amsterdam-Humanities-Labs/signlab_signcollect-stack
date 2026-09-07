@@ -166,10 +166,13 @@ req GET /mocap_lab/ "$COOK" >/dev/null; is "/mocap_lab/ is not browsable" 403
 req GET /mocap_lab/generate_video_files.php "$COOK" >/dev/null; is "mocap_lab/generate_video_files.php" 200
 
 # --- 6. viconDashboard's own API ----------------------------------------
-# deploy.sh excludes 'api/' from every component (to protect /web/zin/api),
-# and that pattern has no leading slash, so it silently swallows these four
-# as well. install.sh ships them separately; this is the check that catches
-# it if that step is ever dropped.
+# These four spent a long time not being deployed at all: the old rsync
+# deploy excluded 'api/' from every component to protect /web/zin/api, the
+# pattern had no leading slash, and so it swallowed viconDashboard's API too.
+# The dashboard rendered and every panel 404'd. The host clones each
+# component whole now, so the exclusion is gone and only $WEBROOT/zin/api is
+# still protected, by name. This is the check that notices if a future
+# exclusion goes wide again.
 section "viconDashboard API"
 json_ok "get_mocap_stats.php"   "$(req GET /viconDashboard/api/get_mocap_stats.php "$COOK")"
 json_ok "get_date_overview.php" "$(req GET /viconDashboard/api/get_date_overview.php "$COOK")"

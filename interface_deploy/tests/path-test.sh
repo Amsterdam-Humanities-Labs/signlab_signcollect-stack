@@ -212,17 +212,19 @@ else
   # Two exclusions, both deliberate, both about files this repository does
   # not ship:
   #
-  #   signbank_sync/config.php is written per host by host-config.sh and
-  #   excluded from every rsync. Its state_dir is an absolute path on
-  #   purpose - a config file is exactly where an absolute path belongs, and
-  #   client.php falls back to sc_path('signbank_data') when it is absent.
+  #   signbank_sync/config.php is written per host by host-config.sh and is
+  #   gitignored upstream, so no clone carries it. Its state_dir is an
+  #   absolute path on purpose - a config file is exactly where an absolute
+  #   path belongs, and client.php falls back to sc_path('signbank_data')
+  #   when it is absent.
   #
-  #   */api/ is not deployed at all. deploy.sh excludes 'api/' so that
-  #   --delete cannot wipe the sCAPI submodule mounted at /web/zin/api, and
-  #   rsync matches that pattern at every depth, so /web/viconDashboard/api
-  #   is excluded too. The four files there are stale copies predating this
-  #   migration; the repository's own versions are migrated. See the note
-  #   below - it is a deploy bug, not a missed literal.
+  #   */api/ used to be excluded from the deploy entirely, which is how
+  #   $WEBROOT/viconDashboard/api came to hold stale copies predating the
+  #   migration while the repository's own versions were already fixed. The
+  #   host clones each component whole now, so those are current and the
+  #   note below no longer fires; the exclusion stays because
+  #   $WEBROOT/zin/api is the separately-deployed sCAPI service and is not
+  #   this repository's to assert about.
   STRAY=$(onhost "grep -rn --include='*.php' -E \"['\\\"]/web/\" $WEBROOT 2>/dev/null \
       | grep -v '^$WEBROOT/lib/' \
       | grep -v '/signbank_sync/config.php:' \
@@ -236,11 +238,11 @@ else
     printf '%s\n' "$STRAY" | head -10 | sed 's/^/       /'
   fi
 
-  # Say out loud what the exclusion above hides, so it cannot quietly become
-  # permanent: viconDashboard's four API endpoints are migrated in git and
-  # unreachable by rsync.
+  # Say out loud what the exclusion above would hide, so it cannot quietly
+  # become permanent. Silent since the host started cloning each component
+  # whole; it fires again the moment something stops being deployed.
   APISTALE=$(onhost "grep -rln --include='*.php' \"'/web/mysql_config.php'\" $WEBROOT/*/api 2>/dev/null | tr '\n' ' '")
-  [ -n "$APISTALE" ] && note "not deployed, so still hardcoded on the host: $APISTALE(deploy.sh's --exclude 'api/' matches at every depth)"
+  [ -n "$APISTALE" ] && note "not deployed, so still hardcoded on the host: $APISTALE"
 fi
 
 # --- 6. browser URLs were not touched -----------------------------------

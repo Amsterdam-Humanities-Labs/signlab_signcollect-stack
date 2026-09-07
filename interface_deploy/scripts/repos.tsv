@@ -80,3 +80,4 @@ mocap	signlab_mocap	main
 mocap_lab	signlab_mocap_lab	main
 viconDashboard	signlab_viconDashboard	main
 gebarenoverleg_media	signlab_demo-media	main
+blendBaking	signlab_blendAnims	main

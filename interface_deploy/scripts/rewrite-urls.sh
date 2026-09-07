@@ -9,15 +9,21 @@
 # Left alone: .log .md .swift - committed test output, docs, and iOS client
 #             code. None are executed here; the egress block covers them.
 #
-# The target hostname is NOT hardcoded - a redeploy onto a different VPS only
-# needs a different DOMAIN. It ends up in cookie domains and redirect
-# allow-lists in login.html / logout.html, so getting it wrong silently breaks
-# sign-in.
+# The target hostname is NOT hardcoded and has no default - a redeploy onto a
+# different VPS only needs a different DOMAIN. It ends up in cookie domains
+# and redirect allow-lists in login.html / logout.html, so a wrong value does
+# not fail, it silently breaks sign-in. A default here would be exactly that
+# wrong value on every host but one, so there is none.
+#
+# This normally runs ON the demo host, from scripts/host-bootstrap.sh, over
+# the docroot's own git checkouts. It still takes plain directories, so it is
+# equally usable by hand.
 #
 # Usage: DOMAIN=demo2.example.org rewrite-urls.sh <tree> [<tree> ...]
 set -euo pipefail
 
-DOMAIN=${DOMAIN:-dev.taila8bdbd.ts.net}
+DOMAIN=${DOMAIN:-}
+[ -n "$DOMAIN" ] || { echo "DOMAIN is not set - refusing to guess the hostname" >&2; exit 2; }
 [ $# -ge 1 ] || { echo "usage: [DOMAIN=host] $0 <tree> [<tree> ...]" >&2; exit 2; }
 echo "target domain: $DOMAIN"
 

@@ -1,12 +1,28 @@
 #!/usr/bin/env bash
-# Verify the demovps deployment. Evidence, not assumptions - every claim here
-# is a command whose output you can read.
+# Verify a demo deployment. Evidence, not assumptions - every claim here is a
+# command whose output you can read.
+#
+# Both parameters are required and neither has a default. The one that used
+# to be here named demovps, which has since been decommissioned, so a bare
+# run spent its time SSHing at a machine that no longer exists and then
+# reported the timeout as a failure of the demo.
+#
+# Usage: scripts/verify.sh --host gomer@demo1 https://demo1.example.org
+#        scripts/verify.sh --host gomer@demo1            # base URL from --domain
 set -uo pipefail
-B=${1:-https://dev.taila8bdbd.ts.net}
-HOST=${HOST:-demovps}   # ssh target, for the checks that must run on the box
+
+cd "$(dirname "$0")/.."
+SC_USAGE='usage: scripts/verify.sh --host <ssh-target> [<base-url> | --domain <name>]'
+# shellcheck source=scripts/_common.sh
+. scripts/_common.sh
+sc_parse_common "$@"
+sc_require_host
+B=""
+[ ${#sc_args[@]} -gt 0 ] && B=${sc_args[0]}
+[ -n "$B" ] || { sc_resolve_domain; B="https://$DOMAIN"; }
 fail=0
 chk() { # chk <path> <expected-code> <label>
-  local got; got=$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 12 "$B$1" 2>/dev/null)
+  local got; got=$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 12 --max-time 30 "$B$1" 2>/dev/null)
   if [ "$got" = "$2" ]; then printf '  ok   %-32s %s\n' "$1" "$got"
   else printf '  FAIL %-32s got %s want %s\n' "$1" "$got" "$2"; fail=1; fi
 }
@@ -42,10 +58,10 @@ for t in https://signcollect.nl/ https://136.144.170.87/ http://100.88.38.8/; do
   else printf '  ok   blocked   %s\n' "$t"; fi
 done
 echo "== login (users is the one deliberately non-empty table) =="
-r=$(curl -sS --connect-timeout 12 -X POST -d "username=gomer&password=123" "$B/login_sc.php" 2>/dev/null)
+r=$(curl -sS --connect-timeout 12 --max-time 30 -X POST -d "username=gomer&password=123" "$B/login_sc.php" 2>/dev/null)
 case "$r" in *'"status":"success"'*) echo "  ok   gomer/123 authenticates" ;;
              *) echo "  FAIL login: $r"; fail=1 ;; esac
-r=$(curl -sS --connect-timeout 12 -X POST -d "username=gomer&password=wrong" "$B/login_sc.php" 2>/dev/null)
+r=$(curl -sS --connect-timeout 12 --max-time 30 -X POST -d "username=gomer&password=wrong" "$B/login_sc.php" 2>/dev/null)
 case "$r" in *'"status":"failure"'*) echo "  ok   wrong password rejected" ;;
              *) echo "  FAIL bad password not rejected: $r"; fail=1 ;; esac
 # 98 from db/schema.sql, plus schema_migrations, which scripts/migrate.sh
