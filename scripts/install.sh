@@ -65,11 +65,20 @@ echo
 echo "== host config =="
 HOST="$HOST" scripts/host-config.sh
 
-# 5b. mocapStudio resolves mysql_config.php next to itself rather than at the
-#     docroot, and that file is gitignored upstream so a clone never has it.
-#     Symlinked, not copied, so there stays exactly one credential file on the
-#     host - the same trick host-config.sh uses for the annotation editors.
-#     Re-made every run: deploy.sh rsyncs mocapStudio with --delete.
+# 5b. mocapStudio and animMIDI both resolve mysql_config.php next to
+#     themselves rather than at the docroot, and that file is gitignored
+#     upstream in each, so a clone never has it. Symlinked, not copied, so
+#     there stays exactly one credential file on the host - the same trick
+#     host-config.sh uses for the annotation editors. Re-made every run:
+#     deploy.sh rsyncs both components with --delete.
+#
+#     animMIDI joined this list once its Composer autoloader existed. Before
+#     that, every page under animMIDI/public/ died on line 2 requiring
+#     vendor/autoload.php and no request ever reached a database call; with
+#     the autoloader in place the next thing an authenticated admin hit was
+#     app/config/Database.php requiring ../../mysql_config.php, which is the
+#     identical gap one layer down. The two are separate bugs that looked
+#     like one because the first hid the second.
 #
 #     viconDashboard/api/ needs shipping by hand for a different reason:
 #     deploy.sh excludes 'api/' from every component so that rsync --delete
@@ -84,12 +93,34 @@ if [ -d build/signlab_viconDashboard/api ]; then
   rsync -a --delete build/signlab_viconDashboard/api/ "$HOST:/web/viconDashboard/api/"
   echo "  viconDashboard/api/ shipped (deploy.sh excludes api/ everywhere)"
 fi
-ssh "$HOST" 'if [ -d /web/mocapStudio ]; then
-    ln -sfn /web/mysql_config.php /web/mocapStudio/mysql_config.php
-    echo "  mocapStudio/mysql_config.php -> /web/mysql_config.php"
-  else
-    echo "  /web/mocapStudio absent - skipped"
-  fi'
+ssh "$HOST" 'for c in mocapStudio animMIDI; do
+    if [ -d "/web/$c" ]; then
+      ln -sfn /web/mysql_config.php "/web/$c/mysql_config.php"
+      echo "  $c/mysql_config.php -> /web/mysql_config.php"
+    else
+      echo "  /web/$c absent - skipped"
+    fi
+  done'
+
+# 5c. Scheduled jobs. pythonCron is not a docroot component - it is a systemd
+#     service - so it has neither a repos.tsv row nor a deploy.sh rsync, and
+#     runs its own clone-to-/opt script instead. See scripts/pythoncron.sh for
+#     where it lands and why.
+#
+#     After host-config.sh, not before: the one job it schedules writes the
+#     Signbank gloss dump, which needs /web/signbank_data to exist and the
+#     deploy user to be in group www-data, and both of those are that script's
+#     doing. It also needs the job itself on disk, which is deploy.sh's.
+#
+#     Not fatal. A demo whose scheduler failed to install is still a demo -
+#     the connector's "Ververs nu" button does not go through pythonCron - and
+#     stopping here would leave the deploy unverified.
+echo
+if HOST="$HOST" DOMAIN="$DOMAIN" scripts/pythoncron.sh; then :; else
+  echo "  WARNING: pythonCron not installed - the Signbank refresh will not run on a schedule."
+  echo "  The connector page still refreshes on demand. Re-run:"
+  echo "    HOST=$HOST DOMAIN=$DOMAIN scripts/pythoncron.sh"
+fi
 
 # 6. Schema migrations. db/schema.sql is a point-in-time dump; anything added
 #    since exists only in migrations/, and the interface breaks without them.

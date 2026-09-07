@@ -1,0 +1,12 @@
+[
+    {
+        "service_name": "Signbank ECV refresh",
+        "executable": "/usr/bin/php",
+        "path": "@WEBROOT@/menu_beta/signbank_sync/ecv_refresh.php",
+        "working_dir": "@WEBROOT@/menu_beta/signbank_sync",
+        "interval_minutes": 60,
+        "time_or_minute": "minute",
+        "timeout_minutes": 30,
+        "execute_immediately": false
+    }
+]

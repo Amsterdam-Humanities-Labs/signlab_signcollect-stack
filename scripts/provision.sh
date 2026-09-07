@@ -33,8 +33,28 @@ ssh "$HOST" 'set -e
   # without it, so label creation fails and every gloss that references a
   # label then fails too. php-curl/gd/xml/zip match the production set of
   # non-default extensions.
+  #
+  # composer is installed from apt rather than downloaded because this half
+  # of the job belongs to the machine: a tool the host needs, once, from the
+  # same package manager as everything else. There are no runtime
+  # dependencies for it to fetch - animMIDI, the one component with a
+  # composer.json, requires only PHP extensions, which are above. What it is
+  # for is composer dump-autoload, which writes the PSR-4 autoloader that
+  # nine files under animMIDI/public/ require on their first line. That
+  # generation step is deliberately NOT here: it belongs to deploy.sh, whose
+  # rsync --delete removes the autoloader, and it can only run once the code
+  # is on the host, which at this point it is not.
+  #
+  # python3-psutil is the only third-party import in the scheduler pythonCron
+  # runs here: lib/health_monitor uses it to kill stuck jobs and report
+  # process memory. Without it python-scheduler.service crash-loops on
+  # ImportError and nothing scheduled ever runs. See scripts/pythoncron.sh.
+  #
+  # Both of these are machine-level, which is why they are in this file at
+  # all: apt packages a host needs once, not artefacts of a deploy.
   for p in apache2 php libapache2-mod-php php-mysql php-mbstring php-curl \
-           php-gd php-xml php-zip php-bz2 mysql-server git rsync curl; do
+           php-gd php-xml php-zip php-bz2 mysql-server git rsync curl \
+           composer python3-psutil; do
     dpkg -s "$p" >/dev/null 2>&1 || need="$need $p"
   done
   if [ -n "$need" ]; then
