@@ -28,7 +28,13 @@ echo "=== provisioning $HOST as $DOMAIN ==="
 # php-mysql pulls mysqli + pdo_mysql, which is what the interface uses.
 ssh "$HOST" 'set -e
   need=""
-  for p in apache2 php libapache2-mod-php php-mysql mysql-server git rsync curl; do
+  # Extension set matched against production. php-mbstring is not optional:
+  # labels_create.php calls mb_strlen() and dies with "undefined function"
+  # without it, so label creation fails and every gloss that references a
+  # label then fails too. php-curl/gd/xml/zip match the production set of
+  # non-default extensions.
+  for p in apache2 php libapache2-mod-php php-mysql php-mbstring php-curl \
+           php-gd php-xml php-zip php-bz2 mysql-server git rsync curl; do
     dpkg -s "$p" >/dev/null 2>&1 || need="$need $p"
   done
   if [ -n "$need" ]; then
