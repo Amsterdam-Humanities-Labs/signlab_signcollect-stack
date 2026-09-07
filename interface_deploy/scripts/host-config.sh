@@ -25,3 +25,16 @@ else
                chmod 640 /web/menu_beta/signbank_sync/config.php'
   echo "  signbank_sync/config.php installed (demo values, no real credential)"
 fi
+
+# /web/.session_secret - signs the session cookie. Without it session.php
+# falls back to accepting an unsigned cookie, which is what let a hand-written
+# {"userId":38} impersonate that user. Generated once and never rotated here:
+# rotating it logs everyone out.
+if ssh "$HOST" 'test -s /web/.session_secret'; then
+  echo "  .session_secret already present - left alone"
+else
+  ssh "$HOST" 'umask 027 && openssl rand -hex 32 > /web/.session_secret &&
+               sudo chown "$USER":www-data /web/.session_secret &&
+               chmod 640 /web/.session_secret'
+  echo "  .session_secret generated (value not shown)"
+fi

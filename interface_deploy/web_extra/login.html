@@ -191,15 +191,20 @@
                 var data = JSON.parse(response);
                 if (data.status === 'success') {
                     var role = data.role || 'user';
-                    var expires = new Date();
-                    expires.setFullYear(expires.getFullYear() + 1);
+                    // expiresAt and sig come from the server: they are the
+                    // signed payload. Recomputing expiresAt here would
+                    // invalidate the signature. role is kept only for the UI -
+                    // the server reads it from the database, never from here.
+                    var expiresAt = data.expiresAt ||
+                        new Date(Date.now() + 365*24*60*60*1000).toUTCString();
                     var sessionObject = {
                         userId: data.userId,
                         username: data.username,
                         role: role,
-                        expiresAt: expires.toUTCString()
+                        expiresAt: expiresAt,
+                        sig: data.sig || ''
                     };
-                    document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expires.toUTCString()}; path=/; domain=@DOMAIN@`;
+                    document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expiresAt}; path=/; domain=@DOMAIN@`;
                     window.location.href = getRedirectUrl();
                 } else if (data.status === 'blocked') {
                     showError('Uw account is geblokkeerd. Neem contact op met een beheerder.');
