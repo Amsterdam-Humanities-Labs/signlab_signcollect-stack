@@ -1,0 +1,160 @@
+# Studio files the demo carries: one line per camera angle, per take.
+#
+#   <stem><TAB><cuts>
+#
+# cuts is which of studioFilesMini/{raw,post} holds that angle. Both the .mp4
+# and the .jpg thumbnail exist for every cut listed - production makes them
+# together, and scripts/seed-demo-data.sh checks for both.
+#
+# The angles come from matched_transcriptions, which names them one column
+# each: l_file, m_file, r_file, a_file, b_file. They are NOT the same stem with
+# a different letter - the numeric suffix differs per angle within a take
+# (M20260227_5998, L20260227_7582 and R20260227_0221 are one recording), so
+# the mapping can only be read out of the row and never guessed from a
+# filename. studioIndex getStudioFiles.php returns exactly those five columns
+# and its front end builds every URL from them.
+#
+# m_file is recorded with a .wav extension - the audio track the take was
+# matched on - and every consumer swaps it for .mp4, or for .jpg when it wants
+# the thumbnail. The stems here are already extension-free.
+#
+# A and B have no post cut on any of these takes. That is not a gap in the
+# copy: production has A/B post cuts for other sessions but ran none for
+# these, so studioIndex 404s on post/<A stem>.jpg there exactly as it does
+# here, and falls back to the raw thumbnail by design (index.html img.onerror).
+#
+# Kept as a separate list, not derived from the SQL, so scripts/seed-demo-data.sh
+# never has to parse SQL to know which files to move, and so a reviewer can see
+# in one place exactly which recordings the demo carries.
+#
+# The files themselves live in the private repo signlab_demo-media, which
+# scripts/repos.tsv deploys to /web/gebarenoverleg_media. This list and that
+# repository have to agree: seed-demo-data.sh checks every line here against
+# the checkout and refuses to seed if one is missing, so adding an angle means
+# adding its files there first.
+
+# take M20240418_0020  (matched_transcriptions 1619, zOg=Glos)
+L20240418_0020	raw post
+M20240418_0020	raw post
+R20240418_0020	raw post
+
+# take M20240612_0015  (matched_transcriptions 3099, zOg=Glos)
+L20240612_0015	raw post
+M20240612_0015	raw post
+R20240612_0015	raw post
+
+# take M20240603_0118  (matched_transcriptions 3369, zOg=Glos)
+L20240603_0118	raw post
+M20240603_0118	raw post
+R20240603_0118	raw post
+
+# take M20240513_0089  (matched_transcriptions 3528, zOg=Glos)
+L20240513_0089	raw post
+M20240513_0089	raw post
+R20240513_0089	raw post
+
+# take M20240507_0012  (matched_transcriptions 3577, zOg=Glos)
+L20240507_0012	raw post
+M20240507_0012	raw post
+R20240507_0012	raw post
+
+# take M20240507_0014  (matched_transcriptions 3578, zOg=Glos)
+L20240507_0014	raw post
+M20240507_0014	raw post
+R20240507_0014	raw post
+
+# take M20240507_0015  (matched_transcriptions 3581, zOg=Glos)
+L20240507_0015	raw post
+M20240507_0015	raw post
+R20240507_0015	raw post
+
+# take M20240910_0598  (matched_transcriptions 4127, zOg=Glos)
+L20240910_0598	raw post
+M20240910_0598	raw post
+R20240910_0598	raw post
+A20240910_0597	raw
+B20240910_0598	raw
+
+# take M20240913_0969  (matched_transcriptions 4499, zOg=Glos)
+L20240913_0969	raw post
+M20240913_0969	raw post
+R20240913_0969	raw post
+A20240913_0968	raw
+B20240913_0867	raw
+
+# take M20241218_1689  (matched_transcriptions 19770, zOg=glos)
+L20241218_2776	raw post
+M20241218_1689	raw post
+R20241218_5400	raw post
+A20241218_4650	raw
+B20241218_3893	raw
+
+# take M20260126_1567  (matched_transcriptions 52647, zOg=zin)
+L20260126_3146	raw post
+M20260126_1567	raw post
+R20260126_5787	raw post
+A20260126_4607	raw
+B20260126_3989	raw
+
+# take M20260126_1569  (matched_transcriptions 52662, zOg=zin)
+L20260126_3148	raw post
+M20260126_1569	raw post
+R20260126_5789	raw post
+A20260126_4609	raw
+B20260126_3991	raw
+
+# take M20260127_2042  (matched_transcriptions 53210, zOg=zin)
+L20260127_3621	raw post
+M20260127_2042	raw post
+R20260127_6262	raw post
+A20260127_5082	raw
+B20260127_4459	raw
+
+# take M20260127_2212  (matched_transcriptions 53307, zOg=zin)
+L20260127_3791	raw post
+M20260127_2212	raw post
+R20260127_6432	raw post
+A20260127_5252	raw
+B20260127_4629	raw
+
+# take M20260224_5425  (matched_transcriptions 56798, zOg=zin)
+L20260224_7009	raw post
+M20260224_5425	raw post
+R20260224_9647	raw post
+A20260224_8481	raw
+B20260224_7842	raw
+
+# take M20260224_5441  (matched_transcriptions 56902, zOg=zin)
+L20260224_7025	raw post
+M20260224_5441	raw post
+R20260224_9663	raw post
+A20260224_8497	raw
+B20260224_7858	raw
+
+# take M20260227_5950  (matched_transcriptions 57063, zOg=zin)
+L20260227_7534	raw post
+M20260227_5950	raw post
+R20260227_0173	raw post
+A20260227_9006	raw
+B20260227_8367	raw
+
+# take M20260227_5955  (matched_transcriptions 57068, zOg=zin)
+L20260227_7539	raw post
+M20260227_5955	raw post
+R20260227_0178	raw post
+A20260227_9011	raw
+B20260227_8372	raw
+
+# take M20260227_5998  (matched_transcriptions 57349, zOg=zin)
+L20260227_7582	raw post
+M20260227_5998	raw post
+R20260227_0221	raw post
+A20260227_9054	raw
+B20260227_8415	raw
+
+# take M20260227_5981  (matched_transcriptions 57376, zOg=zin)
+L20260227_7565	raw post
+M20260227_5981	raw post
+R20260227_0204	raw post
+A20260227_9037	raw
+B20260227_8398	raw

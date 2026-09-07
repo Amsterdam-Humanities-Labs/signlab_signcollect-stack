@@ -1,0 +1,62 @@
+[Unit]
+# signlab_pythonCron's scheduler v2: one process, a 60-second loop, SQLite
+# state. The demo runs this half of pythonCron and not the other - see
+# scripts/pythoncron.sh for why the sixteen wrapper units and the watchdog
+# are left out.
+Description=SignCollect demo job scheduler (pythonCron scheduler v2)
+Documentation=https://github.com/Amsterdam-Humanities-Labs/signlab_pythonCron
+Documentation=file://@HOME@/README.md
+After=network-online.target mysql.service apache2.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@USER@
+# The one scheduled job writes the Signbank gloss dump into
+# @WEBROOT@/signbank_data, which is www-data:www-data 2775. @USER@ is a member
+# of www-data (scripts/host-config.sh puts it there); this states the
+# dependency rather than relying on the group database being read.
+SupplementaryGroups=www-data
+
+WorkingDirectory=@HOME@
+Environment=PYTHONUNBUFFERED=1
+# @HOME@ holds only code and is replaced wholesale by every deploy; @STATE@
+# holds scheduler_state.db, which is the sole record of when each job last
+# ran. Losing it makes every job look as though it has never executed and
+# therefore due immediately - which for this job set means an unscheduled
+# 7,500-request rebuild against Signbank. Keeping the two apart is the point
+# of the split.
+Environment=PYTHONCRON_HOME=@HOME@
+Environment=PYTHONCRON_STATE_DIR=@STATE@
+ExecStart=/usr/bin/python3 @HOME@/scheduler_v2.py --config @CONFIG@
+Restart=always
+RestartSec=10
+
+MemoryMax=512M
+TasksMax=100
+
+# Production's unit calls this "relaxed to allow /web writes" and the same
+# applies here: ProtectSystem=full makes /usr, /boot and /etc read-only, and
+# the two paths the scheduler and its jobs must write are named explicitly.
+# @CONFIG@ lives under /etc and stays read-only, which is correct - the
+# admin-tunable half of the schedule is @WEBROOT@/signbank_data/.settings.json,
+# written by the connector page, not this file.
+NoNewPrivileges=yes
+ProtectSystem=full
+ReadWritePaths=@STATE@ @WEBROOT@
+PrivateTmp=no
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+# The journal rather than an append: file. Production writes to
+# @HOME@/scheduler_v2.log and the README's own operational notes describe
+# those files reaching 50-100MB and needing an emergency cleanup script; a
+# demo host should not inherit that. The scheduler still keeps its own
+# scheduler_v2.log and per-service logs under @STATE@.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

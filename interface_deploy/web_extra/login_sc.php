@@ -1,5 +1,9 @@
 <?php
 
+// signcollect-lib's install-root resolver: sc_path(), sc_dir(), sc_root().
+// Vendored shim - it finds /web/lib/paths.php, or falls back to /web.
+require_once __DIR__ . '/sc_paths.php';
+
 include('mysql_config.php');
 
 
@@ -67,7 +71,7 @@ if ($stmt->fetch()) {
     // session.php so there is one implementation, not two that can drift.
     $expiresAt = gmdate('D, d M Y H:i:s', time() + 365 * 24 * 60 * 60) . ' GMT';
     $sessionSig = '';
-    $sessionLib = '/web/menu_beta/php_api/session.php';
+    $sessionLib = sc_path('menu_beta/php_api/session.php');
     if (is_readable($sessionLib)) {
         require_once $sessionLib;
         $secret = session_secret();

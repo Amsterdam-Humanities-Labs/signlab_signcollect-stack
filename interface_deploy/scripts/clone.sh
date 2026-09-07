@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Obtain every git-backed component of the SignCollect interface into build/.
 #
-# GitHub is the only source. The unversioned parts of production (menu_old,
-# nmm, downloadVideos, and the loose root .html files) are vendored in this
-# repo under web_extra/ - they have no upstream repo of their own, so without
+# GitHub is the only source. The unversioned parts of production (nmm,
+# downloadVideos, and the loose root .html files) are vendored in this repo
+# under web_extra/ - they have no upstream repo of their own, so without
 # vendoring a fresh checkout could not redeploy. Splitting them into real
 # repos is tracked in the stack issue tracker.
 #
@@ -41,7 +41,7 @@ echo "== vendored components (web_extra/ -> build/web_extra/) =="
 rm -rf build/web_extra
 mkdir -p build/web_extra
 cp -R web_extra/. build/web_extra/
-for d in menu_old nmm downloadVideos; do
+for d in nmm downloadVideos; do
   printf '  %-16s %s files\n' "$d" "$(find "build/web_extra/$d" -type f | wc -l | tr -d ' ')"
 done
 printf '  %-16s %s\n' "root files" "$(ls build/web_extra/*.html build/web_extra/*.php build/web_extra/*.js 2>/dev/null | wc -l | tr -d ' ')"
