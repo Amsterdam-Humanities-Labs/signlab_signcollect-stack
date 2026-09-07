@@ -97,6 +97,24 @@ echo
 echo "== migrations =="
 HOST="$HOST" scripts/migrate.sh
 
+# 7. Demo data. After migrations, because those can still add columns these
+#    rows write into.
+#
+#    The media comes from the signlab_demo-media component, cloned by step 1
+#    like any other repo - nothing here reaches signcollect.nl. It used to
+#    rsync from production into a local cache, which meant a fresh checkout
+#    could only be seeded from a workstation with production access.
+#
+#    Not fatal: a missing or incomplete checkout should leave the demo up with
+#    an empty database rather than abort the deploy before it has been verified.
+echo
+echo "== demo data =="
+if HOST="$HOST" scripts/seed-demo-data.sh; then :; else
+  echo "  WARNING: seeding failed - the interface is deployed but has no demo data."
+  echo "  Check build/signlab_demo-media exists, then re-run:"
+  echo "    scripts/clone.sh && HOST=$HOST scripts/seed-demo-data.sh"
+fi
+
 echo
 echo "== verify =="
 scripts/verify.sh "https://$DOMAIN" || true
