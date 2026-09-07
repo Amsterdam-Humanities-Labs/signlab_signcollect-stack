@@ -32,7 +32,9 @@ sc_require_host
 fails=0; warns=0
 ok()   { printf '  ok    %-22s %s\n' "$1" "${2:-}"; }
 warn() { printf '  warn  %-22s %s\n' "$1" "${2:-}"; warns=$((warns+1)); }
-bad()  { printf '  FAIL  %-22s %s\n' "$1" "${2:-}"; shift 2; [ $# -gt 0 ] && printf '%s\n' "$*" | sed 's/^/          /'; fails=$((fails+1)); }
+bad()  { printf '  FAIL  %-22s %s\n' "$1" "${2:-}"; shift 2
+         [ $# -gt 0 ] && printf '%s\n' "$@" | sed 's/^/          /'
+         fails=$((fails+1)); return 0; }
 
 echo "== preflight: $(sc_where), webroot $WEBROOT =="
 
@@ -81,10 +83,11 @@ fi
 # the host: if this fails, the rest would fail as a cascade of timeouts that
 # say nothing about the host.
 if [ "${SC_LOCAL:-0}" != "1" ]; then
+  reachable=no
   err=$(command ssh -o BatchMode=yes -o ConnectTimeout=12 -o StrictHostKeyChecking=accept-new \
         "$HOST" 'echo reachable' 2>&1)
   case "$err" in
-    *reachable*) ok "ssh $HOST" "reachable" ;;
+    *reachable*) ok "ssh $HOST" "reachable"; reachable=yes ;;
     *"Permission denied"*|*"publickey"*)
       bad "ssh $HOST" "refused the key" \
         "The host is up but will not let this key in." \
@@ -101,7 +104,15 @@ if [ "${SC_LOCAL:-0}" != "1" ]; then
         "machines on a laptop and go away when it sleeps." ;;
     *) bad "ssh $HOST" "failed" "$err" ;;
   esac
-  [ $fails -eq 0 ] || { echo; echo "  preflight stopped: the host is not reachable, so nothing else could be checked."; exit 1; }
+  # Only the ssh check gates the rest. A workstation-side failure (no gh, say)
+  # is worth knowing about alongside everything the host has to say, so it is
+  # reported and the run continues; an unreachable host makes every later check
+  # a timeout that describes the link rather than the host.
+  if [ "$reachable" != "yes" ]; then
+    echo
+    echo "  preflight stopped: the host is not reachable, so nothing else could be checked."
+    exit 1
+  fi
 fi
 
 # --- 3. everything the host must be able to do ----------------------------

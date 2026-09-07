@@ -29,7 +29,7 @@ sc_on_error "scripts/provision.sh $(sc_retry_args)"
 DB=admin_gebarenoverleg
 DBUSER=signcollect
 
-echo "=== provisioning $HOST as $DOMAIN ==="
+echo "=== provisioning $(sc_where) as $DOMAIN, into $WEBROOT ==="
 
 # --- 1. LAMP ------------------------------------------------------------
 # php-mysql pulls mysqli + pdo_mysql, which is what the interface uses.

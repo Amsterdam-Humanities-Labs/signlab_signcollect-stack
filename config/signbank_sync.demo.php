@@ -52,11 +52,18 @@ return [
 
     // Everything the connector owns and may write: the runtime API key, the
     // refresh state, and the gloss dump itself. It is a directory of its own
-    // because /web is not writable by www-data and replacing the dump
+    // because @WEBROOT@ is not writable by www-data and replacing the dump
     // atomically needs write permission on the containing directory.
-    // /web/glosses_transformed.json used to symlink in here; that link was
+    // @WEBROOT@/glosses_transformed.json used to symlink in here; that link was
     // removed so a consumer reading the old path fails loudly.
-    'state_dir'        => '/web/signbank_data',
+    // @WEBROOT@ is substituted by scripts/host-config.sh when it installs this
+    // file, the same way config/pythoncron.demo.json carries the docroot. It
+    // was a literal /web until the first --webroot install, where everything
+    // the connector owns - the runtime key, the refresh state, the lock and
+    // the dump - was still being written to a directory on the wrong side of
+    // the host. The demo deployed, served every page, and answered the
+    // connector's every write with "cannot create /web/signbank_data".
+    'state_dir'        => '@WEBROOT@/signbank_data',
 
     // The full refresh is spawned as a detached CLI process by the connector
     // page; under mod_php PHP_BINARY is apache2, so the interpreter is named.

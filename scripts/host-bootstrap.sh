@@ -93,6 +93,16 @@ sync_repo() { # sync_repo <repo> <branch> <dir>
   if [ -e "$dir/.git" ]; then
     act=updated
   else
+    # Decided before `git init`, which creates .git and would make every
+    # directory look non-empty: a cold install reported seventeen components
+    # "adopted", which is the word for taking over a tree that was already
+    # there and exactly the wrong thing to tell somebody watching their first
+    # install of a host that had nothing on it.
+    if [ -d "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
+      act=adopted
+    else
+      act=cloned
+    fi
     # `git init` rather than `git clone`, because on a host that was
     # previously deployed by rsync the directory already exists and is full
     # of files, and clone refuses a non-empty target. init + fetch + reset
@@ -103,8 +113,6 @@ sync_repo() { # sync_repo <repo> <branch> <dir>
     mkdir -p "$dir"
     git -C "$dir" init --quiet
     git -C "$dir" remote add origin "$url"
-    act=adopted
-    [ -n "$(ls -A "$dir")" ] || act=cloned
   fi
   git -C "$dir" remote set-url origin "$url"
   # --depth 1: this is a deploy, not a working copy. History of

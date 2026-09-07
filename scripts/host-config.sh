@@ -54,15 +54,28 @@ SIGNBANK_API_KEY=${SIGNBANK_API_KEY:-}
 # so it is replaced.
 # The pattern matches the setting, not the word: this file's own comments
 # mention the discard port, and matching those would reinstall on every run.
+#
+# The second replace-trigger is a state_dir that names some other install
+# root. That is our own template rendered for a different --webroot, and it is
+# recognisable with the same certainty as the discard port: the file still
+# carries this repo's DEMO-instance header, and its state_dir is not the one
+# this host is being installed with. Left alone, the connector writes its key,
+# its lock, its schedule and its 11MB dump to a directory outside the docroot
+# and reports "cannot create /web/signbank_data" for every one of them, on a
+# host where every page otherwise serves. A real config an admin wrote does
+# not carry that header and is not touched.
 if ssh "$HOST" "test -f $WEBROOT/menu_beta/signbank_sync/config.php &&
-                ! grep -q \"'base_url'.*127\\.0\\.0\\.1:9\" $WEBROOT/menu_beta/signbank_sync/config.php"; then
+                ! grep -q \"'base_url'.*127\\.0\\.0\\.1:9\" $WEBROOT/menu_beta/signbank_sync/config.php &&
+                ! { grep -q 'DEMO instance' $WEBROOT/menu_beta/signbank_sync/config.php &&
+                    ! grep -qF \"'state_dir'        => '$WEBROOT/signbank_data'\" $WEBROOT/menu_beta/signbank_sync/config.php; }"; then
   echo "  signbank_sync/config.php already present - left alone"
 else
   ssh "$HOST" "mkdir -p $WEBROOT/menu_beta/signbank_sync &&
-               cp $SRCDIR/config/signbank_sync.demo.php $WEBROOT/menu_beta/signbank_sync/config.php &&
+               sed 's|@WEBROOT@|$WEBROOT|g' $SRCDIR/config/signbank_sync.demo.php \
+                 > $WEBROOT/menu_beta/signbank_sync/config.php &&
                sudo chown \"\$USER\":www-data $WEBROOT/menu_beta/signbank_sync/config.php &&
                chmod 640 $WEBROOT/menu_beta/signbank_sync/config.php"
-  echo "  signbank_sync/config.php installed (demo values, no real credential)"
+  echo "  signbank_sync/config.php installed (demo values, state_dir $WEBROOT/signbank_data)"
 fi
 
 # $WEBROOT/signbank_data - everything the Signbank connector owns and writes: the
