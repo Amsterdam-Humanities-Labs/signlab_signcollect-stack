@@ -77,19 +77,25 @@ for p in /sc_paths.php /zin/sc_paths.php /hh/sc_paths.php /menu_beta/sc_paths.ph
   esac
 done
 
-# --- 2. the default really is /web -------------------------------------
+# --- 2. the resolver agrees with the install root -----------------------
+# $WEBROOT, not the literal /web: the library is deployed at <root>/lib and
+# resolves the root from its own location, so on a host installed with
+# --webroot these probes have to be aimed at the library that is actually
+# there. Every one of them named /web/lib/paths.php and returned nothing at
+# all on the first --webroot host - seven red lines that said only that a file
+# the test invented did not exist.
 section "default root"
 if [ -z "$HOST" ]; then
   note "on-host resolver checks skipped - set HOST=<ssh target> to run them"
 else
-  R=$(onhost 'php -r "require \"/web/lib/paths.php\"; echo sc_root();"')
+  R=$(onhost "php -r 'require \"$WEBROOT/lib/paths.php\"; echo sc_root();'")
   eq "sc_root() is $WEBROOT" "$R" "$WEBROOT"
 
   # Each of these is a literal that used to be typed out somewhere in the
   # estate. They are compared as strings, not as "a path that exists",
   # because the claim under test is byte equality with what was deleted.
-  read -r -d '' PROBE <<'PHP'
-require "/web/lib/paths.php";
+  read -r -d '' PROBE <<PHP
+require "$WEBROOT/lib/paths.php";
 echo implode("\n", [
   sc_path("mysql_config.php"),
   sc_path(".session_secret"),
@@ -106,7 +112,7 @@ echo implode("\n", [
   sc_dir("zin/eaf/zin"),
   sc_dir("hh/eaf"),
   sc_dir(),
-  sc_url("/web/zin/eaf/zin/x.srt"),
+  sc_url("$WEBROOT/zin/eaf/zin/x.srt"),
   sc_url("/mnt/bigstorage/x.mkv"),
 ]);
 PHP
@@ -153,25 +159,25 @@ section "the root is configurable"
 if [ -z "$HOST" ]; then
   note "override checks skipped - no HOST"
 else
-  G=$(onhost 'SC_WEB_ROOT=/srv/demo php -r "require \"/web/lib/paths.php\"; echo sc_root(), \"|\", sc_dir(\"media_raw\"), \"|\", sc_url(\"/srv/demo/zin/x.srt\");"')
+  G=$(onhost "SC_WEB_ROOT=/srv/demo php -r 'require \"$WEBROOT/lib/paths.php\"; echo sc_root(), \"|\", sc_dir(\"media_raw\"), \"|\", sc_url(\"/srv/demo/zin/x.srt\");'")
   eq "SC_WEB_ROOT moves the root, the named locations and sc_url() together" \
      "$G" "/srv/demo|/srv/demo/gebarenoverleg_media/studioFilesMini/raw/|/zin/x.srt"
 
-  G=$(onhost 'php -r "define(\"SC_WEB_ROOT\", \"/opt/sc\"); require \"/web/lib/paths.php\"; echo sc_root();"')
+  G=$(onhost "php -r 'define(\"SC_WEB_ROOT\", \"/opt/sc\"); require \"$WEBROOT/lib/paths.php\"; echo sc_root();'")
   eq "the SC_WEB_ROOT constant wins over the compiled default" "$G" "/opt/sc"
 
   # Step 3 of the documented order: the env file. Written to /tmp and pointed
   # at with SC_ENV_FILE, so the host's own /web/.env is never touched.
-  G=$(onhost 'f=$(mktemp); printf "DB_HOST=localhost\nDB_USER=u\nDB_NAME=n\nSC_WEB_ROOT=/tmp/rootfromenv\n" > $f; SC_ENV_FILE=$f php -r "require \"/web/lib/paths.php\"; echo sc_root();"; rm -f $f')
+  G=$(onhost "f=\$(mktemp); printf 'DB_HOST=localhost\nDB_USER=u\nDB_NAME=n\nSC_WEB_ROOT=/tmp/rootfromenv\n' > \$f; SC_ENV_FILE=\$f php -r 'require \"$WEBROOT/lib/paths.php\"; echo sc_root();'; rm -f \$f")
   eq "SC_WEB_ROOT in the env file moves the root" "$G" "/tmp/rootfromenv"
 
   # A relative root is refused rather than resolved against the cwd of
   # whatever cron job happened to call it.
-  G=$(onhost 'SC_WEB_ROOT=not/absolute php -r "require \"/web/lib/paths.php\"; echo sc_root();" 2>/dev/null')
+  G=$(onhost "SC_WEB_ROOT=not/absolute php -r 'require \"$WEBROOT/lib/paths.php\"; echo sc_root();' 2>/dev/null")
   eq "a relative SC_WEB_ROOT falls back to the compiled default" "$G" "/web"
 
   # Step 4: installed as <root>/lib, the parent is the root, with nothing set.
-  G=$(onhost 'd=$(mktemp -d); mkdir -p $d/lib; cp /web/lib/paths.php /web/lib/db_config.php $d/lib/; php -r "require \"$d/lib/paths.php\"; echo sc_root();"; rm -rf $d')
+  G=$(onhost "d=\$(mktemp -d); mkdir -p \$d/lib; cp $WEBROOT/lib/paths.php $WEBROOT/lib/db_config.php \$d/lib/; php -r 'require \"'\$d'/lib/paths.php\"; echo sc_root();'; rm -rf \$d")
   case "$G" in
     /*/lib) bad "a library at <x>/lib resolved the root to itself: $G" ;;
     /tmp/*|/var/folders/*) ok "a library installed at <x>/lib resolves the root to <x> ($G)" ;;

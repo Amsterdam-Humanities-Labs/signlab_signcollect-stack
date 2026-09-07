@@ -25,13 +25,17 @@ SC_USAGE='usage: scripts/provision.sh --host <ssh-target> [--domain <name>]'
 sc_parse_common "$@"
 sc_require_host
 sc_resolve_domain
+sc_on_error "scripts/provision.sh $(sc_retry_args)"
 DB=admin_gebarenoverleg
 DBUSER=signcollect
 
-echo "=== provisioning $HOST as $DOMAIN ==="
+echo "=== provisioning $(sc_where) as $DOMAIN, into $WEBROOT ==="
 
 # --- 1. LAMP ------------------------------------------------------------
 # php-mysql pulls mysqli + pdo_mysql, which is what the interface uses.
+sc_doing "installing packages (apache, php, mysql, git, ...)" \
+  "apt failed on the host. Usually a stale index or no outbound HTTPS.
+     Look:  ssh $HOST 'sudo apt-get update'"
 ssh "$HOST" 'set -e
   need=""
   # Extension set matched against production. php-mbstring is not optional:
@@ -90,6 +94,7 @@ ssh "$HOST" 'set -e
 # production /web/uploads has always existed as a symlink to bulk storage, so
 # a host built from scratch was the only place the assumption showed up, as a
 # 500 on the first selfie recording.
+sc_doing "creating $WEBROOT and its writable directories"
 ssh "$HOST" 'set -e
   sudo mkdir -p '"$WEBROOT"' '"$WEBROOT"'/media_stub '"$WEBROOT"'/uploads '"$WEBROOT"'/uploads/lsm
   sudo chown -R "$USER":www-data '"$WEBROOT"'
@@ -100,6 +105,9 @@ ssh "$HOST" 'set -e
 # --- 3. database + credentials -----------------------------------------
 # .env is created only once; a re-run must not invalidate the password the
 # database already has.
+sc_doing "creating the database and $WEBROOT/.env" \
+  "The database password is generated on the host and written to $WEBROOT/.env once.
+     If .env exists but the grant is wrong, remove it and re-run to reissue both."
 ssh "$HOST" "set -e
   if [ ! -f '"$WEBROOT"'/.env ]; then
     pw=\$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
@@ -118,6 +126,7 @@ ssh "$HOST" "set -e
 # --- 4. schema + demo login --------------------------------------------
 # Loaded only into an empty database. Re-running must never drop live demo
 # data, so a non-zero object count means hands off.
+sc_doing "loading db/schema.sql"
 objs=$(ssh "$HOST" "sudo mysql -N -e \"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB';\"")
 if [ "${objs:-0}" -eq 0 ]; then
   # innodb_strict_mode must be off for this dump. form_data is 68 columns of
@@ -137,6 +146,9 @@ ssh "$HOST" "sudo mysql $DB" < db/demo-user.sql
 echo "  demo login ensured"
 
 # --- 5. TLS -------------------------------------------------------------
+sc_doing "creating the database and $WEBROOT/.env" \
+  "The database password is generated on the host and written to $WEBROOT/.env once.
+     If .env exists but the grant is wrong, remove it and re-run to reissue both."
 ssh "$HOST" "set -e
   if [ ! -f /etc/ssl/demo/\$(basename $DOMAIN).crt ]; then
     sudo mkdir -p /etc/ssl/demo
@@ -154,22 +166,44 @@ ssh "$HOST" "set -e
 # Every apache file is a template now: DocumentRoot, the /api and /media
 # aliases and the deny rules all sit below the install root, so they have to
 # follow --webroot or apache serves a directory the deploy never wrote to.
+#
+# Rendered straight onto the host through sc_put, with no workstation-side
+# staging file. What was here before was
+#
+#     sed t > /tmp/$out; scp /tmp/$out "$HOST:/tmp/$out"; rm -f /tmp/$out
+#
+# which reads as three steps only because the two machines are different.
+# Run with --local the source and the destination are one path: cp refused
+# ("are the same file") and the rm that followed would have deleted the file
+# the next step reads. sc_put has a destination and no source, so there is no
+# second path to collide with and nothing to clean up - see _common.sh.
+#
+# The staging directory is emptied first rather than written into: a rename
+# of a template between releases would otherwise leave its rendered output in
+# /tmp for a2enconf to pick up forever.
+sc_doing "staging the apache configuration on the host" \
+  "Nothing has been enabled yet; the previous apache config is untouched."
+ssh "$HOST" 'rm -rf /tmp/signcollect-apache && mkdir -p /tmp/signcollect-apache'
 sed -e "s|@DOMAIN@|$DOMAIN|g" -e "s|@WEBROOT@|$WEBROOT|g" \
-    apache/vhost-ssl.conf.template > /tmp/vhost-$DOMAIN.conf
-scp -q /tmp/vhost-$DOMAIN.conf "$HOST:/tmp/demo-ssl.conf"; rm -f /tmp/vhost-$DOMAIN.conf
+    apache/vhost-ssl.conf.template | sc_put /tmp/signcollect-apache/demo-ssl.conf
 for f in apache/signcollect-*.conf.template; do
   out=$(basename "$f" .template)
-  sed -e "s|@WEBROOT@|$WEBROOT|g" "$f" > "/tmp/$out"
-  scp -q "/tmp/$out" "$HOST:/tmp/$out"; rm -f "/tmp/$out"
+  sed -e "s|@WEBROOT@|$WEBROOT|g" "$f" | sc_put "/tmp/signcollect-apache/$out"
 done
+
+sc_doing "enabling the apache configuration" \
+  "apache2ctl configtest rejected the rendered config, or apache would not reload.
+     Look:  ssh $HOST 'sudo apache2ctl configtest; sudo journalctl -u apache2 -n 30'"
 ssh "$HOST" 'set -e
-  sudo mv /tmp/demo-ssl.conf /etc/apache2/sites-available/demo-ssl.conf
+  cd /tmp/signcollect-apache
+  sudo install -o root -g root -m 644 demo-ssl.conf /etc/apache2/sites-available/demo-ssl.conf
   sudo a2ensite demo-ssl >/dev/null 2>&1 || true
-  for f in /tmp/signcollect-*.conf; do
+  for f in signcollect-*.conf; do
     [ -e "$f" ] || continue
-    sudo mv "$f" /etc/apache2/conf-available/
+    sudo install -o root -g root -m 644 "$f" /etc/apache2/conf-available/"$f"
     sudo a2enconf "$(basename "$f" .conf)" >/dev/null
   done
+  cd /; rm -rf /tmp/signcollect-apache
   sudo apache2ctl configtest && sudo systemctl reload apache2
   echo "  apache configured"'
 

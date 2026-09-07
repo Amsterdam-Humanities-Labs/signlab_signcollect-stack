@@ -27,6 +27,11 @@
 set -uo pipefail
 
 BASE=${BASE:-https://dev2.taila8bdbd.ts.net}
+# The connector's state_dir follows the install root, so the path it reports
+# does too. This was the literal /web and turned red on the first host that
+# was installed anywhere else - a test asserting the default rather than the
+# deployment.
+WEBROOT=${WEBROOT:-/web}
 ADMIN_USER=${ADMIN_USER:-gomer}
 ADMIN_PASS=${ADMIN_PASS:-123}
 FULL=${FULL:-0}
@@ -167,7 +172,7 @@ section "status"
 STATUS_BODY=$(req GET "$API" "$ACOOK"); is "status as admin" 200
 has  "status reports the Signbank host"    "$STATUS_BODY" '"base_url":"https://signbank.cls.ru.nl"'
 has  "status reports the dataset"          "$STATUS_BODY" '"dataset":"NGT"'
-has  "status reports the dump path"        "$STATUS_BODY" '"path":"/web/signbank_data/glosses_transformed.json"'
+has  "status reports the dump path"        "$STATUS_BODY" "\"path\":\"$WEBROOT/signbank_data/glosses_transformed.json\""
 has  "status reports the dump exists"      "$STATUS_BODY" '"exists":true'
 has  "status reports the dump is writable" "$STATUS_BODY" '"writable":true'
 

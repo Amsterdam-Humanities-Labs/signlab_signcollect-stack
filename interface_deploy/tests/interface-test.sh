@@ -289,7 +289,13 @@ body=$(req GET "/menu_beta/php_api/activity_log.php?pageSize=5" "$ACOOK")
 case "$body" in *"$MARKPAGE"*) ok "the new visit appears at the top of the log" ;;
   *) bad "new visit not in the newest-first page: $(printf '%s' "$body" | head -c 200)" ;; esac
 
-# Pagination. Two single-row pages must be two different rows.
+# Pagination. Two single-row pages must be two different rows - which needs
+# two rows to exist. On a host with a history of test runs there always are;
+# on one installed twenty minutes ago activity_log held exactly ONE row, the
+# visit logged four lines above, so page 2 was empty and this failed on the
+# only kind of host it matters on. The suite logs the second row itself rather
+# than inheriting it from whatever happened to the host before.
+form /menu_beta/users_api.php "$ACOOK" "action=activity&page=itest_activity2_$TS.html" >/dev/null
 p1=$(req GET "/menu_beta/php_api/activity_log.php?pageSize=1&page=1" "$ACOOK")
 is "activity log page 1" 200
 p2=$(req GET "/menu_beta/php_api/activity_log.php?pageSize=1&page=2" "$ACOOK")

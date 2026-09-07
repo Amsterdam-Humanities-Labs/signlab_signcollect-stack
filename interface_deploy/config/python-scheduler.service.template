@@ -29,6 +29,10 @@ Environment=PYTHONUNBUFFERED=1
 # of the split.
 Environment=PYTHONCRON_HOME=@HOME@
 Environment=PYTHONCRON_STATE_DIR=@STATE@
+# The same statement apache/signcollect-web.conf.template makes to PHP, for the
+# PHP the scheduler runs from the command line. ecv_refresh.php resolves paths
+# through signcollect-lib, whose CLI process has no apache SetEnv to read.
+Environment=SC_WEB_ROOT=@WEBROOT@
 ExecStart=/usr/bin/python3 @HOME@/scheduler_v2.py --config @CONFIG@
 Restart=always
 RestartSec=10

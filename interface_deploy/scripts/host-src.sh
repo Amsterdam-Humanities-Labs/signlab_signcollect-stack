@@ -29,6 +29,22 @@
 # Only tracked content is sent - `git archive HEAD` - so build/, secrets.env
 # and .dbpass.local cannot leak onto a host by accident.
 #
+# WITH --local THERE IS NOTHING TO DO, AND THAT IS THE POINT
+#
+# This step exists to make a second machine hold a copy of this tree. Run on
+# the demo host itself there is no second machine: the tree you are standing
+# in IS the tree the host builds from. Doing the work anyway is not merely
+# wasteful, it is destructive twice over - `git reset --hard origin/HEAD`
+# would rewind the checkout the running scripts are being read out of, and
+# `git archive HEAD | tar x -C $SRCDIR` would then extract that tree over
+# itself while bash is still reading this file off disk. (Worse, run from
+# inside the stack clone, `git archive HEAD` is the whole stack repo, so it
+# would unpack interface_deploy/ INSIDE interface_deploy/.)
+#
+# So local mode does not guard the clone and the overlay, it skips the step:
+# _common.sh already resolved SRCDIR to this directory, which is the only
+# answer the rest of the install needs from here.
+#
 # Usage: scripts/host-src.sh --host gomer@demo1
 set -euo pipefail
 
@@ -46,6 +62,25 @@ overlays this working tree onto its interface_deploy/ directory.
 . scripts/_common.sh
 sc_parse_common "$@"
 sc_require_host
+sc_on_error "scripts/host-src.sh $(sc_retry_args)"
+sc_doing "putting the deploy tree on the host"
+
+if [ "${SC_LOCAL:-0}" = "1" ]; then
+  # Sanity, not ceremony: if this is not the deploy tree then SRCDIR is wrong
+  # and every later step would look for scripts in the wrong place.
+  for f in scripts/host-bootstrap.sh scripts/repos.tsv config/signbank_sync.demo.php assets/glosses_transformed.json; do
+    [ -e "$f" ] || sc_fail "this is not the deploy tree" \
+"$SRCDIR is missing $f, so it cannot be the interface_deploy tree.
+
+Run the installer from inside it:
+    git clone https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
+    cd ~/signcollect-deploy/interface_deploy
+    scripts/install.sh $(sc_retry_args)"
+  done
+  echo "== deploy source =="
+  echo "  --local: already here, at $SRCDIR - nothing to clone, nothing to overlay"
+  exit 0
+fi
 
 STACK_REPO=${STACK_REPO:-Amsterdam-Humanities-Labs/signlab_signcollect-stack}
 
