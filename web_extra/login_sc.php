@@ -60,7 +60,34 @@ if ($stmt->fetch()) {
     $updateStmt->execute();
     $updateStmt->close();
 
-    echo json_encode(array('status' => 'success', 'userId' => $userId, 'username' => $resultUsername, 'role' => $role));
+    // The session cookie is signed so it cannot be edited into another
+    // identity. The server owns expiresAt because it is part of the signed
+    // payload - if the client picked it, it could not be verified.
+    // session_secret()/session_signature() come from the interface's
+    // session.php so there is one implementation, not two that can drift.
+    $expiresAt = gmdate('D, d M Y H:i:s', time() + 365 * 24 * 60 * 60) . ' GMT';
+    $sessionSig = '';
+    $sessionLib = '/web/menu_beta/php_api/session.php';
+    if (is_readable($sessionLib)) {
+        require_once $sessionLib;
+        $secret = session_secret();
+        if ($secret !== null) {
+            $sessionSig = session_signature(array(
+                'userId'    => $userId,
+                'username'  => $resultUsername,
+                'expiresAt' => $expiresAt,
+            ), $secret);
+        }
+    }
+
+    echo json_encode(array(
+        'status'    => 'success',
+        'userId'    => $userId,
+        'username'  => $resultUsername,
+        'role'      => $role,
+        'expiresAt' => $expiresAt,
+        'sig'       => $sessionSig,
+    ));
 } else {
     // Login failed
     $stmt->close();
