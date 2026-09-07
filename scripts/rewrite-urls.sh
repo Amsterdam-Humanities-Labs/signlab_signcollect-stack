@@ -9,10 +9,17 @@
 # Left alone: .log .md .swift - committed test output, docs, and iOS client
 #             code. None are executed here; the egress block covers them.
 #
-# Usage: rewrite-urls.sh <tree> [<tree> ...]
+# The target hostname is NOT hardcoded - a redeploy onto a different VPS only
+# needs a different DOMAIN. It ends up in cookie domains and redirect
+# allow-lists in login.html / logout.html, so getting it wrong silently breaks
+# sign-in.
+#
+# Usage: DOMAIN=demo2.example.org rewrite-urls.sh <tree> [<tree> ...]
 set -euo pipefail
 
-[ $# -ge 1 ] || { echo "usage: $0 <tree> [<tree> ...]" >&2; exit 2; }
+DOMAIN=${DOMAIN:-dev.taila8bdbd.ts.net}
+[ $# -ge 1 ] || { echo "usage: [DOMAIN=host] $0 <tree> [<tree> ...]" >&2; exit 2; }
+echo "target domain: $DOMAIN"
 
 total=0
 for tree in "$@"; do
@@ -20,7 +27,7 @@ for tree in "$@"; do
   while IFS= read -r -d '' f; do
     grep -q 'signcollect\.nl' "$f" 2>/dev/null || continue
     before=$(grep -coE 'https?://[a-z.-]*signcollect\.nl' "$f" || true)
-    perl -pi -e '
+    DOMAIN="$DOMAIN" perl -pi -e '
       # 1. subdomains first - the bare-host rule below would eat their suffix.
       s{https?://api\.signcollect\.nl}{/api}g;
       s{https?://media\.signcollect\.nl}{/media}g;
@@ -32,7 +39,7 @@ for tree in "$@"; do
       s{https?://signcollect\.nl}{}g;
       # 4. bare hostname last - cookie domains and redirect allow-lists in
       #    login.html / logout.html, which would silently break sign-in.
-      s{(?<![/\w])\.?signcollect\.nl}{dev.taila8bdbd.ts.net}g;
+      s{(?<![/\w])\.?signcollect\.nl}{$ENV{DOMAIN}}g;
     ' "$f"
     after=$(grep -coE 'https?://[a-z.-]*signcollect\.nl' "$f" 2>/dev/null || true)
     total=$(( total + before - after ))

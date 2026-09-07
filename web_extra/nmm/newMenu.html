@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/userProtect.js"></script>
+    <meta charset="UTF-8">
+    <title>NMM Data Viewer</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        .table-row-blue {
+            background-color: #cfe2ff;
+            cursor: pointer; /* Indicate that the row is interactive */
+        }
+        /* Optional: Highlight row on hover */
+        .table-row-blue:hover {
+            background-color: #b6d4fe;
+        }
+        .modal-red {
+            background-color: rgba(255, 0, 0, 0.5);
+        }
+        /* Style for the countdown overlay */
+        .countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1050; /* Higher than modal */
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        <p id="count-info" class="text-muted">Loading counts...</p>
+
+        <h1 class="mb-4">NMM Data Viewer</h1>
+        
+        <!-- Search and Filter Section -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <input type="text" id="search-glos" class="form-control" placeholder="Search Glos">
+            </div>
+            <div class="col-md-4">
+                <select id="thema-select" class="form-select">
+                    <option value="">Select Thema</option>
+                    <!-- Themas will be populated here -->
+                </select>
+            </div>
+            <div class="col-md-4">
+                <!-- Reset button remains for clearing filters -->
+                <button id="reset-button" class="btn btn-secondary">Reset</button>
+            </div>
+        </div>
+        
+        <!-- Data Table -->
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Glos</th>
+                    <th>Latest Video</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="data-table-body">
+                <!-- Data rows will be populated here -->
+            </tbody>
+        </table>
+        
+        <!-- Pagination Controls -->
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item">
+                    <button class="page-link" id="prev-page">Previous</button>
+                </li>
+                <li class="page-item">
+                    <span class="page-link" id="current-page">1</span>
+                </li>
+                <li class="page-item">
+                    <button class="page-link" id="next-page">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    
+    <!-- Video Modal -->
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="videoModalLabel">All Videos</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="modal-body-content">
+            <!-- Video list will be populated here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Webcam Modal -->
+    <div class="modal fade" id="webcamModal" tabindex="-1" aria-labelledby="webcamModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-white" id="webcamModalLabel">Webcam Capture</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <video id="webcamVideo" autoplay playsinline></video>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bootstrap JS and dependencies (Popper.js and jQuery) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" 
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" 
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js" 
+            crossorigin="anonymous"></script>
+    
+    <script>
+        $(document).ready(function() {
+            fetchCounts();
+            const apiUrl = 'https://leffe.science.uva.nl:8043/nmm/fetch_nmm_db.php';
+            const deleteUrl = 'https://leffe.science.uva.nl:8043/nmm/emptyVideo.php'; // Adjust the URL if needed
+            const modifyUrl = 'https://leffe.science.uva.nl:8043/nmm/modify_videofile.php'; // New URL for modifying videos
+            let currentPage = 1;
+            const limit = 10;
+            let debounceTimer;
+    
+            // Fetch and populate themas
+            function fetchThemas() {
+                try {
+                    $.ajax({
+                        url: 'https://leffe.science.uva.nl:8043/uniqueThema.php',
+                        method: 'GET',
+                        success: function(response) {
+                            const themas = JSON.parse(response);
+                            const themaSelect = $('#thema-select');
+                            themaSelect.append(`<option value="nmm_nietopgenomen">NMM NOG NIET OPGENOMEN</option>`);
+                            themaSelect.append(`<option value="nmm_alopgenomen">NMM AL OPGENOMEN</option>`);
+
+                            themas.forEach(thema => {
+                                themaSelect.append(`<option value="${thema}">${thema}</option>`);
+                            });
+
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error fetching themas:', error);
+                            alert('Error fetching themas.');
+                        }
+                    });
+                } catch (error) {
+                    console.error(error);
+                    alert('Error fetching themas.');
+                }
+            }
+            
+            fetchThemas();
+            
+            // Fetch data from API
+            function fetchData(page = 1) {
+                const searchGlos = $('#search-glos').val().trim();
+                const selectedThema = $('#thema-select').val();
+                const offset = (page - 1) * limit;
+                
+                let queryParams = {
+                    limit: limit,
+                    offset: offset
+                };
+                
+                if (searchGlos.length >= 3) { // Minimum 3 characters for search
+                    queryParams.glos = searchGlos;
+                }
+                
+                if (selectedThema !== '') {
+                    queryParams.thema = selectedThema;
+                }
+                if(selectedThema == "nmm_nietopgenomen")
+                {
+                    $.ajax({
+                    url: "https://leffe.science.uva.nl:8043/nmm/fetch_nmm_no_takes.php?all=1",
+                    method: 'GET',
+                    data: queryParams,
+                    success: function(response) {
+                        console.log(queryParams)
+                        if (response.success) {
+                            console.log('Data fetched:', response.unmatchedGloss);
+                            populateTable(response.unmatchedGloss);
+                            // Update pagination
+                            $('#current-page').text(currentPage);
+                            togglePaginationButtons(response.unmatchedGloss.length < limit);
+                        } else {
+                            alert('Error fetching data.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                        alert('Error fetching data.');
+                    }
+                });
+
+
+                }
+                else if(selectedThema == "nmm_alopgenomen")
+                {
+                    $.ajax({
+                    url: "https://leffe.science.uva.nl:8043/nmm/fetch_nmm_no_takes.php?all=1",
+                    method: 'GET',
+                    data: queryParams,
+                    success: function(response) {
+                        console.log(queryParams)
+                        if (response.success) {
+                            console.log('Data fetched:', response.matchedGloss);
+                            populateTable(response.matchedGloss);
+                            // Update pagination
+                            $('#current-page').text(currentPage);
+                            togglePaginationButtons(response.matchedGloss.length < limit);
+                        } else {
+                            alert('Error fetching data.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                        alert('Error fetching data.');
+                    }
+                });
+                }
+                else
+                {
+    
+                    $.ajax({
+                    url: apiUrl,
+                    method: 'GET',
+                    data: queryParams,
+                    success: function(response) {
+                        console.log(queryParams)
+                        if (response.success) {
+                            console.log('Data fetched:', response.data);
+                            populateTable(response.data);
+                            // Update pagination
+                            $('#current-page').text(currentPage);
+                            togglePaginationButtons(response.data.length < limit);
+                        } else {
+                            alert('Error fetching data.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                        alert('Error fetching data.');
+                    }
+                });
+                }
+                fetchCounts(selectedThema);
+
+            
+            }
+            
+            // Populate the table with data
+            function populateTable(data) {
+                const tbody = $('#data-table-body');
+                tbody.empty();
+                console.log(data)
+                data.forEach(item => {
+
+                    let hasVideos = item.videos && item.videos.length > 0;
+                    const latestVideo = hasVideos ? item.videos[item.videos.length - 1] : 'No Video';
+                    const rowClass = hasVideos || (item.type === 'ZELFOPNAME OC') ? 'table-row-blue' : '';
+                    const typeText = item.type ? item.type.toUpperCase() : 'Nothing';
+                    let latestVideoSrc = '';
+                    let posterSrc = '';
+                    let post_processed = item.processed;
+                    let processed = '';
+                    //forloop post_processed
+                    if(post_processed == null){
+                        post_processed = [];
+                    }
+                    for (let i = 0; i < post_processed.length; i++) {
+                        if (post_processed[i].includes("mp4")) {
+                            processed = "post";
+                        } 
+                    }
+
+                    if (hasVideos) {
+                        latestVideoSrc = `/gebarenoverleg_media/studioFilesMini/raw/${latestVideo.replace('.wav', '.mp4')}`;
+
+                        let posterFilename = latestVideo.replace(/\.(mp4|wav)$/i, '.jpg');
+
+                        posterSrc = `/gebarenoverleg_media/studioFilesMini/raw/${posterFilename}`;
+
+                        if(processed != ""){
+                            latestVideoSrc = `/gebarenoverleg_media/studioFilesMini/post/${latestVideo.replace('.wav', '.mp4')}`;
+                            posterSrc = posterSrc.replace("raw", "post");
+                        }
+
+
+                    } else if (item.zelfopname) {
+                        // Handle 'zelfopname' which may be a string or JSON array
+                        if (item.zelfopname.startsWith('[')) {
+                            try {
+                                const zelfopnameArray = JSON.parse(item.zelfopname);
+                                if (Array.isArray(zelfopnameArray) && zelfopnameArray.length > 0) {
+                                    latestVideoSrc = "../uploads/" + zelfopnameArray[0].replace("nmm/", "uploads/");
+                                    const posterFilename = zelfopnameArray[0].replace(/\.(webm|wav)$/i, '.jpg');
+                                    posterSrc = `../uploads/${posterFilename.replace("nmm/", "uploads/")}`;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing zelfopname JSON:', e);
+                                latestVideoSrc = item.zelfopname;
+                                latestVideoSrc = "../uploads/" + latestVideoSrc; 
+                                const posterFilename = latestVideoSrc.replace(/\.(webm|wav)$/i, '.jpg');
+                                posterSrc = `../uploads/${posterFilename.replace("nmm/", "uploads/")}`;
+                            }
+                        } else {
+                            latestVideoSrc = item.zelfopname;
+                            latestVideoSrc = "../uploads/" + latestVideoSrc;
+
+                            const posterFilename = latestVideoSrc.replace(/\.(webm|wav)$/i, '.jpg');
+                            posterSrc = `../uploads/${posterFilename.replace("nmm/", "uploads/")}`;
+                        }
+                    }
+                    // Create table row
+                    const row = $(`
+                        <tr class="${rowClass}">
+                            <td>${item.glos}</td>
+                            <td>
+                                ${latestVideoSrc ? `<video width="320" height="240" controls poster="${posterSrc}">
+                                    <source src="${latestVideoSrc}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>` : 'No Video'}
+                            </td>
+                            <td>${typeText}</td>
+                            <td>
+                                ${hasVideos ? `<button class="btn btn-primary btn-sm view-videos-btn" data-id="${item.id}" data-glos="${item.glos}">View Videos</button>` : ''}
+                                <button class="btn btn-warning btn-sm make-oc-btn" data-id="${item.id}" data-type="OC" data-glos="${item.glos}" data-thema="${item.thema}">Make OC</button>
+
+                            </td>
+                        </tr>
+                    `);
+                    
+                    tbody.append(row);
+                });
+    
+                // After populating the table, add hover event listeners
+                addHoverPlayPause();
+            }
+            
+            // Toggle pagination buttons
+            function togglePaginationButtons(isLastPage) {
+                $('#prev-page').prop('disabled', currentPage <= 1);
+                $('#next-page').prop('disabled', isLastPage);
+            }
+            
+            // Initial data fetch
+            fetchData(currentPage);
+            
+            // Pagination controls
+            $('#prev-page').click(function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchData(currentPage);
+                }
+            });
+            
+            $('#next-page').click(function() {
+                currentPage++;
+                fetchData(currentPage);
+            });
+            
+            // Debounce function to limit the rate of AJAX calls
+            function debounce(func, delay) {
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => func.apply(context, args), delay);
+                };
+            }
+            
+            // Auto-search for gloss with minimum 3 characters
+            $('#search-glos').on('input', debounce(function() {
+                $('#thema-select').val('');
+
+                const searchGlos = $(this).val().trim();
+                if (searchGlos.length >= 3) {
+                    currentPage = 1;
+                    fetchData(currentPage);
+                } else if (searchGlos.length === 0) {
+                    // If input is cleared, fetch data without gloss filter
+                    currentPage = 1;
+                    fetchData(currentPage);
+                }
+            }, 500)); // 500ms debounce delay
+            
+            // Auto-fetch on thema selection
+            $('#thema-select').change(function() {
+                $('#search-glos').val('');
+                currentPage = 1;
+                fetchData(currentPage);
+            });
+            
+            // Reset button functionality
+            $('#reset-button').click(function() {
+                $('#search-glos').val('');
+                $('#thema-select').val('');
+                currentPage = 1;
+                fetchData(currentPage);
+            });
+            
+            // Handle View Videos button click
+            $(document).on('click', '.view-videos-btn', function() {
+                const itemId = $(this).data('id');
+                const glos = $(this).data('glos');
+                openVideoModal(itemId, glos);
+                console.log(itemId, glos)
+            });
+            
+            // Open video modal and populate videos
+            function openVideoModal(itemId, glos) {
+                // Fetch videos for the specific item
+                $.ajax({
+                    url: apiUrl,
+                    method: 'GET',
+                    data: { glos: glos, limit: 10 }, // Adjust limit if needed
+                    success: function(response) {
+                        if (response.success) {
+                            // Find the specific item in the data
+                            const item = response.data.find(d => d.id == itemId);
+                            if (item) {
+                                populateModal(item.videos, item.zelfopname, glos);
+                                const videoModal = new bootstrap.Modal(document.getElementById('videoModal'));
+                                videoModal.show();
+                            } else {
+                                alert('No videos found for this item.');
+                            }
+                        } else {
+                            alert('Error fetching videos.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching videos:', error);
+                        alert('Error fetching videos.');
+                    }
+                });
+            }
+            
+            // Populate the modal with videos
+            function populateModal(videos, zelfopname, glos) {
+                const modalBody = $('#modal-body-content');
+                modalBody.empty();
+                modalBody.append(`<h5>Videos for Glos: ${glos}</h5>`);
+                
+                // If there are videos in the 'videos' array, display them
+                if (videos && videos.length > 0) {
+                    videos.forEach(video => {
+                        // Modify .wav to .mp4
+                        let videoSrc = `/gebarenoverleg_media/studioFilesMini/raw/${video.replace('.wav', '.mp4')}`;
+                        let posterFilename = video.replace(/\.(mp4|wav)$/i, '.jpg');
+                        let posterSrc = `/gebarenoverleg_media/studioFilesMini/raw/${posterFilename}`;
+                        
+                        const videoElement = $(`
+                            <div class="d-flex align-items-center mb-3">
+                                <video width="320" height="240" controls poster="${posterSrc}" class="flex-grow-1 me-3">
+                                    <source src="${videoSrc}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <button class="btn btn-danger btn-sm delete-video-btn me-2" data-mfile="${video}">Delete</button>
+                                <button class="btn btn-warning btn-sm modify-video-btn" data-mfile="${video}">This is OC</button>
+                            </div>
+                        `);
+                        modalBody.append(videoElement);
+                    });
+                }
+                
+                // If 'videos' array is empty but 'zelfopname' is available, display 'zelfopname' video
+                if ((!videos || videos.length === 0) && zelfopname) {
+                    let videoSrc = zelfopname;
+                    let posterFilename = zelfopname.replace(/\.(mp4|wav)$/i, '.jpg');
+                    let posterSrc = posterFilename.includes("uploads") ? posterFilename : `/gebarenoverleg_media/studioFilesMini/raw/${posterFilename}`;
+                    
+                    const zelfopnameVideo = $(`
+                        <div class="d-flex align-items-center mb-3">
+                            <video width="320" height="240" controls poster="${posterSrc}" class="flex-grow-1 me-3">
+                                <source src="${videoSrc}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <button class="btn btn-danger btn-sm delete-video-btn me-2" data-mfile="${zelfopname}">Delete</button>
+                            <button class="btn btn-warning btn-sm modify-video-btn" data-mfile="${zelfopname}">This is OC</button>
+                        </div>
+                    `);
+                    modalBody.append(zelfopnameVideo);
+                }
+
+                // Add hover play/pause functionality in the modal
+                addHoverPlayPauseModal();
+            }
+            
+            // Handle Delete Video button click
+            $(document).on('click', '.delete-video-btn', function() {
+                const mFile = $(this).data('mfile');
+                if (confirm(`Are you sure you want to delete ${mFile}?`)) {
+                    deleteVideo(mFile);
+                }
+            });
+            
+            // Handle Modify Video button click ("This is OC")
+            $(document).on('click', '.modify-video-btn', function() {
+                const mFile = $(this).data('mfile');
+                if (confirm(`Are you sure you want to modify ${mFile}?`)) {
+                    modifyVideo(mFile);
+                }
+            });
+                            
+                // Delete video function
+                function deleteVideo(mFile) {
+                    $.ajax({
+                        url: deleteUrl,
+                        method: 'GET', // Ensure it's a GET request as per your PHP script
+                        data: { m_file: mFile },
+                        dataType: 'json', // Expect JSON response
+                        success: function(response) {
+                            if (response.status === "success") {
+                                alert('Video deleted successfully.');
+                                // Refresh the modal content
+                                $('#videoModal').modal('hide');
+                                fetchData(currentPage);
+                            } else {
+                                alert('Error deleting video: ' + response.message);
+                                if (response.error) {
+                                    console.error('Delete Video Error:', response.error);
+                                }
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error deleting video:', error);
+                            alert('Error deleting video.');
+                        }
+                    });
+                }
+
+
+            
+            // Modify video function ("This is OC")
+            function modifyVideo(mFile) {
+                $.ajax({
+                    url: modifyUrl,
+                    method: 'POST', // Assuming POST for modification
+                    data: { m_file: mFile },
+                    success: function(response) {
+                        try {
+                            const res = JSON.parse(response);
+                            if (res.success) {
+                                alert('Video modified successfully.');
+                                // Optionally, refresh the modal or table
+                                $('#videoModal').modal('hide');
+                                fetchData(currentPage);
+                            } else {
+                                alert('Error modifying video: ' + res.error);
+                            }
+                        } catch (e) {
+                            console.error('Error parsing modify response:', e);
+                            alert('Error modifying video.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error modifying video:', error);
+                        alert('Error modifying video.');
+                    }
+                });
+            }
+            
+            // Function to add hover play/pause functionality
+            function addHoverPlayPause() {
+                // Select all rows with the 'table-row-blue' class
+                $('tr.table-row-blue').off('mouseenter mouseleave').on('mouseenter', function() {
+                    const video = $(this).find('video')[0];
+                    if (video) {
+                        video.play();
+                    }
+                }).on('mouseleave', function() {
+                    const video = $(this).find('video')[0];
+                    if (video) {
+                        video.pause();
+                        video.currentTime = 0; // Reset video to start
+                    }
+                });
+            }
+
+            // Function to add hover play/pause in the modal
+            function addHoverPlayPauseModal() {
+                $('#modal-body-content video').off('mouseenter mouseleave').on('mouseenter', function() {
+                    this.play();
+                }).on('mouseleave', function() {
+                    this.pause();
+                    this.currentTime = 0; // Reset video to start
+                });
+            }
+
+            // Handle 'Make OC' button click
+            $(document).on('click', '.make-oc-btn', function() {
+                const currentRow = $(this).closest('tr');
+                const id = $(this).data('id');
+                const type = $(this).data('type');
+                const glos = $(this).data('glos');
+                const thema = $(this).data('thema');
+                
+                // Check if the additional row already exists to prevent duplicates
+                if (currentRow.next('.oc-row').length === 0) {
+                    const newRow = $(`
+                        <tr class="oc-row">
+                            <td colspan="4">
+                                <button class="btn btn-success start-webcam-btn" data-id="${id}" data-type="OC" data-glos="${glos}" data-thema="${thema}">Start Webcam Capture</button>
+                            </td>
+                        </tr>
+                    `);
+                    currentRow.after(newRow);
+                }
+            });
+
+            // Handle 'Start Webcam Capture' button click
+            $(document).on('click', '.start-webcam-btn', function() {
+                const id = $(this).data('id');
+                const type = $(this).data('type');
+                const glos = $(this).data('glos');
+                const thema = $(this).data('thema');
+                showWebcamModal(id, type, glos, thema);
+            });
+
+            // Show Webcam Modal and handle video capture
+            function showWebcamModal(id, type, glos, thema) {
+                $('#webcamModal').modal('show');
+                const videoElement = document.getElementById('webcamVideo');
+                let stream;
+
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(mediaStream => {
+                        stream = mediaStream;
+                        videoElement.srcObject = stream;
+
+                        $('#webcamModal').on('hidden.bs.modal', () => {
+                            if (stream) {
+                                stream.getTracks().forEach(track => track.stop());
+                                stream = null;
+                            }
+                        });
+
+                        // Create countdown overlay
+                        const countdownOverlay = document.createElement('div');
+                        countdownOverlay.className = 'countdown-overlay';
+                        countdownOverlay.innerText = '3';
+                        document.body.appendChild(countdownOverlay);
+
+                        let countdown = 3;
+
+                        const countdownInterval = setInterval(() => {
+                            countdown--;
+                            countdownOverlay.innerText = countdown;
+
+                            if (countdown === 0) {
+                                clearInterval(countdownInterval);
+                                countdownOverlay.remove();
+
+                                // Show red overlay on modal to indicate recording
+                                $('#webcamModal .modal-body').addClass('modal-red');
+
+                                try {
+                                    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                                    const chunks = [];
+
+                                    recorder.ondataavailable = event => {
+                                        if (event.data.size > 0) {
+                                            chunks.push(event.data);
+                                        }
+                                    };
+
+                                    recorder.onstart = () => {
+                                        // Indicate recording is active
+                                        $('#webcamModal .modal-body').addClass('modal-red');
+                                    };
+
+                                    recorder.onstop = () => {
+                                        $('#webcamModal .modal-body').removeClass('modal-red');
+                                        $('#webcamModal').modal('hide');
+                                        stream.getTracks().forEach(track => track.stop());
+                                        stream = null;
+
+                                        // Call uploadVideo to handle the upload process
+                                        uploadVideo(id, type, new Blob(chunks, { type: 'video/webm' }), glos, thema);
+                                    };
+
+                                    // Start recording immediately after countdown ends
+                                    recorder.start();
+
+                                    // Stop recording after 3 seconds
+                                    setTimeout(() => recorder.stop(), 3000);
+                                } catch (error) {
+                                    console.error('Failed to start MediaRecorder:', error);
+                                    alert('Failed to start MediaRecorder. Ensure your browser supports video recording.');
+                                }
+                            }
+                        }, 1000); // Countdown interval set to 1 second
+                    })
+                    .catch(error => {
+                        console.error('Error accessing webcam:', error);
+                        alert('Unable to access the webcam. Please check your camera settings.');
+                    });
+            }
+
+            // Upload video synchronously
+            function uploadVideo(id, type, blob, glos, thema) {
+                try {
+                    const formData = new FormData();
+                    formData.append('video', blob, `video_${type}.webm`);
+                    formData.append('id', id);
+                    formData.append('type', type);
+                    formData.append('glos', glos);
+                    formData.append('thema', thema);
+
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', 'upload_video_nmm.php', false); // false for synchronous request
+                    xhr.send(formData);
+
+                    if (xhr.status === 200) {
+                        const result = JSON.parse(xhr.responseText);
+                        console.log(result);
+                        if (result.success) {
+                            // Reload the table to reflect the new video
+                            fetchData(currentPage);
+                        } else {
+                            alert(`Failed to upload video: ${result.error}`);
+                        }
+                    } else {
+                        throw new Error(`Error uploading video: ${xhr.statusText}`);
+                    }
+                } catch (error) {
+                    console.error('Error uploading video:', error);
+                    alert('Error uploading video.');
+                }
+            }
+        });
+
+
+    // Fetch counts and update header
+function fetchCounts(thema) {
+    // Define the primary API link
+    let apiLink = 'https://leffe.science.uva.nl:8043/nmm/fetch_nmm.php?id=a&type=b';
+
+    try {
+        // First XMLHttpRequest to fetch main counts
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', apiLink, false); // false for synchronous request
+        xhr.send(null);
+
+        if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText);
+            if (data.counts) {
+                const { 
+                    unique_signbank_count, 
+                    gc_count, 
+                    oc_count, 
+                    nmm_count, 
+                    total_matched_count, 
+                    total_signbank_count 
+                } = data.counts;
+
+                // Now, fetch nogtegaan_count from the second API
+                const nogtegaanApiLink = 'https://leffe.science.uva.nl:8043/nmm/fetch_nmm_no_takes.php?all=1';
+                const xhrNogTeGaan = new XMLHttpRequest();
+                xhrNogTeGaan.open('GET', nogtegaanApiLink, false); // false for synchronous request
+                xhrNogTeGaan.send(null);
+
+                let nogtegaan_count = 0; // Default value in case of failure
+                if (xhrNogTeGaan.status === 200) {
+                    const dataNogTeGaan = JSON.parse(xhrNogTeGaan.responseText);
+                    if (dataNogTeGaan.unmatchedCount !== undefined) {
+                        nogtegaan_count = dataNogTeGaan.unmatchedCount;
+                    }
+                } else {
+                    console.warn(`Warning: Failed to fetch nogtegaan_count. Status: ${xhrNogTeGaan.status}`);
+                }
+
+                // Update the HTML with all counts, including nogtegaan_count
+                document.getElementById('count-info').innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <div class="card text-white bg-primary h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Unieke Signbank Rijen</h5>
+                                    <p class="card-text">${unique_signbank_count}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card text-white bg-success h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Gesproken Componenten</h5>
+                                    <p class="card-text">${gc_count}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card text-white bg-warning h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Orrrale Componenten</h5>
+                                    <p class="card-text">${oc_count}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card text-white bg-danger h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Speciale NMM componenten</h5>
+                                    <p class="card-text">${nmm_count}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card text-white bg-secondary h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Totaal unieke opnames</h5>
+                                    <p class="card-text">${total_matched_count}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card text-white bg-success h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Totaal unieke Signbank Rijen</h5>
+                                    <p class="card-text">${total_signbank_count}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- New Card for Nog te gaan opnames -->
+                        <div class="col-md-2">
+                            <div class="card text-white bg-info h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Nog te gaan opnames</h5>
+                                    <p class="card-text">${nogtegaan_count}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('count-info').innerHTML = `
+                    <div class="alert alert-warning" role="alert">
+                        Counts not available.
+                    </div>
+                `;
+            }
+        } else {
+            throw new Error(`Error fetching counts: ${xhr.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error fetching counts:', error);
+        document.getElementById('count-info').innerHTML = `
+            <div class="alert alert-danger" role="alert">
+                Error fetching counts.
+            </div>
+        `;
+    }
+}
+
+
+    </script>
+</body>
+</html>
