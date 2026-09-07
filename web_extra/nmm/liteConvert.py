@@ -231,7 +231,7 @@ def extract_fields(input_data, gloss_to_id, id_to_m_files):
 
 def main():
     # Define hardcoded file paths
-    input_file = "/web/glosses_transformed.json"
+    input_file = "/web/signbank_data/glosses_transformed.json"
     output_file = "/web/nmm/liteGlos.json"
 
     # MySQL configuration

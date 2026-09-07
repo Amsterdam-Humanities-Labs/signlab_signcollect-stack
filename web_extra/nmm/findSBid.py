@@ -2,7 +2,7 @@ import json
 import mysql.connector
 
 # Load JSON file and build a mapping from gloss to signbank_id
-input_file = "/web/glosses_transformed.json"
+input_file = "/web/signbank_data/glosses_transformed.json"
 with open(input_file, "r", encoding="utf-8") as f:
     input_data = json.load(f)
 
