@@ -98,6 +98,10 @@ SC_USAGE='usage: scripts/pythoncron.sh --host <ssh-target> [--domain <name>]'
 sc_parse_common "$@"
 sc_require_host
 sc_resolve_domain
+sc_on_error "scripts/pythoncron.sh $(sc_retry_args)"
+sc_doing "installing the pythonCron scheduler" \
+  "The demo works without it - the connector page still refreshes on demand -
+     so install.sh treats a failure here as a warning, not an abort."
 WEBROOT=${WEBROOT:-/web}
 
 ORG=Amsterdam-Humanities-Labs

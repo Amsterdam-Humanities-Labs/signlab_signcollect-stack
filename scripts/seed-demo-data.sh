@@ -87,6 +87,8 @@ SC_USAGE='usage: scripts/seed-demo-data.sh --host <ssh-target>
 . scripts/_common.sh
 sc_parse_common "$@"
 sc_require_host
+sc_on_error "scripts/seed-demo-data.sh $(sc_retry_args)"
+sc_doing "seeding demo rows and linking the media"
 DB=admin_gebarenoverleg
 WEBROOT=${WEBROOT:-/web}
 HOST_MEDIA=$WEBROOT/gebarenoverleg_media/studioFilesMini

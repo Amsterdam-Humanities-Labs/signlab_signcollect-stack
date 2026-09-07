@@ -7,44 +7,114 @@ Isolated means isolated: the deployed copy has no network path back to
 production `signcollect.nl`, by URL rewrite *and* by firewall. See the spec
 in `docs/superpowers/specs/`.
 
-## Install a demo on a new host
+## Quickstart
 
-One command:
+### What a brand-new host needs first
+
+A demo host is an ordinary Ubuntu box (24.04 is what these are tested on).
+Before the first install it needs exactly four things, and nothing else -
+apache, php, mysql, git, composer, gh and nftables are all installed for you:
+
+1. **A normal user you can log in as** - `ssh gomer@demo1` works, by key.
+2. **Passwordless sudo for that user.** Everything privileged runs
+   non-interactively, so a `sudo` that stops to ask for a password stops the
+   install half way through. As root on the host:
+
+       echo 'gomer ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/gomer
+       chmod 440 /etc/sudoers.d/gomer
+
+3. **Outbound HTTPS to github.com.** The host clones about seventeen private
+   repositories itself. Nothing else needs to be reachable.
+4. **Tailscale joined and logged in** - `sudo tailscale up`. That is where the
+   demo's hostname and its TLS certificate come from. Without it, supply both
+   yourself: `--domain <name>` and a certificate at
+   `/etc/ssl/demo/<name>.{crt,key}`.
+
+Plus GitHub credentials, which differ by mode and are the one thing the
+installer cannot invent - see below.
+
+You do not have to remember any of this. `scripts/preflight.sh` checks every
+one of them, changes nothing, and prints the command that fixes each:
+
+    scripts/preflight.sh --host gomer@demo1
+
+### Then, the one command
+
+**From your workstation, over ssh** - your own `gh` login is what authorises
+the host, so `gh auth login` here first:
 
     scripts/install.sh --host gomer@demo1
 
-That is the whole thing. It takes a bare Ubuntu box to a working demo and is
-equally the normal way to redeploy an already-running one - every step is
-idempotent.
+**On the demo host itself, no ssh at all** - the host needs its own GitHub
+login, because there is no workstation to take a token from:
 
-`--domain` is optional. The demo's hostname is read off the host itself with
-`tailscale status --self`, which is the only name `tailscale cert` will issue
-a certificate for anyway. On a host with no tailscale, say it yourself and
-supply the certificate at `/etc/ssl/demo/<name>.{crt,key}`:
+    gh auth login                                    # once, on the host
+    git clone https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
+    cd ~/signcollect-deploy/interface_deploy
+    scripts/install.sh --local
 
-    scripts/install.sh --host gomer@demo1 --domain demo1.example.org
+That is the whole thing, in either mode. It takes a bare Ubuntu box to a
+working demo at `https://<host>.<tailnet>.ts.net`, log in as `gomer` / `123`,
+and it is equally the normal way to redeploy an already-running one.
+
+### Before you commit to it
+
+    scripts/install.sh --host gomer@demo1 --dry-run
+
+Runs the preflight checks and then reports, from the host's actual state,
+what each of the eleven steps would change - which packages are missing, how
+many components are already checked out, whether the database is empty,
+whether isolation has been applied. It changes nothing.
+
+### If it stops half way
+
+Re-run the same command. Every step is idempotent and the run resumes rather
+than compounding: packages are compared against `dpkg`, the schema is loaded
+only into an empty database, `.env` and `.session_secret` are written once and
+then left alone, each component is `fetch` + `reset --hard` rather than a
+clone that would refuse a non-empty directory, and migrations are recorded in
+`schema_migrations`.
+
+A failure names the step it stopped at, the host it was talking to, and the
+command to retry - the step alone, or the whole install:
+
+    === install FAILED at step 5/11: bootstrap - clone 17 components ===
+        host: gomer@demo1 (over ssh)   webroot: /web
+
+### The options
+
+    --host    <target>   ssh target for the demo host          } one of
+    --local              this machine IS the demo host         } these two
+    --domain  <name>     what the demo is served as. Read off the host with
+                         `tailscale status --self` when omitted, which is the
+                         only name `tailscale cert` will issue for anyway.
+    --webroot <path>     where the site is installed. Default /web. Becomes
+                         apache's DocumentRoot, the parent of the /api and
+                         /media mounts, and SC_WEB_ROOT in the env file, so
+                         the PHP path resolver and the deploy cannot disagree.
+    --no-provision       skip step 2 on a known-good server
+    --dry-run            report; change nothing
 
 Nothing has a default that names a machine. A missing `--host` fails with a
 usage message rather than reaching for whichever box happened to be the demo
 when the script was written.
 
-### What the host needs beforehand
+### --local and --host are the same install
 
-1. **SSH access** as a normal user - `ssh gomer@demo1` works from here.
-2. **Passwordless sudo** for that user. Everything privileged goes through
-   `sudo` non-interactively.
-3. **Tailscale joined and logged in**, if you want the TLS certificate and
-   the derived `--domain` to work.
-4. **Outbound HTTPS to github.com.** The host clones about seventeen private
-   repositories itself; nothing else needs to be reachable.
+Every step talks to the host through the `ssh` and `scp` wrappers in
+`scripts/_common.sh` and through nothing else; `--local` replaces those two
+functions with "run it here". Anything new must go through them, or local mode
+quietly stops covering it. Two steps are genuinely different rather than
+merely redirected, and both say so where they happen:
 
-Nothing else. No apache, php, mysql, git, composer or gh - `provision.sh`
-installs them. `rsync` is *not* installed and is not used anywhere.
-
-Your own `gh` login is what authorises the host: `scripts/host-auth.sh`
-installs `gh` there and hands it a token from `gh auth token`. Read that
-script's header before you run it on a host you do not control - the token
-carries your full account scope.
+- `host-src.sh` **skips entirely** under `--local`. Its job is to give a
+  second machine a copy of this tree; there is no second machine, and doing
+  it anyway would `git reset --hard` the checkout the running scripts are
+  being read out of.
+- `host-auth.sh` **cannot fabricate a login** under `--local`. Over ssh it
+  hands the host a token from your workstation's `gh`; on the host itself
+  there is no other account, so it installs `gh`, tells you to run
+  `gh auth login`, and stops.
 
 ## How a deploy works
 
@@ -66,6 +136,7 @@ ever takes effect.
 ## Layout
 
 - `scripts/install.sh`   - the entry point; orchestrates everything below
+- `scripts/preflight.sh` - read-only checks of everything the install depends on
 - `scripts/_common.sh`   - shared `--host` / `--domain` handling
 - `scripts/provision.sh` - LAMP, docroot, database, TLS, apache on a bare host
 - `scripts/host-auth.sh` - give the host a GitHub login of its own

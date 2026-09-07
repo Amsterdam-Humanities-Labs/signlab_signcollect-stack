@@ -22,6 +22,10 @@ SC_USAGE='usage: scripts/host-config.sh --host <ssh-target>'
 . scripts/_common.sh
 sc_parse_common "$@"
 sc_require_host
+sc_on_error "scripts/host-config.sh $(sc_retry_args)"
+sc_doing "installing the per-host config files" \
+  "These live inside deployed component directories, so host-bootstrap.sh must have run first.
+     If $WEBROOT/menu_beta does not exist, that is the step that failed."
 
 # A Signbank API key can be supplied for this host, and never through a
 # tracked file. Two ways, both outside git:

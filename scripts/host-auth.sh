@@ -17,27 +17,35 @@
 #
 # Idempotent: a host that can already reach GitHub is left alone.
 #
+# WITH --local THERE IS NO SECOND ACCOUNT TO COPY FROM
+#
+# "take the workstation's token and give it to the host" has no meaning when
+# the workstation IS the host - it would be handing gh its own token back. So
+# in local mode this installs gh and then stops, because the one thing it
+# cannot do for you is log a machine in to GitHub as you. It says exactly
+# that, rather than failing later inside a clone with "repository not found",
+# which is what a private repo looks like to an unauthenticated client.
+#
+# The workstation-side checks moved below the install for the same reason:
+# they only apply to the ssh path, and on a bare host in local mode the old
+# order died with "gh is not installed on this workstation" before the step
+# that installs gh had run.
+#
 # Usage: scripts/host-auth.sh --host gomer@dev2
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-SC_USAGE='usage: scripts/host-auth.sh --host <ssh-target>'
+SC_USAGE='usage: scripts/host-auth.sh [--host <ssh-target> | --local]'
 # shellcheck source=scripts/_common.sh
 . scripts/_common.sh
 sc_parse_common "$@"
 sc_require_host
-
-command -v gh >/dev/null 2>&1 || {
-  echo "gh is not installed on this workstation - it is the source of the token" >&2
-  exit 1
-}
-gh auth token >/dev/null 2>&1 || {
-  echo "workstation gh is not logged in: run 'gh auth login' first" >&2
-  exit 1
-}
+sc_on_error "scripts/host-auth.sh $(sc_retry_args)"
 
 # --- 1. gh on the host ---------------------------------------------------
 # From GitHub's own apt repo; Ubuntu's archive does not carry gh.
+sc_doing "installing gh on the host" \
+  "The host needs gh for the private org repos. If apt failed, check the host has outbound HTTPS."
 ssh "$HOST" 'set -e
   if command -v gh >/dev/null 2>&1; then
     echo "  gh already installed ($(gh --version | head -1))"
@@ -55,9 +63,34 @@ ssh "$HOST" 'set -e
   fi'
 
 # --- 2. authenticate, unless it already can ------------------------------
+sc_doing "authenticating the host to GitHub"
 if ssh "$HOST" 'gh auth status >/dev/null 2>&1'; then
   echo "  host gh already authenticated as $(ssh "$HOST" 'gh api user -q .login 2>/dev/null')"
+elif [ "${SC_LOCAL:-0}" = "1" ]; then
+  # The one thing this script cannot do for you.
+  sc_fail "this host has no GitHub login, and --local has no other machine to take one from" \
+"Over ssh the host is handed a token from the workstation's gh. Running on the
+host itself there is no workstation, so log in here, once:
+
+    gh auth login
+
+Choose GitHub.com, HTTPS, and authenticate with a browser or a token that can
+read Amsterdam-Humanities-Labs. Then re-run:
+
+    scripts/install.sh $(sc_retry_args)"
 else
+  command -v gh >/dev/null 2>&1 || sc_fail "gh is not installed on this workstation" \
+"It is the source of the token the host is given.
+
+    brew install gh && gh auth login       (macOS)
+    sudo apt install gh && gh auth login   (Debian/Ubuntu)
+
+Or run the installer on the demo host itself, where it needs no workstation:
+    scripts/install.sh --local $([ "${WEBROOT:-/web}" = /web ] || echo "--webroot $WEBROOT")"
+  gh auth token >/dev/null 2>&1 || sc_fail "this workstation's gh is not logged in" \
+"The host is authorised with a token taken from your gh login.
+
+    gh auth login"
   # --with-token reads stdin. Nothing is echoed and nothing lands in argv.
   gh auth token | ssh "$HOST" 'gh auth login --with-token'
   echo "  host gh authenticated as $(ssh "$HOST" 'gh api user -q .login 2>/dev/null') (token not shown)"
@@ -66,9 +99,18 @@ fi
 # --- 3. let git use it ---------------------------------------------------
 # Without this, `git clone https://github.com/...` still prompts for a
 # username; gh only wires itself in as a credential helper when asked.
+sc_doing "wiring gh in as git's credential helper"
 ssh "$HOST" 'gh auth setup-git && echo "  git credential helper configured"'
 
 # --- 4. prove it, rather than assume -------------------------------------
-ssh "$HOST" 'git ls-remote https://github.com/Amsterdam-Humanities-Labs/signlab_zin >/dev/null 2>&1 &&
-             echo "  verified: host can read a private org repo" ||
-             { echo "  FAILED: host still cannot read private repos" >&2; exit 1; }'
+sc_doing "proving the host can read a private org repo"
+ssh "$HOST" 'git ls-remote https://github.com/Amsterdam-Humanities-Labs/signlab_zin >/dev/null 2>&1' ||
+  sc_fail "the host still cannot read the private org repos" \
+"gh reports a login but git cannot fetch Amsterdam-Humanities-Labs/signlab_zin.
+Usually the account is not a member of that organisation, or the token lacks
+the 'repo' scope.
+
+Check, on the host:
+    gh auth status
+    git ls-remote https://github.com/Amsterdam-Humanities-Labs/signlab_zin"
+echo "  verified: host can read a private org repo"

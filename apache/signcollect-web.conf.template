@@ -1,3 +1,25 @@
+# Tell PHP where the install root is, once, for the whole server.
+#
+# signcollect-lib's sc_root() has five sources for that answer, and this is
+# the second: the SC_WEB_ROOT environment variable. It is here because the
+# first non-/web install exposed a gap in the fourth - the library derives the
+# root from its own location, which works for every consumer that can FIND the
+# library, and the vendored shim looks for it at ../lib, ../../lib and
+# /web/lib. A file sitting AT the docroot root (mysql_config.php, login_sc.php,
+# uniqueLabels.php) is one level too high for the relative candidates and, on a
+# host whose root is not /web, the absolute one does not exist either. So those
+# files fell through to the compiled default and looked for /web/.env, which on
+# a --webroot host is a database configuration error on the login page and
+# nowhere else - deployed, serving, and unable to authenticate anyone.
+#
+# The shim cannot be taught a new candidate here: thirteen repositories carry a
+# byte-identical copy of it and tests/path-test.sh checksums them against each
+# other, so that fix belongs upstream in signlab_signcollect-lib. Stating the
+# root to the server is the answer that needs no copy to change, and it is the
+# input the library already documents. With --webroot /web it says /web, which
+# is what every path already resolved to.
+SetEnv SC_WEB_ROOT @WEBROOT@
+
 # SignCollect demo docroot. AllowOverride All matches production, where the
 # apps rely on .htaccess for rewrites.
 <Directory @WEBROOT@>
