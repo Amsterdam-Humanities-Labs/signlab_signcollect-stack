@@ -37,9 +37,11 @@ case "$r" in *'"status":"success"'*) echo "  ok   gomer/123 authenticates" ;;
 r=$(curl -sS --connect-timeout 12 -X POST -d "username=gomer&password=wrong" "$B/login_sc.php" 2>/dev/null)
 case "$r" in *'"status":"failure"'*) echo "  ok   wrong password rejected" ;;
              *) echo "  FAIL bad password not rejected: $r"; fail=1 ;; esac
-echo "== database: 98 objects =="
+# 98 from db/schema.sql, plus schema_migrations, which scripts/migrate.sh
+# creates to record what it has applied.
+echo "== database: 99 objects =="
 ssh "$HOST" 'sudo mysql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"admin_gebarenoverleg\";"' \
-  | awk '{ if ($1==98) print "  ok   objects = 98"; else { print "  FAIL objects = "$1; exit 1 } }' || fail=1
+  | awk '{ if ($1==99) print "  ok   objects = 99"; else { print "  FAIL objects = "$1" (want 99)"; exit 1 } }' || fail=1
 echo
 [ $fail -eq 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"
 exit $fail
