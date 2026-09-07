@@ -48,10 +48,16 @@ ssh "$HOST" 'set -e
   sudo systemctl enable --now apache2 mysql >/dev/null 2>&1 || true'
 
 # --- 2. docroot ---------------------------------------------------------
+# uploads/ and uploads/lsm are not incidental: php_api/upload_video.php and
+# php_api/lsm_video_upload.php write there, and the browser plays recordings
+# back from /uploads/<hash>.webm - i.e. straight out of DocumentRoot. On
+# production /web/uploads has always existed as a symlink to bulk storage, so
+# a host built from scratch was the only place the assumption showed up, as a
+# 500 on the first selfie recording.
 ssh "$HOST" 'set -e
-  sudo mkdir -p /web /web/media_stub
+  sudo mkdir -p /web /web/media_stub /web/uploads /web/uploads/lsm
   sudo chown -R "$USER":www-data /web
-  sudo chmod 2775 /web
+  sudo chmod 2775 /web /web/uploads /web/uploads/lsm
   [ -f /web/media_stub/index.html ] || echo "media stub" | sudo tee /web/media_stub/index.html >/dev/null
   echo "  /web ready"'
 
