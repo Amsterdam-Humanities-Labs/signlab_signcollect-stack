@@ -797,16 +797,16 @@ NMM Site
   <button class="btn btn-primary" id="logout" onclick="logout()">Uitloggen</button>
 
 
-<a href="https://signcollect.nl/menu_beta/labels_add.html" class="btn btn-primary" role="button">Labels toevoegen</a>
-<a href="https://signcollect.nl/menu_beta/batch_add.html" class="btn btn-primary" role="button">Batch toevoegen</a>
-<a href="https://signcollect.nl/menu_old/menu.html?extern=1" class="btn btn-primary" role="button">TYD-Interface</a>
-<a href="https://signcollect.nl/hh/index.html" class="btn btn-primary" role="button">Health Holland Interface</a>
-<a href="https://signcollect.nl/themas.html" class="btn btn-primary" role="button">Themas Aanpassen</a>
-<a href="https://signcollect.nl/josBoard/index.html" class="btn btn-primary" role="button" style="display:none">Josje Board</a>
-<a href="https://signcollect.nl/videoMuxer/index.html" class="btn btn-primary" role="button" style="display:none">Video Mixer</a>
-<a href="https://signcollect.nl/downloadVideos/downloadThemaVideo.html" class="btn btn-primary" role="button">Video Downloader</a>
-<a href="https://signcollect.nl/animMIDI/public/index.php" class="btn btn-primary" role="button">Motion Capture Postprocessing</a>
-<a href="https://signcollect.nl/renderServer/index.html" class="btn btn-primary" role="button" style="display:none">Video Render Management</a>
+<a href="/menu_beta/labels_add.html" class="btn btn-primary" role="button">Labels toevoegen</a>
+<a href="/menu_beta/batch_add.html" class="btn btn-primary" role="button">Batch toevoegen</a>
+<a href="/menu_old/menu.html?extern=1" class="btn btn-primary" role="button">TYD-Interface</a>
+<a href="/hh/index.html" class="btn btn-primary" role="button">Health Holland Interface</a>
+<a href="/themas.html" class="btn btn-primary" role="button">Themas Aanpassen</a>
+<a href="/josBoard/index.html" class="btn btn-primary" role="button" style="display:none">Josje Board</a>
+<a href="/videoMuxer/index.html" class="btn btn-primary" role="button" style="display:none">Video Mixer</a>
+<a href="/downloadVideos/downloadThemaVideo.html" class="btn btn-primary" role="button">Video Downloader</a>
+<a href="/animMIDI/public/index.php" class="btn btn-primary" role="button">Motion Capture Postprocessing</a>
+<a href="/renderServer/index.html" class="btn btn-primary" role="button" style="display:none">Video Render Management</a>
 <a id="usersLink" href="/menu_beta/users.html" class="btn btn-primary" role="button" style="display:none">Gebruikers Beheren</a>
 <a id="statsLink" href="/stats.html" class="btn btn-primary" role="button" style="display:none">Gebruikersactiviteit</a>
 
@@ -1396,7 +1396,7 @@ $('#glossaryToggle').click(function() {
     let glossary = [];
     async function loadGlossary() {
       try {
-        const response = await fetch('https://signcollect.nl/menu_old/glosses_transformed.json');
+        const response = await fetch('/menu_old/glosses_transformed.json');
         glossary = await response.json();
         glossary = glossary.map(item => {
           const key = Object.keys(item)[0];
@@ -1712,7 +1712,7 @@ function redirectToProcessed(){
   window.location.href = "processedYet.html"
 }
 function redirectToNMM(){
-  window.location.href = "https://signcollect.nl/nmm/fastView.html"
+  window.location.href = "/nmm/fastView.html"
 }
 function redirecttowebDicFixer(){
   window.location.href = "glosses_not_in_webDic.html"
@@ -1805,7 +1805,7 @@ function DoSmthOnChange(elementID)
 var labelsOnce = 0;
 
 function getUniqueLabels() {
-  fetch('https://signcollect.nl/uniqueLabels.php')
+  fetch('/uniqueLabels.php')
     .then(response => response.json())
     .then(uniqueLabels => {
       uniqueLabelsArray = uniqueLabels
@@ -3369,7 +3369,7 @@ function updateZelfOpnameButton(id){
   function processForZelfopname(){
     $.ajax({
       type: "GET",
-      url: "https://signcollect.nl/helpScripts/processForZelfopname.php",
+      url: "/helpScripts/processForZelfopname.php",
       success: function (data) {
         console.log(data)
       },
@@ -3520,7 +3520,7 @@ function updateZelfOpnameButton(id){
         //send post to signbankAPI
         let ajaxPromise = new Promise((resolve, reject) => {
                 $.ajax({
-                    url: "https://signcollect.nl/signBankAPI/upload_video",
+                    url: "/signBankAPI/upload_video",
                     type: 'POST',
                     data: JSON.stringify(payload),
                     contentType: "application/json",
@@ -3552,7 +3552,7 @@ function updateZelfOpnameButton(id){
               }
 
               $.ajax({
-                    url: "https://signcollect.nl/signBankAPI/update_gloss",
+                    url: "/signBankAPI/update_gloss",
                     type: 'POST',
                     data: JSON.stringify(payloada),
                     contentType: "application/json",
@@ -5209,7 +5209,7 @@ function showWhisper() {
 
 
 
-    fetch('https://signcollect.nl/uniqueThema.php'+externUrl)
+    fetch('/uniqueThema.php'+externUrl)
       .then(response => response.json())
       .then(data => {
         const selects = document.getElementsByClassName('themaSelect');
@@ -5564,7 +5564,7 @@ data.forEach(thema => {
 
 
 
-               //we get info from https://signcollect.nl/zin/getZinnen.php?action=findGloss&gloss= and get length of the array
+               //we get info from /zin/getZinnen.php?action=findGloss&gloss= and get length of the array
                 
 
 
@@ -5676,7 +5676,7 @@ data.forEach(thema => {
                 fetchZinData(item.glos).then(data => {
                   zinCol = data;
                   console.log(item.glos);
-                  const url = 'https://signcollect.nl/zin/zinnen.html?searchGloss=' + item.glos;
+                  const url = '/zin/zinnen.html?searchGloss=' + item.glos;
                   $(`#${item.id} .zinnenShow`).append('<a href="' + url + '">' + zinCol + ' Zinnen</a>');
                   console.log(item.id);
                 });
@@ -5789,7 +5789,7 @@ data.forEach(thema => {
 
 
 
-                fetch('https://api.signcollect.nl/getResolvedId?id=' + item.id + '&type=' + "glos")
+                fetch('/api/getResolvedId?id=' + item.id + '&type=' + "glos")
                 .then(response => response.json())  // You were missing this!
                 .then(apiData => {
                     console.log(apiData);
@@ -5910,7 +5910,7 @@ data.forEach(thema => {
 
 
 async function fetchZinData(glos) {
-    const response = await fetch('https://signcollect.nl/zin/getZinnen.php?action=findGloss&gloss='+glos);
+    const response = await fetch('/zin/getZinnen.php?action=findGloss&gloss='+glos);
     const data = await response.json();
     const rows = data.rows;
     const length = rows.length;
@@ -6345,7 +6345,7 @@ else
         };
 
         $.ajax({
-              url: "https://signcollect.nl/signBankAPI/update_morphology",
+              url: "/signBankAPI/update_morphology",
               type: 'POST',
               data: JSON.stringify(payload),
               contentType: "application/json",  // This line is crucial
@@ -6413,7 +6413,7 @@ async function sendUpdateToSignbank(sbArrayGlobal) {
 
             let ajaxPromise = new Promise((resolve, reject) => {
                 $.ajax({
-                    url: "https://signcollect.nl/signBankAPI/update_gloss",
+                    url: "/signBankAPI/update_gloss",
                     type: 'POST',
                     data: JSON.stringify(payload),
                     contentType: "application/json",
@@ -6509,7 +6509,7 @@ fetchSingleRow(glosid)
     console.log('Payload:', payload);
 
     $.ajax({
-      url: "https://signcollect.nl/signBankAPI/create_gloss",
+      url: "/signBankAPI/create_gloss",
       type: 'POST',
       data: JSON.stringify(payload),
       contentType: "application/json",  // This line is crucial
@@ -6773,7 +6773,7 @@ else
     return timestamp;
   }
   function fetchDataFromServer(id) {
-    const serverName = "https://signcollect.nl/gebarenoverleg_media/studioFilesMini/";
+    const serverName = "/gebarenoverleg_media/studioFilesMini/";
     const studioVideosDiv = document.getElementById('studioVideosDiv');
     console.log(id)
     $.ajax({
@@ -7667,7 +7667,7 @@ async function addqueryCount(count)
 
 async function fetchCounts() {
     try {
-        const response = await fetch('https://signcollect.nl/count_rows.php');
+        const response = await fetch('/count_rows.php');
         const data = await response.json();
 
         if (data.counts) {

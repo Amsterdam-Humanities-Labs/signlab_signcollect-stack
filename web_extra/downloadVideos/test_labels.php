@@ -2,7 +2,7 @@
 // Test script to debug label filtering issue
 
 // Simulate the exact same API call as the main script
-$apiUrl = "https://signcollect.nl/fetch_all2.php?extern=1&limit=10000&status=StudioOpname&handle=statusFilter";
+$apiUrl = "/fetch_all2.php?extern=1&limit=10000&status=StudioOpname&handle=statusFilter";
 $jsonData = file_get_contents($apiUrl);
 
 if ($jsonData === false) {

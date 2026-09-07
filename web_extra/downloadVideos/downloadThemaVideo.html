@@ -213,7 +213,7 @@
         }
         
         function loadLabels() {
-            fetch('https://signcollect.nl/uniqueLabels.php')
+            fetch('/uniqueLabels.php')
                 .then(response => response.json())
                 .then(uniqueLabels => {
                     const labelSelect = document.getElementById('labelSelect');

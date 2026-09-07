@@ -22,7 +22,13 @@ DRY=""
 [ "${1:-}" = "--dry-run" ] && { DRY="--dry-run"; echo "(dry run - nothing is written)"; }
 echo "target host: $HOST"
 
-KEEP=(--exclude 'mysql_config.php' --exclude '.env' --exclude '.git' --exclude 'node_modules')
+# .env holds the live DB credentials and is never shipped or deleted.
+#
+# api/ is the signlab_sCAPI submodule mounted at /api. It is a separate
+# service, out of scope for an interface-only deploy, and clone.sh does not
+# populate it - without this exclude, rsync --delete would replace the
+# working API with an empty directory.
+KEEP=(--exclude '.env' --exclude '.git' --exclude 'node_modules' --exclude 'api/')
 
 echo "== git-backed components =="
 while IFS=$'\t' read -r webdir repo branch; do

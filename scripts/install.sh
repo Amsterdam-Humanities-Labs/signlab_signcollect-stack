@@ -11,18 +11,31 @@
 # Redeploying onto a different VPS is exactly:
 #   HOST=demo2 DOMAIN=demo2.example.org scripts/install.sh
 #
-# Prerequisites on the target: apache2 + php + mysql, /web writable by the
-# ssh user, and a demo database. This script deploys the interface; it does
-# not provision the server or seed the database (see db/ for the schema).
+# A bare Ubuntu host is fine: step 0 installs the LAMP stack, creates the
+# docroot and database, issues the TLS cert and writes the apache config.
+# Every step is idempotent, so this is also the normal way to redeploy an
+# already-running demo.
+#
+# Pass --no-provision to skip step 0 when the server is known-good.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 HOST=${HOST:-demovps}
 DOMAIN=${DOMAIN:-dev.taila8bdbd.ts.net}
+provision=1
+[ "${1:-}" = "--no-provision" ] && provision=0
 echo "=== installing SignCollect demo ==="
 echo "  host:   $HOST"
 echo "  domain: $DOMAIN"
 echo
+
+# 0. Server. LAMP, docroot, database, TLS, apache - all idempotent.
+if [ $provision -eq 1 ]; then
+  HOST="$HOST" DOMAIN="$DOMAIN" scripts/provision.sh
+  echo
+else
+  echo "(skipping provision)"
+fi
 
 # 1. Obtain the code. Fresh clones each run would be slower but this keeps
 #    build/ reusable; clone.sh hard-resets so it is never a stale tree.
@@ -44,17 +57,6 @@ python3 scripts/remove-mocap-tile.py build/signlab_signCollect-v2/index.html || 
 # 4. Ship it.
 echo
 HOST="$HOST" scripts/deploy.sh
-
-# 5. Server config. Idempotent - overwrites its own two files and nothing else.
-echo
-echo "== apache config =="
-for f in apache/*.conf; do
-  scp -q "$f" "$HOST:/tmp/$(basename "$f")"
-  ssh "$HOST" "sudo mv /tmp/$(basename "$f") /etc/apache2/conf-available/ && \
-               sudo a2enconf $(basename "$f" .conf) >/dev/null"
-  echo "  enabled $(basename "$f")"
-done
-ssh "$HOST" 'sudo apache2ctl configtest && sudo systemctl reload apache2'
 
 echo
 echo "== verify =="

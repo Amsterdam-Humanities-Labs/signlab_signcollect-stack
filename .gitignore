@@ -3,3 +3,7 @@ build/
 # Real configs with credentials never get committed.
 config/*.local.php
 secrets.env
+
+# Real credentials, generated per host by provision.sh.
+.env
+web_extra/.env

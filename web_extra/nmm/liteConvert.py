@@ -83,12 +83,12 @@ def fetch_id_to_m_files(connection):
 
             # Determine base_video_url based on 'post_processed'
             if post_processed is None:
-                base_video_url = "https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw"
+                base_video_url = "/gebarenoverleg_media/studioFilesMini/raw"
             elif post_processed == "1":
-                base_video_url = "https://signcollect.nl/gebarenoverleg_media/studioFilesMini/post"
+                base_video_url = "/gebarenoverleg_media/studioFilesMini/post"
             else:
                 # Handle unexpected values by defaulting to 'raw'
-                base_video_url = "https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw"
+                base_video_url = "/gebarenoverleg_media/studioFilesMini/raw"
                 print(f"Warning: Unexpected 'post_processed' value for gloss ID {m_transcription}: {post_processed}", file=sys.stderr)
 
             # Convert .wav to .mp4 by replacing the extension

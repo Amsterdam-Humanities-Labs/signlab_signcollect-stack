@@ -1,0 +1,26 @@
+# HTTPS vhost for the demo instance. @DOMAIN@ is substituted by provision.sh.
+#
+# ServerName must match the certificate exactly. Tailscale issues certs only
+# for a node's own MagicDNS name, so reaching the site by any other name
+# (the bare short name, or the raw IP) falls through to whichever vhost sorts
+# first and produces a certificate warning.
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+	ServerName @DOMAIN@
+	DocumentRoot /web
+
+	SSLEngine on
+	SSLCertificateFile    /etc/ssl/demo/@DOMAIN@.crt
+	SSLCertificateKeyFile /etc/ssl/demo/@DOMAIN@.key
+
+	ErrorLog  ${APACHE_LOG_DIR}/demo-error.log
+	CustomLog ${APACHE_LOG_DIR}/demo-access.log combined
+</VirtualHost>
+</IfModule>
+
+# Plain HTTP redirects to HTTPS rather than serving the app unencrypted.
+<VirtualHost *:80>
+	ServerName @DOMAIN@
+	DocumentRoot /web
+	Redirect permanent / https://@DOMAIN@/
+</VirtualHost>

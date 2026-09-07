@@ -47,7 +47,7 @@ def upload_video(php_url, video_path, glos):
 
 if __name__ == "__main__":
     # Configuration
-    PHP_UPLOAD_URL = "https://signcollect.nl/nmm/upload_video_nmm.php"  # Replace with your actual PHP script URL
+    PHP_UPLOAD_URL = "/nmm/upload_video_nmm.php"  # Replace with your actual PHP script URL
     VIDEO_FILE_PATH = "/web/uploads/35fd887c4966232e50a701fd427d0235a8db7ff7331d24050df3f484b9ba2b1e.webm"                        # Replace with the path to your video file
     GLOS_VALUE = "test"                                   # Replace with your desired 'glos' value
 

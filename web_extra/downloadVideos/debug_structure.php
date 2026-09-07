@@ -1,7 +1,7 @@
 <?php
 // Debug script to examine the data structure
 
-$apiUrl = "https://signcollect.nl/fetch_all2.php?extern=1&limit=10&status=StudioOpname&handle=statusFilter";
+$apiUrl = "/fetch_all2.php?extern=1&limit=10&status=StudioOpname&handle=statusFilter";
 $jsonData = file_get_contents($apiUrl);
 
 if ($jsonData === false) {
