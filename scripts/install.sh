@@ -58,6 +58,11 @@ python3 scripts/remove-mocap-tile.py build/signlab_signCollect-v2/index.html || 
 echo
 HOST="$HOST" scripts/deploy.sh
 
+# 5. Per-host configs that are gitignored upstream, so a clone never has them.
+echo
+echo "== host config =="
+HOST="$HOST" scripts/host-config.sh
+
 echo
 echo "== verify =="
 scripts/verify.sh "https://$DOMAIN" || true

@@ -28,7 +28,11 @@ echo "target host: $HOST"
 # service, out of scope for an interface-only deploy, and clone.sh does not
 # populate it - without this exclude, rsync --delete would replace the
 # working API with an empty directory.
-KEEP=(--exclude '.env' --exclude '.git' --exclude 'node_modules' --exclude 'api/')
+# signbank_sync/config.php is gitignored upstream and written per host by
+# host-config.sh. Without this exclude, --delete removes it and every page
+# load 500s in php_api/current_user.php.
+KEEP=(--exclude '.env' --exclude '.git' --exclude 'node_modules' --exclude 'api/' \
+      --exclude 'signbank_sync/config.php')
 
 echo "== git-backed components =="
 while IFS=$'\t' read -r webdir repo branch; do
