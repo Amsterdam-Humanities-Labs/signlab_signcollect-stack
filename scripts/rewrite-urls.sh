@@ -25,7 +25,7 @@ total=0
 for tree in "$@"; do
   [ -d "$tree" ] || { echo "skip (not a directory): $tree" >&2; continue; }
   while IFS= read -r -d '' f; do
-    grep -q 'signcollect\.nl' "$f" 2>/dev/null || continue
+    grep -qE 'signcollect\.nl|@DOMAIN@' "$f" 2>/dev/null || continue
     before=$(grep -coE 'https?://[a-z.-]*signcollect\.nl' "$f" || true)
     DOMAIN="$DOMAIN" perl -pi -e '
       # 1. subdomains first - the bare-host rule below would eat their suffix.
@@ -40,6 +40,10 @@ for tree in "$@"; do
       # 4. bare hostname last - cookie domains and redirect allow-lists in
       #    login.html / logout.html, which would silently break sign-in.
       s{(?<![/\w])\.?signcollect\.nl}{$ENV{DOMAIN}}g;
+      # 5. explicit placeholder in the demo-only files. These have no
+      #    signcollect.nl left to match on, so without this they would keep
+      #    whichever host they were last rewritten for.
+      s{\@DOMAIN\@}{$ENV{DOMAIN}}g;
     ' "$f"
     after=$(grep -coE 'https?://[a-z.-]*signcollect\.nl' "$f" 2>/dev/null || true)
     total=$(( total + before - after ))

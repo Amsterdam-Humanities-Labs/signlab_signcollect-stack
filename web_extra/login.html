@@ -127,11 +127,11 @@
     function getRedirectUrl() {
         var params = new URLSearchParams(window.location.search);
         var redirect = params.get('redirect');
-        // Only honor explicit ?redirect= when it points back into dev.taila8bdbd.ts.net
+        // Only honor explicit ?redirect= when it points back into @DOMAIN@
         // AND isn't the legacy /menu.html landing page (we always land on the
         // hub /index.html now; users pick the interface they want from there).
         if (redirect
-            && redirect.indexOf('dev.taila8bdbd.ts.net') !== -1
+            && redirect.indexOf('@DOMAIN@') !== -1
             && !/\/menu\.html(?:[?#]|$)/.test(redirect)) {
             return redirect;
         }
@@ -146,8 +146,8 @@
         if (freshLogout) {
             var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
             document.cookie = expired;
-            document.cookie = expired + '; domain=dev.taila8bdbd.ts.net';
-            document.cookie = expired + '; domain=dev.taila8bdbd.ts.net';
+            document.cookie = expired + '; domain=@DOMAIN@';
+            document.cookie = expired + '; domain=@DOMAIN@';
             return;
         }
 
@@ -161,7 +161,7 @@
                     // Delete old cookie (without domain) and re-set with domain for subdomains
                     document.cookie = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
                     var expires = sessionData.expiresAt || new Date(Date.now() + 365*24*60*60*1000).toUTCString();
-                    document.cookie = 'sessionObject=' + encodeURIComponent(JSON.stringify(sessionData)) + '; expires=' + expires + '; path=/; domain=dev.taila8bdbd.ts.net';
+                    document.cookie = 'sessionObject=' + encodeURIComponent(JSON.stringify(sessionData)) + '; expires=' + expires + '; path=/; domain=@DOMAIN@';
                     window.location.href = getRedirectUrl();
                 }
             } catch (e) {}
@@ -199,7 +199,7 @@
                         role: role,
                         expiresAt: expires.toUTCString()
                     };
-                    document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expires.toUTCString()}; path=/; domain=dev.taila8bdbd.ts.net`;
+                    document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expires.toUTCString()}; path=/; domain=@DOMAIN@`;
                     window.location.href = getRedirectUrl();
                 } else if (data.status === 'blocked') {
                     showError('Uw account is geblokkeerd. Neem contact op met een beheerder.');

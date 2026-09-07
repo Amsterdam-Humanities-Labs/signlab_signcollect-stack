@@ -41,11 +41,11 @@ done < scripts/repos.tsv
 echo "== vendored components =="
 # menu_old / nmm / downloadVideos are whole directories, safe to --delete.
 for d in menu_old nmm downloadVideos; do
-  rsync -a --delete $DRY "${KEEP[@]}" "web_extra/$d/" "$HOST:/web/$d/"
+  rsync -a --delete $DRY "${KEEP[@]}" "build/web_extra/$d/" "$HOST:/web/$d/"
   printf '  %-24s -> /web/%s\n' "$d" "$d"
 done
 # Root files: no --delete, /web's root is shared with demo-only files.
-rsync -a $DRY "${KEEP[@]}" --exclude '*/' web_extra/ "$HOST:/web/"
+rsync -a $DRY "${KEEP[@]}" --exclude '*/' build/web_extra/ "$HOST:/web/"
 echo "  root files               -> /web/"
 
 echo

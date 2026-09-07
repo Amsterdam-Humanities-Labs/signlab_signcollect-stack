@@ -46,12 +46,12 @@ scripts/clone.sh
 #    always does, in that order, for exactly this reason.
 echo
 echo "== rewriting production URLs =="
-DOMAIN="$DOMAIN" scripts/rewrite-urls.sh build/*/ web_extra/
+DOMAIN="$DOMAIN" scripts/rewrite-urls.sh build/*/
 
 # 3. Strip the parts of production the demo must not carry.
 echo
 echo "== purging artifacts =="
-scripts/purge-artifacts.sh build/*/ web_extra/ || true
+scripts/purge-artifacts.sh build/*/ || true
 python3 scripts/remove-mocap-tile.py build/signlab_signCollect-v2/index.html || true
 
 # 4. Ship it.

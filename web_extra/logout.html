@@ -108,13 +108,13 @@
     $(document).ready(function () {
         $('#logout-button').click(function () {
             // Clear the session cookie under every domain variant we may
-            // have set it under historically (no-domain, dev.taila8bdbd.ts.net,
-            // dev.taila8bdbd.ts.net) — otherwise a leftover copy survives and
+            // have set it under historically (no-domain, @DOMAIN@,
+            // @DOMAIN@) — otherwise a leftover copy survives and
             // login.html's checkSession() bounces straight back to the menu.
             var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
             document.cookie = expired;
-            document.cookie = expired + '; domain=dev.taila8bdbd.ts.net';
-            document.cookie = expired + '; domain=dev.taila8bdbd.ts.net';
+            document.cookie = expired + '; domain=@DOMAIN@';
+            document.cookie = expired + '; domain=@DOMAIN@';
             sessionStorage.clear();
             // ?fresh=1 tells login.html to stay put even if a cookie copy
             // we couldn't see/clear is still lingering somehow.
