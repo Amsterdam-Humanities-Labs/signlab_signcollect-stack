@@ -95,18 +95,29 @@ It must match the TLS certificate you install at /etc/ssl/demo/<name>.{crt,key}.
 # ssh is always called as `ssh <host> <one command string>`, and scp as
 # `scp [-q] <src> <host>:<dst>`, so local mode can strip the host and run the
 # command, or copy the file, without parsing anything cleverer than that.
-if [ "${SC_LOCAL:-0}" = "1" ]; then
-  ssh() { shift; [ $# -gt 0 ] || return 0; bash -c "$*"; }
-  scp() {
+# SC_LOCAL is tested inside each function, not around them: _common.sh is
+# sourced before the command line is parsed, so a branch out here would be
+# decided while --local is still unread - which is exactly the bug that sent
+# `--local` to ssh localhost.
+ssh() {
+  if [ "${SC_LOCAL:-0}" = "1" ]; then
+    shift                       # drop the host; the rest is one command string
+    [ $# -gt 0 ] || return 0
+    bash -c "$*"
+  else
+    command ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$@"
+  fi
+}
+scp() {
+  if [ "${SC_LOCAL:-0}" = "1" ]; then
     local args=() a
     for a in "$@"; do case "$a" in -*) ;; *) args+=("${a#*:}") ;; esac; done
     [ ${#args[@]} -ge 2 ] || return 0
     cp "${args[@]}"
-  }
-else
-  ssh() { command ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$@"; }
-  scp() { command scp -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$@"; }
-fi
+  else
+    command scp -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$@"
+  fi
+}
 
 # Where this repo's tree lives on the host, as an unexpanded string so the
 # remote shell resolves $HOME. scripts/host-src.sh puts it there.
