@@ -47,6 +47,10 @@ SC_USAGE='usage: scripts/install.sh --host <ssh-target> [--domain <name>]
                      resolver and the deploy always agree on one location.
                      Choose it at install time; moving it later means moving
                      the tree and re-running with the new value.
+  --local            run everything on this machine instead of over ssh. Use
+                     it when you are already on the demo host: clone the stack
+                     repo, cd into interface_deploy, and run this. --host is
+                     then only a label.
   --no-provision     skip step 0 when the server is known-good.
 
 HOST and DOMAIN are still honoured as environment variables.
@@ -55,7 +59,10 @@ Example, taking a bare Ubuntu box to a working demo:
   scripts/install.sh --host gomer@100.69.94.19
 
   Somewhere other than /web:
-    scripts/install.sh --host gomer@100.69.94.19 --webroot /srv/signcollect/web'
+    scripts/install.sh --host gomer@100.69.94.19 --webroot /srv/signcollect/web
+
+  Run on the demo host itself, no ssh:
+    scripts/install.sh --local --webroot /srv/signcollect/web'
 # shellcheck source=scripts/_common.sh
 . scripts/_common.sh
 

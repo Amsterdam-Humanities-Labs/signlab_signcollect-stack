@@ -77,7 +77,7 @@ fi
 # directory is setgid www-data and everything in it is group-writable, and
 # the deploy user joins that group. Group membership rather than a 0777
 # directory: the files stay unwritable by anyone else.
-ssh "$HOST" "WEBROOT='$WEBROOT' "'set -e
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
   sudo install -d -o www-data -g www-data -m 2775 $WEBROOT/signbank_data
   sudo chgrp -R www-data $WEBROOT/signbank_data
   sudo chmod -R g+rwX  $WEBROOT/signbank_data
@@ -97,7 +97,7 @@ echo "  $WEBROOT/signbank_data ready (www-data:www-data 2775, $HOST deploy user 
 # refreshed it, it is newer than the vendored seed. That is also why the seed
 # from assets/ is no longer copied unconditionally - a deploy must not
 # overwrite a fresh dump with a stale one.
-ssh "$HOST" "WEBROOT='$WEBROOT' "'set -e
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
   if [ -L $WEBROOT/glosses_transformed.json ]; then
     rm -f $WEBROOT/glosses_transformed.json
   elif [ -f $WEBROOT/glosses_transformed.json ]; then
@@ -107,24 +107,24 @@ ssh "$HOST" "WEBROOT='$WEBROOT' "'set -e
       rm -f $WEBROOT/glosses_transformed.json
     fi
   fi'
-if ssh "$HOST" "WEBROOT='$WEBROOT' "'test -s $WEBROOT/signbank_data/glosses_transformed.json'; then
-  echo "  glosses_transformed.json present ($(ssh "$HOST" "WEBROOT='$WEBROOT' "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes) in $WEBROOT/signbank_data"
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'test -s $WEBROOT/signbank_data/glosses_transformed.json'; then
+  echo "  glosses_transformed.json present ($(ssh "$HOST" "export WEBROOT='$WEBROOT'; "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes) in $WEBROOT/signbank_data"
 else
   ssh "$HOST" "cp $SRCDIR/assets/glosses_transformed.json $WEBROOT/signbank_data/glosses_transformed.json"
-  echo "  glosses_transformed.json seeded from the host's own assets/ ($(ssh "$HOST" "WEBROOT='$WEBROOT' "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes)"
+  echo "  glosses_transformed.json seeded from the host's own assets/ ($(ssh "$HOST" "export WEBROOT='$WEBROOT'; "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes)"
 fi
-ssh "$HOST" "WEBROOT='$WEBROOT' "'chmod 664 $WEBROOT/signbank_data/glosses_transformed.json 2>/dev/null || true'
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'chmod 664 $WEBROOT/signbank_data/glosses_transformed.json 2>/dev/null || true'
 
 # The API key. A key already on the host is left alone - it may have been
 # replaced by an admin on the connector page, and this script must not
 # silently roll that back.
-if ssh "$HOST" "WEBROOT='$WEBROOT' "'test -s $WEBROOT/signbank_data/.signbank_key'; then
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'test -s $WEBROOT/signbank_data/.signbank_key'; then
   echo "  signbank API key already present - left alone"
 elif [ -n "$SIGNBANK_API_KEY" ]; then
   # Piped over stdin, so the key never appears in a command line or in the
   # remote shell's history.
   printf '%s\n' "$SIGNBANK_API_KEY" |
-    ssh "$HOST" "WEBROOT='$WEBROOT' "'umask 027 && cat > $WEBROOT/signbank_data/.signbank_key &&
+    ssh "$HOST" "export WEBROOT='$WEBROOT'; "'umask 027 && cat > $WEBROOT/signbank_data/.signbank_key &&
                  sudo chown www-data:www-data $WEBROOT/signbank_data/.signbank_key &&
                  sudo chmod 640 $WEBROOT/signbank_data/.signbank_key'
   echo "  signbank API key installed (value not shown)"
@@ -136,10 +136,10 @@ fi
 # falls back to accepting an unsigned cookie, which is what let a hand-written
 # {"userId":38} impersonate that user. Generated once and never rotated here:
 # rotating it logs everyone out.
-if ssh "$HOST" "WEBROOT='$WEBROOT' "'test -s $WEBROOT/.session_secret'; then
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'test -s $WEBROOT/.session_secret'; then
   echo "  .session_secret already present - left alone"
 else
-  ssh "$HOST" "WEBROOT='$WEBROOT' "'umask 027 && openssl rand -hex 32 > $WEBROOT/.session_secret &&
+  ssh "$HOST" "export WEBROOT='$WEBROOT'; "'umask 027 && openssl rand -hex 32 > $WEBROOT/.session_secret &&
                sudo chown "$USER":www-data $WEBROOT/.session_secret &&
                chmod 640 $WEBROOT/.session_secret'
   echo "  .session_secret generated (value not shown)"
