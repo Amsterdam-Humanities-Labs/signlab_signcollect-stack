@@ -45,13 +45,24 @@ the host, so `gh auth login` here first:
 
     scripts/install.sh --host gomer@demo1
 
-**On the demo host itself, no ssh at all** - the host needs its own GitHub
-login, because there is no workstation to take a token from:
+**On the demo host itself, no ssh at all.** The host needs a GitHub login of
+its own here, because there is no workstation to take a token from - and it
+needs `git` before it can fetch the installer that would have installed it.
+That is the one bootstrap this mode cannot avoid, and it is four commands:
 
-    gh auth login                                    # once, on the host
+    sudo apt update && sudo apt install -y git
     git clone https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
+        # a private repo: git asks for your GitHub username and, as the
+        # password, a personal access token with `repo` scope
     cd ~/signcollect-deploy/interface_deploy
+
+    scripts/host-auth.sh --local    # installs gh, then asks you to log in
+    gh auth login                   # your own GitHub account
     scripts/install.sh --local
+
+`gh` is not in Ubuntu's archive, which is why `host-auth.sh` is what installs
+it - from GitHub's own apt repository. Everything else the installer still puts
+there itself: apache, php, mysql, composer, nftables.
 
 That is the whole thing, in either mode. It takes a bare Ubuntu box to a
 working demo at `https://<host>.<tailnet>.ts.net`, log in as `gomer` / `123`,
@@ -174,6 +185,13 @@ that push the mirror is behind, so `scripts/host-src.sh` overlays the local
 `HEAD` tree onto the host's checkout after cloning - about a megabyte, of
 which nearly all is `assets/glosses_transformed.json`. When the mirror is
 current it writes identical bytes; `SKIP_OVERLAY=1` turns it off.
+
+**`--local` has no overlay, and cannot have one.** On the host there is no
+second tree to overlay from - the checkout you are standing in is the one the
+install uses. So a `--local` run deploys exactly what the mirror holds, and a
+change made here reaches it only after the `git subtree` push. If you have just
+edited something in this repository and want it on a host today, either deploy
+over ssh (which overlays your working tree) or push the subtree first.
 
 ## Known gap
 
