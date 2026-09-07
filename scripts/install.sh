@@ -95,6 +95,20 @@ echo
 echo "== bootstrap (on $HOST) =="
 ssh "$HOST" "DOMAIN='$DOMAIN' ${WEBROOT:+WEBROOT='$WEBROOT'} $SRCDIR/scripts/host-bootstrap.sh"
 
+# 3b. Cut the demo off from production. This used to be a step you were
+#     expected to remember, and on a host where it had been forgotten the
+#     only symptom was verify.sh's isolation block turning red at the very
+#     end - after everything else had passed, which is the point in a deploy
+#     where a failure is least likely to be read. A demo that can still reach
+#     signcollect.nl is not a demo, so it is part of the install now.
+#
+#     Runs on the host, as the host: it writes /etc/hosts and loads an
+#     nftables table there. The chain policy stays ACCEPT and only
+#     production's addresses are rejected, so it cannot cut our own SSH.
+echo
+echo "== isolation from production =="
+ssh "$HOST" "$SRCDIR/scripts/isolate.sh" | sed 's/^/  /'
+
 # 4. Per-host configs that are gitignored upstream, so a clone never has them.
 echo
 echo "== host config =="

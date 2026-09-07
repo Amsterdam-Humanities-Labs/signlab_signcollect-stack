@@ -64,8 +64,12 @@ ssh "$HOST" 'set -e
   # git checkouts (scripts/host-bootstrap.sh), and the demo host this now
   # targets does not permit rsync at all. git, by the same change, went from
   # a convenience to the single most load-bearing package here.
+  # nftables is what scripts/isolate.sh loads the egress block into. Ubuntu
+  # ships it by default and the demo would work without it right up to the
+  # moment it mattered, which is precisely the kind of dependency worth
+  # naming rather than inheriting.
   for p in apache2 php libapache2-mod-php php-mysql php-mbstring php-curl \
-           php-gd php-xml php-zip php-bz2 mysql-server git curl \
+           php-gd php-xml php-zip php-bz2 mysql-server git curl nftables \
            composer python3-psutil; do
     dpkg -s "$p" >/dev/null 2>&1 || need="$need $p"
   done
