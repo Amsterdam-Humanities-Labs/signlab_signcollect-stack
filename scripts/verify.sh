@@ -11,7 +11,7 @@ chk() { # chk <path> <expected-code> <label>
   else printf '  FAIL %-32s got %s want %s\n' "$1" "$got" "$2"; fail=1; fi
 }
 echo "== pages =="
-for p in / /index.html /menu_beta/index.html "/menu_old/menu.html?extern=1" \
+for p in / /index.html /menu_beta/index.html \
          /zin/zinnen.html /media/ /login.html; do chk "$p" 200; done
 echo "== interface components =="
 for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
@@ -20,8 +20,12 @@ for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
 # /api is the signlab_sCAPI submodule - a separate service, out of scope for
 # an interface-only deploy. One endpoint (/zin/api/getSamVideos.php) is called
 # from two places and will not work without it.
-echo "== known-dead link (matches production) =="
-chk /opnameViewTest.html 404
+# The Signbank ECV dump every gloss lookup reads, installed by host-config.sh
+# from assets/. menu_beta's Glos Wizard, its batch entry page and nmm's
+# scripts all resolve it at this absolute path, so a 404 here is silent -
+# they get an HTML error page where they expect JSON.
+echo "== signbank export =="
+chk /glosses_transformed.json 200
 echo "== secrets must be denied =="
 for p in /mysql_config.php /zin/mysql_config.php /zin/.env /.env; do chk "$p" 403; done
 echo "== isolation from production =="

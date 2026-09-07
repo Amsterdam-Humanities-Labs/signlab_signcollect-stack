@@ -43,8 +43,8 @@ while IFS=$'\t' read -r webdir repo branch; do
 done < scripts/repos.tsv
 
 echo "== vendored components =="
-# menu_old / nmm / downloadVideos are whole directories, safe to --delete.
-for d in menu_old nmm downloadVideos; do
+# nmm / downloadVideos are whole directories, safe to --delete.
+for d in nmm downloadVideos; do
   rsync -a --delete $DRY "${KEEP[@]}" "build/web_extra/$d/" "$HOST:/web/$d/"
   printf '  %-24s -> /web/%s\n' "$d" "$d"
 done

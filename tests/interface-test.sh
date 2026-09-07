@@ -101,7 +101,9 @@ ACOOK=$(printf '%s' "$ALOGIN" | cookie_from_login) || bad "could not build admin
 # --- 2. unauthenticated access must be refused --------------------------
 section "unauthenticated access"
 for p in /menu_beta/php_api/current_user.php /menu_beta/php_api/glosses_list.php \
-         /menu_beta/php_api/filters_options.php; do
+         /menu_beta/php_api/filters_options.php \
+         "/menu_beta/php_api/wizard_search.php?q=BOEK" \
+         "/menu_beta/php_api/wizard_suggest.php?glos=BOEK"; do
   req GET "$p" "" >/dev/null; is "refused without session: $p" 401 403
 done
 
@@ -165,6 +167,71 @@ else
   note "gloss-scoped endpoints skipped - no gloss id"
 fi
 
+# --- 6b. glos wizard ----------------------------------------------------
+# The wizard asks one question - does this sign already exist? - of the local
+# gloss table and of the Signbank ECV dump at once. Both halves are checked
+# here, but only the local half can be asserted unconditionally: a host that
+# has not had the export installed has no dump to search. The endpoint says
+# so in `ecv`, and this follows suit rather than reporting a green run for a
+# search that only ever saw half the data.
+section "glos wizard"
+req GET /glosses_transformed.json "$ACOOK" >/dev/null
+is "signbank ECV dump is served" 200
+
+req GET /menu_beta/php_api/wizard_search.php "$ACOOK" >/dev/null
+is "wizard search without a query refused" 400
+req GET /menu_beta/php_api/wizard_suggest.php "$ACOOK" >/dev/null
+is "wizard suggest without a gloss refused" 400
+
+body=$(req GET "/menu_beta/php_api/wizard_search.php?q=$TESTGLOS" "$ACOOK")
+is "wizard search" 200
+case "$body" in *"\"$TESTGLOS\""*) ok "wizard search finds the local test gloss" ;;
+  *) bad "wizard search missed $TESTGLOS: $(printf '%s' "$body" | head -c 120)" ;; esac
+
+case "$body" in
+  *'"ecv":true'*)
+    ok "signbank ECV dump is loaded"
+    body=$(req GET "/menu_beta/php_api/wizard_search.php?q=BOEK" "$ACOOK")
+    case "$body" in *'"source":"signbank"'*) ok "wizard search returns signbank hits" ;;
+      *) bad "wizard search found nothing in the ECV for BOEK" ;; esac
+    case "$body" in *'"phonology"'*) ok "signbank hits carry their phonology" ;;
+      *) bad "signbank hit has no phonology block - adopting one would create an empty row" ;; esac
+    ;;
+  *) note "signbank ECV dump absent - signbank half of the wizard not exercised" ;;
+esac
+
+# Naming: TESTGLOS was created above, so the wizard must refuse to reuse the
+# name and offer the first free suffix instead.
+body=$(req GET "/menu_beta/php_api/wizard_suggest.php?glos=$TESTGLOS" "$ACOOK")
+is "wizard suggest for an existing gloss" 200
+case "$body" in *'"exists":true'*) ok "wizard suggest sees the existing gloss" ;;
+  *) bad "wizard suggest did not see $TESTGLOS: $(printf '%s' "$body" | head -c 120)" ;; esac
+case "$body" in *"\"glos\":\"$TESTGLOS-A\""*) ok "wizard suggest offers $TESTGLOS-A" ;;
+  *) bad "wizard suggest offered the wrong name: $(printf '%s' "$body" | head -c 120)" ;; esac
+
+body=$(req GET "/menu_beta/php_api/wizard_suggest.php?glos=itest%20free%20$TS" "$ACOOK")
+case "$body" in *'"exists":false'*) ok "wizard suggest reports an unused name as free" ;;
+  *) bad "wizard suggest called an unused name taken: $(printf '%s' "$body" | head -c 120)" ;; esac
+case "$body" in *"\"glos\":\"ITEST-FREE-$TS\""*) ok "wizard suggest normalises to an uppercase hyphenated gloss" ;;
+  *) bad "wizard suggest did not normalise: $(printf '%s' "$body" | head -c 120)" ;; esac
+
+# Adopting a Signbank gloss goes through the ordinary create path, carrying
+# the Signbank id and phonology with it. Assert the phonology actually lands -
+# a row created without it is the failure mode worth catching.
+body=$(req POST /menu_beta/php_api/glosses_create.php "$ACOOK" \
+       "{\"glos\":\"${TESTGLOS}_SB\",\"glos_engels\":\"itest\",\"signbank\":\"2850\",\"phonology\":{\"Handeness\":\"2s\",\"virtualObjectt\":\"itest\"},\"fonologie_fase1\":1,\"fonologie_fase2\":1}")
+is "adopt a signbank gloss" 200 201
+SB_GLOS_ID=$(printf '%s' "$body" | sed -nE 's/.*"id":"?([0-9]+)"?.*/\1/p')
+if [ -n "${SB_GLOS_ID:-}" ]; then
+  body=$(req GET "/menu_beta/php_api/phonology_get.php?id=$SB_GLOS_ID" "$ACOOK")
+  case "$body" in *'"Handeness":"2s"'*) ok "adopted gloss keeps its signbank phonology" ;;
+    *) bad "adopted gloss lost its phonology: $(printf '%s' "$body" | head -c 120)" ;; esac
+  case "$body" in *'"fonologie_fase1":"1"'*) ok "adopted gloss is marked fonologie fase 1 done" ;;
+    *) bad "adopted gloss not marked fase 1 done" ;; esac
+else
+  note "adopted-gloss checks skipped - no gloss id"
+fi
+
 # --- 7. role separation: the same actions as a normal user --------------
 section "role separation (non-admin)"
 if [ -z "${USER_ID:-}" ]; then
@@ -203,7 +270,7 @@ esac
 
 # --- 9. static pages the menu links to ----------------------------------
 section "menu targets"
-for p in / /menu_beta/index.html /menu_old/menu.html /videoFix/index.html \
+for p in / /menu_beta/index.html /videoFix/index.html \
          /studioIndex/ /zin/zinnen.html /nmm/fastView.html /hh/index.html \
          /downloadVideos/downloadThemaVideo.html /menu_beta/labels_add.html \
          /menu_beta/batch_add.html /themas.html /menu_beta/users.html \
@@ -222,6 +289,10 @@ section "cleanup"
 if [ -n "${GLOS_ID:-}" ]; then
   req POST /menu_beta/php_api/glosses_delete.php "$ACOOK" "{\"id\":$GLOS_ID}" >/dev/null
   is "remove test gloss" 200 204
+fi
+if [ -n "${SB_GLOS_ID:-}" ]; then
+  req POST /menu_beta/php_api/glosses_delete.php "$ACOOK" "{\"id\":$SB_GLOS_ID}" >/dev/null
+  is "remove adopted test gloss" 200 204
 fi
 if [ -n "${USER_ID:-}" ]; then
   form /menu_beta/users_api.php "$ACOOK" "action=delete&requestingUserId=$ADMIN_ID&userId=$USER_ID" >/dev/null
