@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/userProtect.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Videos by Theme</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .download-link {
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        .download-link a {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .debug-info {
+            margin-top: 20px;
+            display: none;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        .debug-toggle {
+            margin-top: 10px;
+            color: #0275d8;
+            text-decoration: underline;
+            cursor: pointer;
+            display: none;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #555;
+            border-radius: 50%;
+            animation: spinner-rotate 0.9s linear infinite;
+        }
+        @keyframes spinner-rotate { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Download Videos by Theme and/or Labels</h1>
+        <p>Select a theme, labels, or both to filter videos, then preview and download them.</p>
+        
+        <select id="themaSelect">
+            <option value="">-- Select a Theme (optional) --</option>
+        </select>
+        
+        <div style="margin-top: 15px;">
+            <label for="labelSelect">Select Labels:</label>
+            <select id="labelSelect" multiple style="height: 100px;">
+                <option value="">-- Loading labels... --</option>
+            </select>
+            <small style="display: block; margin-top: 5px; color: #666;">Hold Ctrl/Cmd to select multiple labels (optional)</small>
+            
+            <div id="selectedLabelsDisplay" style="margin-top: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 4px; display: none;">
+                <strong>Selected Labels:</strong>
+                <div id="selectedLabelsList" style="margin-top: 5px;"></div>
+            </div>
+        </div>
+        
+        <button id="previewBtn" style="margin-right: 10px;">Preview Videos</button>
+        <button id="downloadBtn" style="display: none;">Download All Videos</button>
+        
+        <div id="previewSection" style="display: none; margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;">
+            <h3>Video Preview</h3>
+            <div id="videoList"></div>
+            <div style="margin-top: 10px;">
+                <strong>Total videos: <span id="videoCount">0</span></strong>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <p>Preparing your download. This may take a moment...</p>
+            <div class="spinner" role="status" aria-label="Loading"></div>
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="download-link" id="downloadLink">
+            <a href="#" id="downloadFile">Download ZIP File</a>
+        </div>
+        
+        <div class="debug-toggle" id="debugToggle">Show debug information</div>
+        <div class="debug-info" id="debugInfo">
+            <pre id="debugContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load themes and labels when page loads
+            loadThemes();
+            loadLabels();
+            
+            // Event listener for theme selection
+            document.getElementById('themaSelect').addEventListener('change', function() {
+                const selectedThema = this.value;
+                hidePreview();
+            });
+            
+            // Event listener for label selection
+            document.getElementById('labelSelect').addEventListener('change', function() {
+                updateSelectedLabelsDisplay();
+                hidePreview();
+            });
+            
+            // Event listener for preview button
+            document.getElementById('previewBtn').addEventListener('click', function() {
+                const selectedThema = document.getElementById('themaSelect').value;
+                const selectedLabels = getSelectedLabels();
+                
+                console.log('Selected thema:', selectedThema);
+                console.log('Selected labels:', selectedLabels);
+                
+                if (!selectedThema && selectedLabels.length === 0) {
+                    alert('Please select a theme, labels, or both to filter videos.');
+                    return;
+                }
+                
+                previewVideos(selectedThema, selectedLabels);
+            });
+            
+            // Event listener for download button
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                const selectedThema = document.getElementById('themaSelect').value;
+                const selectedLabels = getSelectedLabels();
+                
+                if (!selectedThema && selectedLabels.length === 0) {
+                    alert('Please select a theme, labels, or both to filter videos.');
+                    return;
+                }
+                
+                prepareDownload(selectedThema, selectedLabels);
+            });
+        });
+        
+        function loadThemes() {
+            fetch('../uniqueThema.php?extern=1')
+                .then(response => response.json())
+                .then(themes => {
+                    const select = document.getElementById('themaSelect');
+                    
+                    themes.forEach(theme => {
+                        const option = document.createElement('option');
+                        option.value = theme;
+                        option.textContent = theme;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading themes:', error);
+                    document.getElementById('status').style.display = 'block';
+                    document.getElementById('status').textContent = 'Error loading themes. Please try again.';
+                    document.getElementById('status').style.backgroundColor = '#ffdddd';
+                });
+        }
+        
+        function loadLabels() {
+            fetch('/uniqueLabels.php')
+                .then(response => response.json())
+                .then(uniqueLabels => {
+                    const labelSelect = document.getElementById('labelSelect');
+                    labelSelect.innerHTML = '';
+                    
+                    if (uniqueLabels && uniqueLabels.length > 0) {
+                        // Add labels to select
+                        uniqueLabels.forEach(label => {
+                            const option = document.createElement('option');
+                            option.value = label.name;
+                            option.textContent = label.name;
+                            option.style.backgroundColor = label.color;
+                            labelSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No labels found';
+                        labelSelect.appendChild(option);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading labels:', error);
+                    const labelSelect = document.getElementById('labelSelect');
+                    labelSelect.innerHTML = '<option value="">Error loading labels</option>';
+                });
+        }
+        
+        function clearLabels() {
+            document.getElementById('labelSelect').innerHTML = '<option value="">-- Select labels after choosing a theme --</option>';
+        }
+        
+        function getSelectedLabels() {
+            const labelSelect = document.getElementById('labelSelect');
+            const selectedLabels = [];
+            for (let option of labelSelect.options) {
+                if (option.selected && option.value) {
+                    selectedLabels.push(option.value);
+                }
+            }
+            return selectedLabels;
+        }
+        
+        function updateSelectedLabelsDisplay() {
+            const selectedLabels = getSelectedLabels();
+            const displayDiv = document.getElementById('selectedLabelsDisplay');
+            const listDiv = document.getElementById('selectedLabelsList');
+            
+            if (selectedLabels.length === 0) {
+                displayDiv.style.display = 'none';
+            } else {
+                displayDiv.style.display = 'block';
+                listDiv.innerHTML = '';
+                
+                selectedLabels.forEach(label => {
+                    const labelSpan = document.createElement('span');
+                    labelSpan.style.cssText = 'display: inline-block; background-color: #007bff; color: white; padding: 4px 8px; margin: 2px; border-radius: 12px; font-size: 12px;';
+                    labelSpan.textContent = label;
+                    listDiv.appendChild(labelSpan);
+                });
+            }
+        }
+        
+        function hidePreview() {
+            document.getElementById('previewSection').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+        }
+        
+        function previewVideos(thema, labels) {
+            const loading = document.getElementById('loading');
+            const status = document.getElementById('status');
+            
+            loading.style.display = 'block';
+            status.style.display = 'none';
+            hidePreview();
+            
+            // Build API URL using our new database endpoint
+            let apiUrl = 'fetch_videos_with_labels.php?';
+            const params = new URLSearchParams();
+            
+            if (thema) {
+                params.append('thema', thema);
+            }
+            if (labels.length > 0) {
+                params.append('labels', JSON.stringify(labels));
+            }
+            
+            apiUrl += params.toString();
+            
+            console.log('Fetching from URL:', apiUrl);
+            
+            fetch(apiUrl)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    loading.style.display = 'none';
+                    
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Data is already filtered by the database query
+                        displayPreview(data.data);
+                    } else {
+                        status.style.display = 'block';
+                        status.style.backgroundColor = '#ffdddd';
+                        status.textContent = data.message || 'No videos found for the selected criteria';
+                        console.log('No data found:', data);
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    status.style.display = 'block';
+                    status.style.backgroundColor = '#ffdddd';
+                    status.textContent = 'Error loading videos for preview: ' + error.message;
+                    console.error('Fetch error:', error);
+                });
+        }
+        
+        function displayPreview(videos) {
+            const previewSection = document.getElementById('previewSection');
+            const videoList = document.getElementById('videoList');
+            const videoCount = document.getElementById('videoCount');
+            
+            videoList.innerHTML = '';
+            
+            if (videos.length === 0) {
+                videoList.innerHTML = '<p>No videos found matching the selected labels.</p>';
+                videoCount.textContent = '0';
+            } else {
+                const ul = document.createElement('ul');
+                ul.style.maxHeight = '300px';
+                ul.style.overflowY = 'auto';
+                ul.style.margin = '0';
+                ul.style.padding = '0 0 0 20px';
+                
+                videos.forEach(video => {
+                    const li = document.createElement('li');
+                    li.style.marginBottom = '5px';
+                    
+                    const videoCenter = video.videoCenter ? JSON.parse(video.videoCenter) : null;
+                    const hasVideo = videoCenter && videoCenter.length > 0;
+                    
+                    li.innerHTML = `
+                        <strong>${video.glos}</strong> 
+                        ${hasVideo ? '<span style="color: green;">✓</span>' : '<span style="color: red;">✗ No video</span>'}
+                        <br><small style="color: #666;">Labels: ${video.labels ? JSON.parse(video.labels).join(', ') : 'None'}</small>
+                    `;
+                    
+                    ul.appendChild(li);
+                });
+                
+                videoList.appendChild(ul);
+                videoCount.textContent = videos.length;
+                
+                // Show download button
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+            }
+            
+            previewSection.style.display = 'block';
+        }
+        
+        function prepareDownload(thema, labels) {
+            const loading = document.getElementById('loading');
+            const status = document.getElementById('status');
+            const downloadLink = document.getElementById('downloadLink');
+            const debugToggle = document.getElementById('debugToggle');
+            const debugInfo = document.getElementById('debugInfo');
+            
+            // Show loading indicator
+            loading.style.display = 'block';
+            status.style.display = 'none';
+            downloadLink.style.display = 'none';
+            debugToggle.style.display = 'none';
+            debugInfo.style.display = 'none';
+            
+            // Call PHP script to prepare the ZIP file
+            const formData = new URLSearchParams();
+            if (thema) {
+                formData.append('thema', thema);
+            }
+            if (labels.length > 0) {
+                formData.append('labels', JSON.stringify(labels));
+            }
+            
+            fetch('downloadThemaVideo.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                status.style.display = 'block';
+                
+                if (data.success) {
+                    status.style.backgroundColor = '#dff0d8';
+                    status.textContent = 'ZIP file created successfully with ' + data.count + ' videos.';
+                    
+                    // Display download link
+                    downloadLink.style.display = 'block';
+                    document.getElementById('downloadFile').href = data.zipFile;
+                    
+                    // Automatically trigger download
+                    const downloadUrl = data.zipFile;
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = downloadUrl.split('/').pop();
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    status.style.backgroundColor = '#ffdddd';
+                    status.textContent = 'Error: ' + data.message;
+                    
+                    // Enable debug info if available
+                    if (data.debug || data.data) {
+                        debugToggle.style.display = 'block';
+                        document.getElementById('debugContent').textContent = JSON.stringify(data, null, 2);
+                        
+                        debugToggle.addEventListener('click', function() {
+                            if (debugInfo.style.display === 'none') {
+                                debugInfo.style.display = 'block';
+                                debugToggle.textContent = 'Hide debug information';
+                            } else {
+                                debugInfo.style.display = 'none';
+                                debugToggle.textContent = 'Show debug information';
+                            }
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                status.style.display = 'block';
+                status.style.backgroundColor = '#ffdddd';
+                status.textContent = 'Error creating ZIP file. Please try again.';
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

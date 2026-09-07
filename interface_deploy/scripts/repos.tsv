@@ -1,0 +1,24 @@
+# Git-backed components of the SignCollect web interface.
+#
+#   webdir<TAB>repo<TAB>branch
+#
+# webdir is the directory under /web on production. The deployed tree is kept
+# path-identical to production so menu links resolve unchanged - the menu in
+# signlab_signCollect-v2 hardcodes /videoFix/, /studioIndex/, /hh/ etc.
+#
+# Clone target is build/<repo> (existing convention), deploy target is
+# /web/<webdir>. Branch is what production actually has checked out:
+# signlab_hh is on master, the rest on main.
+#
+# Not listed, deliberately:
+#   signlab_sCAPI  - /api is Alias'd to /web/zin/api by signcollect-mounts.conf,
+#                    so the API ships inside signlab_zin. sCAPI is the separate
+#                    api.signcollect.nl service and is out of scope here.
+#   mocap*         - removed from the demo by design (see remove-mocap-tile.py).
+menu_beta	signlab_signCollect-v2	main
+zin	signlab_zin	main
+videoFix	signlab_videoFix	main
+studioIndex	signlab_studioIndex	main
+studio_beta	signlab_studio_beta	main
+hh	signlab_hh	master
+annotation-tool	signlab_annotation-tool	main

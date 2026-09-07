@@ -1,0 +1,12 @@
+# Cloned upstream sources - reproducible via scripts/clone.sh, not vendored here.
+build/
+# Real configs with credentials never get committed.
+config/*.local.php
+secrets.env
+
+# Real credentials, generated per host by provision.sh.
+.env
+web_extra/.env
+
+# Local credential, never committed (was stripped from history 2026-09-07).
+.dbpass.local

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/userProtect.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Themas</title>
+  <!-- Mantine core CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mantine/core@7.2.2/esm/index.css">
+  <!-- Mantine hooks -->
+  <script src="https://cdn.jsdelivr.net/npm/@mantine/hooks@7.2.2/esm/index.js"></script>
+  <!-- Mantine core -->
+  <script src="https://cdn.jsdelivr.net/npm/@mantine/core@7.2.2/esm/index.js"></script>
+  <!-- Tabler icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-react@2.40.0/dist/index.css">
+  <style>
+    .thema-container {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .thema-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+      color: #333333; /* Dark text color for visibility */
+    }
+    
+    .thema-item:hover {
+      background-color: #e9ecef;
+    }
+    
+    .thema-edit-mode {
+      background-color: #f1f9ee;
+      border: 1px dashed #2b8a3e;
+    }
+    
+    .thema-name {
+      font-weight: 500;
+      flex-grow: 1;
+      color: #333333; /* Dark text color for visibility */
+    }
+    
+    .thema-edit-form {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .thema-actions {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .thema-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px 8px;
+      color: #868e96;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .thema-action-btn:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .edit-btn:hover {
+      color: #1c7ed6;
+    }
+    
+    .save-btn {
+      color: #2b8a3e;
+    }
+    
+    .cancel-btn {
+      color: #e03131;
+    }
+    
+    .save-btn:hover {
+      color: #2b8a3e;
+      background-color: rgba(43, 138, 62, 0.1);
+    }
+    
+    .cancel-btn:hover {
+      color: #e03131;
+      background-color: rgba(224, 49, 49, 0.1);
+    }
+    
+    .edit-input {
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      width: auto;
+      max-width: 150px;
+      color: #333333; /* Ensure edit input text is visible */
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="padding: 20px; max-width: 800px; margin: 0 auto;">
+    <div class="mantine-Paper-root" style="padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <h2 class="mantine-Title-root" style="margin-bottom: 20px;">Manage Themas</h2>
+      
+      <!-- Filter options -->
+      <div class="mantine-Select-root" style="margin-bottom: 20px;">
+        <label class="mantine-Select-label" for="externFilter">Filter by Extern:</label>
+        <select 
+          id="externFilter" 
+          class="mantine-Select-input" 
+          style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px;"
+        >
+          <option value="">All Themas</option>
+          <option value="1">Extern Only</option>
+          <option value="0">Non-Extern Only</option>
+        </select>
+      </div>
+      
+      <div id="errorContainer" style="margin-top: 15px; display: none;">
+        <!-- Error messages will appear here -->
+      </div>
+      
+      <div id="successContainer" style="margin-top: 15px; display: none;">
+        <!-- Success messages will appear here -->
+      </div>
+      
+      <!-- Loading indicator -->
+      <div id="loadingIndicator" style="display: none; margin-top: 20px; text-align: center;">
+        <div class="mantine-Loader-root" style="border: 3px solid #f3f3f3; border-top: 3px solid #228be6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block;"></div>
+        <style>
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        </style>
+      </div>
+      
+      <!-- Themas container -->
+      <div style="margin-top: 30px;">
+        <h3 class="mantine-Title-root" style="margin-bottom: 10px;">Existing Themas</h3>
+        <div id="themasContainer" class="thema-container">
+          <div style="text-align: center; color: #333333;">
+            Loading themas...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const externFilter = document.getElementById('externFilter');
+      const errorContainer = document.getElementById('errorContainer');
+      const successContainer = document.getElementById('successContainer');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const themasContainer = document.getElementById('themasContainer');
+      
+      // Load themas when page loads
+      fetchThemas();
+      
+      // Event listener for extern filter change
+      externFilter.addEventListener('change', function() {
+        fetchThemas();
+      });
+      
+      // Function to fetch and display themas
+      function fetchThemas() {
+        // Show loading indicator
+        showLoading();
+        themasContainer.innerHTML = '<div style="text-align: center; color: #333333;">Loading themas...</div>';
+        
+        // Get filter value
+        const externValue = externFilter.value;
+        
+        // Build API URL
+        let apiUrl = 'uniqueThema.php';
+        if (externValue !== '') {
+          apiUrl += `?extern=${externValue}`;
+        }
+        
+        // Fetch themas from API
+        fetch(apiUrl)
+          .then(response => response.json())
+          .then(data => {
+            hideLoading();
+            
+            if (data.length > 0) {
+              themasContainer.innerHTML = '';
+              data.forEach(thema => {
+                createThemaElement(thema);
+              });
+            } else {
+              themasContainer.innerHTML = '<div style="text-align: center; color: #333333;">No themas found</div>';
+            }
+          })
+          .catch(error => {
+            hideLoading();
+            themasContainer.innerHTML = `
+              <div style="color: #e03131; text-align: center;">
+                Error loading themas: ${error.message}
+              </div>
+            `;
+          });
+      }
+      
+      // Function to create a thema element
+      function createThemaElement(thema) {
+        const themaElement = document.createElement('div');
+        themaElement.className = 'thema-item';
+        themaElement.dataset.thema = thema;
+        
+        const themaName = document.createElement('div');
+        themaName.className = 'thema-name';
+        themaName.textContent = thema;
+        themaName.style.color = '#333333'; // Ensure text color is visible
+        themaElement.appendChild(themaName);
+        
+        // Create actions container
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'thema-actions';
+        
+        // Create edit button
+        const editBtn = document.createElement('button');
+        editBtn.className = 'thema-action-btn edit-btn';
+        editBtn.innerHTML = '✏️ Edit';
+        editBtn.title = 'Edit thema';
+        editBtn.addEventListener('click', function() {
+          activateEditMode(themaElement);
+        });
+        actionsContainer.appendChild(editBtn);
+        
+        themaElement.appendChild(actionsContainer);
+        themasContainer.appendChild(themaElement);
+      }
+      
+      // Function to activate edit mode for a thema
+      function activateEditMode(themaElement) {
+        const themaName = themaElement.querySelector('.thema-name');
+        const actionsContainer = themaElement.querySelector('.thema-actions');
+        const currentThema = themaElement.dataset.thema;
+        
+        // Save current state
+        themaElement.dataset.originalContent = themaElement.innerHTML;
+        
+        // Switch to edit mode
+        themaElement.classList.add('thema-edit-mode');
+        
+        // Create edit form
+        const editForm = document.createElement('div');
+        editForm.className = 'thema-edit-form';
+        
+        // Create input for new thema value
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'mantine-TextInput-input';
+        input.value = currentThema;
+        input.style.flexGrow = '1';
+        input.style.padding = '8px 12px';
+        input.style.border = '1px solid #ced4da';
+        input.style.borderRadius = '4px';
+        input.style.color = '#333333'; // Dark text color for visibility
+        
+        // Create save button
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'thema-action-btn save-btn';
+        saveBtn.innerHTML = '✅ Save';
+        saveBtn.addEventListener('click', function() {
+          saveThemaChange(themaElement, currentThema, input.value.trim());
+        });
+        
+        // Create cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'thema-action-btn cancel-btn';
+        cancelBtn.innerHTML = '❌ Cancel';
+        cancelBtn.addEventListener('click', function() {
+          cancelEdit(themaElement);
+        });
+        
+        // Add elements to form
+        editForm.appendChild(input);
+        editForm.appendChild(saveBtn);
+        editForm.appendChild(cancelBtn);
+        
+        // Clear the thema element and add the edit form
+        themaElement.innerHTML = '';
+        themaElement.appendChild(editForm);
+        
+        // Focus the input
+        input.focus();
+      }
+      
+      // Function to cancel edit mode
+      function cancelEdit(themaElement) {
+        // Restore original content
+        themaElement.innerHTML = themaElement.dataset.originalContent;
+        themaElement.classList.remove('thema-edit-mode');
+        
+        // Re-attach event listener to edit button
+        const editBtn = themaElement.querySelector('.edit-btn');
+        editBtn.addEventListener('click', function() {
+          activateEditMode(themaElement);
+        });
+      }
+      
+      // Function to save thema changes
+      function saveThemaChange(themaElement, oldThema, newThema) {
+        // Check if values are the same or empty
+        if (oldThema === newThema) {
+          cancelEdit(themaElement);
+          return;
+        }
+        
+        if (newThema === '') {
+          showError('Thema name cannot be empty');
+          return;
+        }
+        
+        // Show loading
+        showLoading();
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('action', 'update');
+        formData.append('oldThema', oldThema);
+        formData.append('newThema', newThema);
+        
+        // Send update request
+        fetch('themas_change.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          hideLoading();
+          
+          if (data.error) {
+            showError(data.error);
+            cancelEdit(themaElement);
+          } else {
+            // Update successful
+            themaElement.dataset.thema = newThema;
+            themaElement.classList.remove('thema-edit-mode');
+            
+            // Update thema name
+            const themaName = document.createElement('div');
+            themaName.className = 'thema-name';
+            themaName.textContent = newThema;
+            themaName.style.color = '#333333'; // Ensure text color is visible
+            
+            // Create actions container
+            const actionsContainer = document.createElement('div');
+            actionsContainer.className = 'thema-actions';
+            
+            // Create edit button
+            const editBtn = document.createElement('button');
+            editBtn.className = 'thema-action-btn edit-btn';
+            editBtn.innerHTML = '✏️ Edit';
+            editBtn.title = 'Edit thema';
+            editBtn.addEventListener('click', function() {
+              activateEditMode(themaElement);
+            });
+            actionsContainer.appendChild(editBtn);
+            
+            // Clear and rebuild thema element
+            themaElement.innerHTML = '';
+            themaElement.appendChild(themaName);
+            themaElement.appendChild(actionsContainer);
+            
+            showSuccess(data.message);
+          }
+        })
+        .catch(error => {
+          hideLoading();
+          showError('Error updating thema: ' + error.message);
+          cancelEdit(themaElement);
+        });
+      }
+      
+      // Helper function to show loading indicator
+      function showLoading() {
+        loadingIndicator.style.display = 'block';
+      }
+      
+      // Helper function to hide loading indicator
+      function hideLoading() {
+        loadingIndicator.style.display = 'none';
+      }
+      
+      // Helper function to show error message
+      function showError(message) {
+        errorContainer.style.display = 'block';
+        errorContainer.innerHTML = `
+          <div class="mantine-Alert-root" style="background-color: #fff5f5; color: #e03131; padding: 15px; border-radius: 4px; border-left: 4px solid #e03131;">
+            <p style="margin: 0;">${message}</p>
+          </div>
+        `;
+        
+        // Auto-hide error message after 5 seconds
+        setTimeout(hideError, 5000);
+      }
+      
+      // Helper function to hide error message
+      function hideError() {
+        errorContainer.style.display = 'none';
+        errorContainer.innerHTML = '';
+      }
+      
+      // Helper function to show success message
+      function showSuccess(message) {
+        successContainer.style.display = 'block';
+        successContainer.innerHTML = `
+          <div class="mantine-Alert-root" style="background-color: #f1f9ee; color: #2b8a3e; padding: 15px; border-radius: 4px; border-left: 4px solid #2b8a3e;">
+            <p style="margin: 0;">${message}</p>
+          </div>
+        `;
+        
+        // Auto-hide success message after 5 seconds
+        setTimeout(hideSuccess, 5000);
+      }
+      
+      // Helper function to hide success message
+      function hideSuccess() {
+        successContainer.style.display = 'none';
+        successContainer.innerHTML = '';
+      }
+    });
+  </script>
+</body>
+</html>

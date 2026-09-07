@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>signCollect - Uitloggen</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .logout-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .logout-icon {
+            font-size: 56px;
+            color: #0f3460;
+            margin-bottom: 20px;
+        }
+        .logout-card h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .logout-card p {
+            color: #6c757d;
+            font-size: 15px;
+            margin-bottom: 28px;
+        }
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .btn-logout {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #dc3545, #a71d2a);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-logout:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+        .btn-cancel {
+            padding: 12px 32px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #fff;
+            color: #1a1a2e;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-cancel:hover {
+            border-color: #0f3460;
+            transform: translateY(-1px);
+            color: #0f3460;
+        }
+    </style>
+</head>
+<body>
+
+<div class="logout-card">
+    <div class="logout-icon">
+        <i class="fas fa-sign-out-alt"></i>
+    </div>
+    <h1>Uitloggen</h1>
+    <p>Weet u zeker dat u wilt uitloggen?</p>
+    <div class="btn-row">
+        <a href="/index.html" class="btn-cancel">Annuleren</a>
+        <button id="logout-button" class="btn-logout">
+            <i class="fas fa-power-off me-2"></i>Uitloggen
+        </button>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#logout-button').click(function () {
+            // Clear the session cookie under every domain variant we may
+            // have set it under historically (no-domain, @DOMAIN@,
+            // @DOMAIN@) — otherwise a leftover copy survives and
+            // login.html's checkSession() bounces straight back to the menu.
+            var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+            document.cookie = expired;
+            document.cookie = expired + '; domain=@DOMAIN@';
+            document.cookie = expired + '; domain=@DOMAIN@';
+            sessionStorage.clear();
+            // ?fresh=1 tells login.html to stay put even if a cookie copy
+            // we couldn't see/clear is still lingering somehow.
+            window.location.href = '/login.html?fresh=1';
+        });
+    });
+</script>
+
+</body>
+</html>

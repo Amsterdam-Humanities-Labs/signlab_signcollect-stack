@@ -1,0 +1,615 @@
+[
+    {
+        "base_gloss": "ROODKAPJE",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "FUCK",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "ZELFMOORD",
+        "found_suffixes": [
+            "A",
+            "C",
+            "D"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C'] but found ['A', 'C', 'D']"
+    },
+    {
+        "base_gloss": "VETER",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "DRIVE",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "DRIVE-B",
+        "suggested_gloss": "DRIVE",
+        "reason": "Gloss 'DRIVE-B' does not have a corresponding 'DRIVE' or 'DRIVE-A'. Suggest changing to 'DRIVE'."
+    },
+    {
+        "base_gloss": "ALBANI\u00cb",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "ALBANI\u00cb-B",
+        "suggested_gloss": "ALBANI\u00cb",
+        "reason": "Gloss 'ALBANI\u00cb-B' does not have a corresponding 'ALBANI\u00cb' or 'ALBANI\u00cb-A'. Suggest changing to 'ALBANI\u00cb'."
+    },
+    {
+        "base_gloss": "SCHOUDER",
+        "found_suffixes": [
+            "B",
+            "C",
+            "D"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C'] but found ['B', 'C', 'D']"
+    },
+    {
+        "base_gloss": "300",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "2000",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "BEAR",
+        "found_suffixes": [
+            "F"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['F']"
+    },
+    {
+        "incorrect_gloss": "BEAR-F",
+        "suggested_gloss": "BEAR",
+        "reason": "Gloss 'BEAR-F' does not have a corresponding 'BEAR' or 'BEAR-A'. Suggest changing to 'BEAR'."
+    },
+    {
+        "base_gloss": "DROMEN",
+        "found_suffixes": [
+            "A",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['A', 'C']"
+    },
+    {
+        "base_gloss": "BEFFEN",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "VISIE",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "GRAFIEK",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "HAAT",
+        "found_suffixes": [
+            "A",
+            "C",
+            "D"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C'] but found ['A', 'C', 'D']"
+    },
+    {
+        "base_gloss": "KLAP",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "IN-SLAAP-VALLEN",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "KERK",
+        "found_suffixes": [
+            "B",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['B', 'C']"
+    },
+    {
+        "base_gloss": "KNIKKER",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "KLEUR",
+        "found_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "I"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] but found ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I']"
+    },
+    {
+        "base_gloss": "LOLLY",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "MADRID",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "MORGEN",
+        "found_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "F"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C', 'D', 'E'] but found ['A', 'B', 'C', 'D', 'F']"
+    },
+    {
+        "base_gloss": "TOEVOEGEN",
+        "found_suffixes": [
+            "A",
+            "B",
+            "C",
+            "E"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C', 'D'] but found ['A', 'B', 'C', 'E']"
+    },
+    {
+        "base_gloss": "GIFTIG",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "GIFTIG-B",
+        "suggested_gloss": "GIFTIG",
+        "reason": "Gloss 'GIFTIG-B' does not have a corresponding 'GIFTIG' or 'GIFTIG-A'. Suggest changing to 'GIFTIG'."
+    },
+    {
+        "base_gloss": "FLUITEN",
+        "found_suffixes": [
+            "A",
+            "B",
+            "C",
+            "E"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C', 'D'] but found ['A', 'B', 'C', 'E']"
+    },
+    {
+        "base_gloss": "ALKMAAR",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "DRUMMEN",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "ZONSOPGANG",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "RUG",
+        "found_suffixes": [
+            "A",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['A', 'C']"
+    },
+    {
+        "base_gloss": "SCANDINAVIE",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "PROBEREN",
+        "found_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "Z"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C', 'D', 'E', 'F'] but found ['A', 'B', 'C', 'D', 'E', 'Z']"
+    },
+    {
+        "base_gloss": "VUILNISZAK-A/-B/",
+        "found_suffixes": [
+            "C"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['C']"
+    },
+    {
+        "incorrect_gloss": "VUILNISZAK-A/-B/-C",
+        "suggested_gloss": "VUILNISZAK-A/-B/",
+        "reason": "Gloss 'VUILNISZAK-A/-B/-C' does not have a corresponding 'VUILNISZAK-A/-B/' or 'VUILNISZAK-A/-B/-A'. Suggest changing to 'VUILNISZAK-A/-B/'."
+    },
+    {
+        "base_gloss": "ELLEN-NAUTA",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "LOPEND-VOORTBEWEGEN",
+        "found_suffixes": [
+            "A",
+            "C",
+            "D",
+            "E"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B",
+            "C",
+            "D"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B', 'C', 'D'] but found ['A', 'C', 'D', 'E']"
+    },
+    {
+        "base_gloss": "#PVDD",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "#PVDD-B",
+        "suggested_gloss": "#PVDD",
+        "reason": "Gloss '#PVDD-B' does not have a corresponding '#PVDD' or '#PVDD-A'. Suggest changing to '#PVDD'."
+    },
+    {
+        "base_gloss": "SEKSUEEL MISBRUIK",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "SEKSUEEL MISBRUIK-B",
+        "suggested_gloss": "SEKSUEEL MISBRUIK",
+        "reason": "Gloss 'SEKSUEEL MISBRUIK-B' does not have a corresponding 'SEKSUEEL MISBRUIK' or 'SEKSUEEL MISBRUIK-A'. Suggest changing to 'SEKSUEEL MISBRUIK'."
+    },
+    {
+        "base_gloss": "HAAST",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "OP TIJD",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "OP TIJD-B",
+        "suggested_gloss": "OP TIJD",
+        "reason": "Gloss 'OP TIJD-B' does not have a corresponding 'OP TIJD' or 'OP TIJD-A'. Suggest changing to 'OP TIJD'."
+    },
+    {
+        "base_gloss": "LIEVER NIET",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "LIEVER NIET-B",
+        "suggested_gloss": "LIEVER NIET",
+        "reason": "Gloss 'LIEVER NIET-B' does not have a corresponding 'LIEVER NIET' or 'LIEVER NIET-A'. Suggest changing to 'LIEVER NIET'."
+    },
+    {
+        "base_gloss": "DUIZENDPOOT",
+        "found_suffixes": [
+            "A",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['A', 'C']"
+    },
+    {
+        "base_gloss": "SPRINKHAAN",
+        "found_suffixes": [
+            "A",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['A', 'C']"
+    },
+    {
+        "base_gloss": "SLAAPKAMER",
+        "found_suffixes": [
+            "A",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['A', 'C']"
+    },
+    {
+        "base_gloss": "BUDGET",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "BUDGET-B",
+        "suggested_gloss": "BUDGET",
+        "reason": "Gloss 'BUDGET-B' does not have a corresponding 'BUDGET' or 'BUDGET-A'. Suggest changing to 'BUDGET'."
+    },
+    {
+        "base_gloss": "BUIKPIJN",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "base_gloss": "DOBBELSTEEN",
+        "found_suffixes": [
+            "A",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['A', 'C']"
+    },
+    {
+        "base_gloss": "ONDERSTEBOVEN",
+        "found_suffixes": [
+            "A",
+            "C"
+        ],
+        "expected_suffixes": [
+            "A",
+            "B"
+        ],
+        "reason": "Expected sequential suffixes ['A', 'B'] but found ['A', 'C']"
+    },
+    {
+        "base_gloss": "KOEKJES",
+        "found_suffixes": [
+            "B"
+        ],
+        "expected_suffixes": [
+            "A"
+        ],
+        "reason": "Expected sequential suffixes ['A'] but found ['B']"
+    },
+    {
+        "incorrect_gloss": "KOEKJES-B",
+        "suggested_gloss": "KOEKJES",
+        "reason": "Gloss 'KOEKJES-B' does not have a corresponding 'KOEKJES' or 'KOEKJES-A'. Suggest changing to 'KOEKJES'."
+    }
+]

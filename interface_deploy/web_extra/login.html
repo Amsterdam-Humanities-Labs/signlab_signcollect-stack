@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>signCollect - Login</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .login-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .login-logo i {
+            font-size: 48px;
+            color: #0f3460;
+            margin-bottom: 12px;
+        }
+        .login-logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 8px 0 4px;
+        }
+        .login-logo p {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 0;
+        }
+        .form-floating {
+            margin-bottom: 16px;
+        }
+        .form-floating .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            height: 56px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+        .form-floating .form-control:focus {
+            border-color: #0f3460;
+            box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.15);
+        }
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0f3460, #1a1a2e);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 8px;
+        }
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(15, 52, 96, 0.4);
+        }
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        .alert-msg {
+            display: none;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="login-logo">
+        <i class="fas fa-hands-asl-interpreting"></i>
+        <h1>signCollect</h1>
+        <p>Log in om verder te gaan</p>
+    </div>
+
+    <div class="alert alert-danger alert-msg" id="errorMsg"></div>
+
+    <form id="login-form">
+        <div class="form-floating">
+            <input type="text" class="form-control" id="username" name="username" placeholder="Gebruikersnaam" required autofocus>
+            <label for="username"><i class="fas fa-user me-2"></i>Gebruikersnaam</label>
+        </div>
+        <div class="form-floating">
+            <input type="password" class="form-control" id="password" name="password" placeholder="Wachtwoord" required>
+            <label for="password"><i class="fas fa-lock me-2"></i>Wachtwoord</label>
+        </div>
+        <button type="submit" class="btn-login" id="loginBtn">
+            <span id="loginText">Inloggen</span>
+            <span id="loginSpinner" style="display:none"><i class="fas fa-spinner fa-spin"></i> Laden...</span>
+        </button>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function () {
+        checkSession();
+    });
+
+    function getRedirectUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var redirect = params.get('redirect');
+        // Only honor explicit ?redirect= when it points back into @DOMAIN@
+        // AND isn't the legacy /menu.html landing page (we always land on the
+        // hub /index.html now; users pick the interface they want from there).
+        if (redirect
+            && redirect.indexOf('@DOMAIN@') !== -1
+            && !/\/menu\.html(?:[?#]|$)/.test(redirect)) {
+            return redirect;
+        }
+        return '/index.html';
+    }
+
+    function checkSession() {
+        // If the user just logged out, stay on the login form even if some
+        // copy of the cookie is still lingering — and aggressively clear it
+        // under every domain variant so the next page load is clean.
+        var freshLogout = new URLSearchParams(window.location.search).get('fresh') === '1';
+        if (freshLogout) {
+            var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+            document.cookie = expired;
+            document.cookie = expired + '; domain=@DOMAIN@';
+            document.cookie = expired + '; domain=@DOMAIN@';
+            return;
+        }
+
+        var cookies = decodeURIComponent(document.cookie);
+        var sessionCookie = cookies.split('; ').find(row => row.startsWith('sessionObject='));
+        if (sessionCookie) {
+            try {
+                var rawValue = sessionCookie.split('=').slice(1).join('=');
+                var sessionData = JSON.parse(rawValue);
+                if (sessionData.userId) {
+                    // Delete old cookie (without domain) and re-set with domain for subdomains
+                    document.cookie = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+                    var expires = sessionData.expiresAt || new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+                    document.cookie = 'sessionObject=' + encodeURIComponent(JSON.stringify(sessionData)) + '; expires=' + expires + '; path=/; domain=@DOMAIN@';
+                    window.location.href = getRedirectUrl();
+                }
+            } catch (e) {}
+        }
+    }
+
+    function showError(msg) {
+        $('#errorMsg').text(msg).fadeIn(200);
+    }
+
+    $('#login-form').submit(function (event) {
+        event.preventDefault();
+        $('#errorMsg').hide();
+
+        var username = $('#username').val();
+        var password = $('#password').val();
+
+        $('#loginText').hide();
+        $('#loginSpinner').show();
+        $('#loginBtn').prop('disabled', true);
+
+        $.ajax({
+            url: 'login_sc.php',
+            method: 'POST',
+            data: { username: username, password: password },
+            success: function (response) {
+                var data = JSON.parse(response);
+                if (data.status === 'success') {
+                    var role = data.role || 'user';
+                    var expires = new Date();
+                    expires.setFullYear(expires.getFullYear() + 1);
+                    var sessionObject = {
+                        userId: data.userId,
+                        username: data.username,
+                        role: role,
+                        expiresAt: expires.toUTCString()
+                    };
+                    document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expires.toUTCString()}; path=/; domain=@DOMAIN@`;
+                    window.location.href = getRedirectUrl();
+                } else if (data.status === 'blocked') {
+                    showError('Uw account is geblokkeerd. Neem contact op met een beheerder.');
+                    $('#loginText').show();
+                    $('#loginSpinner').hide();
+                    $('#loginBtn').prop('disabled', false);
+                } else {
+                    showError('Ongeldige gebruikersnaam of wachtwoord.');
+                    $('#loginText').show();
+                    $('#loginSpinner').hide();
+                    $('#loginBtn').prop('disabled', false);
+                }
+            },
+            error: function () {
+                showError('Er is een fout opgetreden. Probeer het opnieuw.');
+                $('#loginText').show();
+                $('#loginSpinner').hide();
+                $('#loginBtn').prop('disabled', false);
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
