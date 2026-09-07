@@ -1,23 +1,23 @@
 # Tailscale issues a cert only for this node's own name, so the production
 # subdomains become path mounts on a single origin. rewrite-urls.sh points the
 # code here: api.signcollect.nl -> /api, media.signcollect.nl -> /media.
-Alias /api   /web/zin/api
-Alias /media /web/media_stub
+Alias /api   @WEBROOT@/zin/api
+Alias /media @WEBROOT@/media_stub
 
-<Directory /web/zin/api>
+<Directory @WEBROOT@/zin/api>
     Options +FollowSymLinks -Indexes
     AllowOverride All
     Require all granted
 </Directory>
-<Directory /web/media_stub>
+<Directory @WEBROOT@/media_stub>
     Options -Indexes
     AllowOverride None
     Require all granted
 </Directory>
 
 # mocap.signcollect.nl gets no Alias, deliberately. Its production vhost has
-# DocumentRoot /web/mocap_site, and repos.tsv deploys that repo to exactly
-# /web/mocap_site here - so the portal is already reachable at /mocap_site/
+# DocumentRoot @WEBROOT@/mocap_site, and repos.tsv deploys that repo to exactly
+# @WEBROOT@/mocap_site here - so the portal is already reachable at /mocap_site/
 # under the single origin, and rewrite-urls.sh points the menu tile there.
 # An Alias would only add a second URL for the same tree. Note the path could
 # not have been /mocap: that is signlab_mocap, a different component, which

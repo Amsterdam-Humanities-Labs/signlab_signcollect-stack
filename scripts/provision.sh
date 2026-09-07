@@ -91,28 +91,28 @@ ssh "$HOST" 'set -e
 # a host built from scratch was the only place the assumption showed up, as a
 # 500 on the first selfie recording.
 ssh "$HOST" 'set -e
-  sudo mkdir -p /web /web/media_stub /web/uploads /web/uploads/lsm
-  sudo chown -R "$USER":www-data /web
-  sudo chmod 2775 /web /web/uploads /web/uploads/lsm
-  [ -f /web/media_stub/index.html ] || echo "media stub" | sudo tee /web/media_stub/index.html >/dev/null
-  echo "  /web ready"'
+  sudo mkdir -p '"$WEBROOT"' '"$WEBROOT"'/media_stub '"$WEBROOT"'/uploads '"$WEBROOT"'/uploads/lsm
+  sudo chown -R "$USER":www-data '"$WEBROOT"'
+  sudo chmod 2775 '"$WEBROOT"' '"$WEBROOT"'/uploads '"$WEBROOT"'/uploads/lsm
+  [ -f '"$WEBROOT"'/media_stub/index.html ] || echo "media stub" | sudo tee '"$WEBROOT"'/media_stub/index.html >/dev/null
+  echo "  '"$WEBROOT"' ready"'
 
 # --- 3. database + credentials -----------------------------------------
 # .env is created only once; a re-run must not invalidate the password the
 # database already has.
 ssh "$HOST" "set -e
-  if [ ! -f /web/.env ]; then
+  if [ ! -f '"$WEBROOT"'/.env ]; then
     pw=\$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
     sudo mysql -e \"CREATE DATABASE IF NOT EXISTS $DB CHARACTER SET utf8mb4;\"
     sudo mysql -e \"CREATE USER IF NOT EXISTS '$DBUSER'@'localhost' IDENTIFIED BY '\$pw';\"
     sudo mysql -e \"ALTER USER '$DBUSER'@'localhost' IDENTIFIED BY '\$pw';\"
     sudo mysql -e \"GRANT ALL PRIVILEGES ON $DB.* TO '$DBUSER'@'localhost'; FLUSH PRIVILEGES;\"
-    printf 'DB_HOST=localhost\nDB_USER=$DBUSER\nDB_PASS=%s\nDB_NAME=$DB\n' \"\$pw\" > /web/.env
-    chmod 640 /web/.env; sudo chown \"\$USER\":www-data /web/.env
-    echo '  database created, /web/.env written (password not shown)'
+    printf 'DB_HOST=localhost\nDB_USER=$DBUSER\nDB_PASS=%s\nDB_NAME=$DB\nSC_WEB_ROOT='"$WEBROOT"'\n' \"\$pw\" > '"$WEBROOT"'/.env
+    chmod 640 '"$WEBROOT"'/.env; sudo chown \"\$USER\":www-data '"$WEBROOT"'/.env
+    echo '  database created, '"$WEBROOT"'/.env written with SC_WEB_ROOT (password not shown)'
   else
     sudo mysql -e \"CREATE DATABASE IF NOT EXISTS $DB CHARACTER SET utf8mb4;\"
-    echo '  /web/.env already exists - left alone'
+    echo '  '"$WEBROOT"'/.env already exists - left alone'
   fi"
 
 # --- 4. schema + demo login --------------------------------------------
@@ -151,9 +151,17 @@ ssh "$HOST" "set -e
   fi"
 
 # --- 6. apache config ---------------------------------------------------
-sed "s|@DOMAIN@|$DOMAIN|g" apache/vhost-ssl.conf.template > /tmp/vhost-$DOMAIN.conf
+# Every apache file is a template now: DocumentRoot, the /api and /media
+# aliases and the deny rules all sit below the install root, so they have to
+# follow --webroot or apache serves a directory the deploy never wrote to.
+sed -e "s|@DOMAIN@|$DOMAIN|g" -e "s|@WEBROOT@|$WEBROOT|g" \
+    apache/vhost-ssl.conf.template > /tmp/vhost-$DOMAIN.conf
 scp -q /tmp/vhost-$DOMAIN.conf "$HOST:/tmp/demo-ssl.conf"; rm -f /tmp/vhost-$DOMAIN.conf
-for f in apache/*.conf; do scp -q "$f" "$HOST:/tmp/$(basename "$f")"; done
+for f in apache/signcollect-*.conf.template; do
+  out=$(basename "$f" .template)
+  sed -e "s|@WEBROOT@|$WEBROOT|g" "$f" > "/tmp/$out"
+  scp -q "/tmp/$out" "$HOST:/tmp/$out"; rm -f "/tmp/$out"
+done
 ssh "$HOST" 'set -e
   sudo mv /tmp/demo-ssl.conf /etc/apache2/sites-available/demo-ssl.conf
   sudo a2ensite demo-ssl >/dev/null 2>&1 || true

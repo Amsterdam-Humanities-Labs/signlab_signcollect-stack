@@ -7,7 +7,7 @@
 <IfModule mod_ssl.c>
 <VirtualHost *:443>
 	ServerName @DOMAIN@
-	DocumentRoot /web
+	DocumentRoot @WEBROOT@
 
 	SSLEngine on
 	SSLCertificateFile    /etc/ssl/demo/@DOMAIN@.crt
@@ -21,6 +21,6 @@
 # Plain HTTP redirects to HTTPS rather than serving the app unencrypted.
 <VirtualHost *:80>
 	ServerName @DOMAIN@
-	DocumentRoot /web
+	DocumentRoot @WEBROOT@
 	Redirect permanent / https://@DOMAIN@/
 </VirtualHost>

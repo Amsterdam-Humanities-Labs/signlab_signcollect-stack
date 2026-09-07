@@ -18,6 +18,7 @@
 #
 #   --host <ssh-target>   or HOST=...    required by everything
 #   --domain <name>       or DOMAIN=...  optional; derived from the host
+#   --webroot <path>      or WEBROOT=...  optional; where the site is installed
 #
 # DOMAIN is derived from `tailscale status --self` because that is the only
 # name the TLS certificate can have: `tailscale cert` issues for a node's own
@@ -40,6 +41,8 @@ sc_parse_common() {
       --host=*)    HOST=${1#--host=};     shift ;;
       --domain)    [ $# -ge 2 ] || sc_die "--domain needs a value"; DOMAIN=$2; shift 2 ;;
       --domain=*)  DOMAIN=${1#--domain=}; shift ;;
+      --webroot)   [ $# -ge 2 ] || sc_die "--webroot needs a value"; WEBROOT=$2; shift 2 ;;
+      --webroot=*) WEBROOT=${1#--webroot=}; shift ;;
       --)          shift; while [ $# -gt 0 ]; do sc_args+=("$1"); shift; done ;;
       *)           sc_args+=("$1"); shift ;;
     esac
@@ -48,6 +51,18 @@ sc_parse_common() {
 
 sc_require_host() {
   [ -n "${HOST:-}" ] || sc_die "no host given: pass --host <ssh-target> (or set HOST)"
+
+  # One value, normalised once. A trailing slash here would produce paths like
+  # /srv/signcollect//uploads, which work but read badly in every log line, and
+  # SC_WEB_ROOT is compared as a string by tests/path-test.sh.
+  WEBROOT=${WEBROOT:-/web}
+  case "$WEBROOT" in
+    /*) ;;
+    *)  sc_die "--webroot must be an absolute path, got: $WEBROOT" ;;
+  esac
+  WEBROOT=${WEBROOT%/}
+  [ -n "$WEBROOT" ] || sc_die "--webroot cannot be /"
+  export WEBROOT
 }
 
 # Ask the host what it is called. Only run when the caller did not say.
