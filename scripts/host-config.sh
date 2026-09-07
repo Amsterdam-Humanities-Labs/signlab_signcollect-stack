@@ -53,3 +53,26 @@ for ed in subBeta8 3DAnn3; do
     chmod 775 \"\$d/zin/cache\" \"\$d/zin/eaf/zin\" 2>/dev/null || true"
   echo "  annotation-editors/$ed: mysql_config symlinked, runtime dirs ready"
 done
+
+# /web/glosses_transformed.json - the Signbank gloss export, ~10.5MB of JSON.
+#
+# Read by absolute path from the docroot root by several components
+# (signCollect-v2 get_glosses.php, signlab_zin getSenses.php, signlab_hh
+# getGlosses.php, the annotation tool), so it has to exist at exactly this
+# path. It was 404 on the demo, which broke every one of them.
+#
+# It ships from assets/ rather than a component tree because it belongs to no
+# single component - it is shared data that four of them read - and deploy.sh
+# only carries component directories plus web_extra's root files.
+#
+# rsync, not scp: it is re-sent as a delta when it changes and is a no-op when
+# it has not, which matters for a file this size on every redeploy. -a keeps
+# the 644 and lands it gomer:staff, the same as the other /web root files.
+#
+# Production carries four byte-identical copies - /web, menu_old/,
+# blendBaking/, hh/ - plus a stale half-size one under helpScripts/test/ from
+# 2024 that is a test fixture, not the export. Only the docroot root copy is
+# deployed here; every component resolves it by absolute path, so the
+# duplicates buy nothing.
+rsync -a assets/glosses_transformed.json "$HOST:/web/glosses_transformed.json"
+echo "  glosses_transformed.json installed ($(wc -c < assets/glosses_transformed.json) bytes)"
