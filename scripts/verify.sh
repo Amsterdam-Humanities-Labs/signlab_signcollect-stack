@@ -16,7 +16,14 @@ for p in / /index.html /menu_beta/index.html \
 echo "== interface components =="
 for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
          /downloadVideos/downloadThemaVideo.html /menu_beta/users.html \
-         /menu_beta/labels_add.html /menu_beta/batch_add.html /stats.html; do chk "$p" 200; done
+         /menu_beta/labels_add.html /menu_beta/batch_add.html \
+         /menu_beta/activity.html; do chk "$p" 200; done
+# /stats.html was a one-off static Chart.js report of media-server download
+# logs, generated 2026-07-06 and never regenerated, reached from a menu entry
+# labelled "Gebruikersactiviteit" - which is not what it showed. menu_beta's
+# activity.html replaces it and reads the activity_log table live, so the old
+# file is gone and must stay gone.
+chk /stats.html 404
 # /api is the signlab_sCAPI submodule - a separate service, out of scope for
 # an interface-only deploy. One endpoint (/zin/api/getSamVideos.php) is called
 # from two places and will not work without it.
@@ -25,7 +32,7 @@ for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
 # scripts all resolve it at this absolute path, so a 404 here is silent -
 # they get an HTML error page where they expect JSON.
 echo "== signbank export =="
-chk /glosses_transformed.json 200
+chk /signbank_data/glosses_transformed.json 200
 echo "== secrets must be denied =="
 for p in /mysql_config.php /zin/mysql_config.php /zin/.env /.env; do chk "$p" 403; done
 echo "== isolation from production =="
