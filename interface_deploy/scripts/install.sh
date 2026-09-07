@@ -63,6 +63,12 @@ echo
 echo "== host config =="
 HOST="$HOST" scripts/host-config.sh
 
+# 6. Schema migrations. db/schema.sql is a point-in-time dump; anything added
+#    since exists only in migrations/, and the interface breaks without them.
+echo
+echo "== migrations =="
+HOST="$HOST" scripts/migrate.sh
+
 echo
 echo "== verify =="
 scripts/verify.sh "https://$DOMAIN" || true
