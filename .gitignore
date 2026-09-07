@@ -7,3 +7,6 @@ secrets.env
 # Real credentials, generated per host by provision.sh.
 .env
 web_extra/.env
+
+# Local credential, never committed (was stripped from history 2026-09-07).
+.dbpass.local
