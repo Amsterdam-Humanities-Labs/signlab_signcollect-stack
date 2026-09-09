@@ -6,70 +6,93 @@ the public API.
 
 There is no code here. This repo exists so a new developer can see, in one
 place, what the repositories are, which of them talk to each other, and where
-each one runs.
+each one runs. What each repository *does* belongs in that repository's own
+README; this is the map, not the territory.
 
 > 📖 **[Read the Manual →](MANUAL.md)**
 > Every repository in one document: what it is for, **live links you can try
 > right now**, how to use each interface, the endpoints behind it, and a
-> troubleshooting section. This README is the map; the manual is the handbook.
+> troubleshooting section.
+>
+> 🛠️ **[Install a host →](docs/install.md)** · **[How a deploy works →](docs/deploy.md)**
+> Taking a bare Ubuntu box to a running SignCollect interface, and what the
+> deploy toolchain in [`interface_deploy/`](interface_deploy) does when it
+> gets there.
 >
 > 🧭 **[Open the interactive explorer →](https://claude.ai/code/artifact/e2000f09-da0e-4995-9b45-e043269f63b6)**
-> The same 28 repositories as a searchable, filterable map laid out along the
-> pipeline — click any repository for its detail and live links.
+> The repositories as a searchable, filterable map laid out along the
+> pipeline. It predates the three most recent additions.
 
 All of these repos live in the **Amsterdam-Humanities-Labs** organisation under
 a `signlab_` name prefix. Every organisation member has access automatically —
 there is nothing to request per repo. Prose in this document uses the short
-names (`viconSync`, not `signlab_viconSync`) for readability; the tables link
+names (`viconSync`, not `signlab_viconSync`) for readability; the table links
 each one to its actual location.
-
-The index covers **27 repositories**, all in the single table below. The `Layer`
-column separates the nine **core stack** repos — the ones that carry data from
-camera to API, documented in depth further down — from the eighteen web tools
-and services built on top of that data.
 
 ## The repositories
 
-Every repo is private except `signlab_Sony-SDK-MACOS-API`. The nine in the
-**core stack** carry data along the camera-to-API path and are documented in
-depth further down; the rest are web tools and services built on top of that
-data, deployed under `/web/<name>` where the directory is the repo name minus
-the `signlab_` prefix.
+Thirty-one repositories, plus the deploy toolchain that lives in this one. The
+`Layer` column groups them; `Role` is an identifying phrase and nothing more.
+Every repo is private except `signlab_Sony-SDK-MACOS-API`.
 
-| Repo | Layer | Language | Role |
-|---|---|---|---|
-| [signlab_viconSync](https://github.com/Amsterdam-Humanities-Labs/signlab_viconSync) | Core stack | Python | Vicon mocap capture → storage → database |
-| [signlab_blackmagic_control](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control) | Core stack | Python | `bmcam` — control Blackmagic cameras over REST |
-| [signlab_blackmagic_RD_sync](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync) | Core stack | Python | Blackmagic clips → H.265 → research drive |
-| [signlab_Sony-SDK-MACOS-API](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API) | Core stack | C++ | Multi-camera controller for Sony FX30 on macOS — **the one public repo** |
-| [signlab_pythonCron](https://github.com/Amsterdam-Humanities-Labs/signlab_pythonCron) | Core stack | Python | Scheduler + watchdog for every recurring job |
-| [signlab_sC-Animation-PP](https://github.com/Amsterdam-Humanities-Labs/signlab_sC-Animation-PP) | Core stack | PHP | Mocap animation post-processing manager |
-| [signlab_sCAPI](https://github.com/Amsterdam-Humanities-Labs/signlab_sCAPI) | Core stack | PHP | Public read API — `api.signcollect.nl` |
-| [signlab_signCollect-v2](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2) | Core stack | JavaScript + PHP | Gloss management web interface |
-| [signlab_hh](https://github.com/Amsterdam-Humanities-Labs/signlab_hh) | Core stack | HTML + Python | Dutch health-content indexing — **dormant** |
-| [signlab_zin](https://github.com/Amsterdam-Humanities-Labs/signlab_zin) | Annotation | PHP + Python | The main annotation tool — synchronise Dutch text, Signbank glosses and video into subtitle/gloss tracks. The largest repo here |
-| [signlab_annotation-tool](https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-tool) | Annotation | JavaScript | Browser-only multi-tier timeline editor that saves ELAN `.eaf` files. No server component |
-| [signlab_annotation-editors](https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-editors) | Annotation | PHP | Self-contained extracts of the two production editors (`subBeta8`, `3DAnn2`) lifted out of `zin` |
-| [signlab_mocapStudio](https://github.com/Amsterdam-Humanities-Labs/signlab_mocapStudio) | Studio & mocap | PHP | Motion Capture Studio UI — 3D recording pages, sentence/video checks, capture stats |
-| [signlab_studioIndex](https://github.com/Amsterdam-Humanities-Labs/signlab_studioIndex) | Studio & mocap | PHP | Studio Index — browse the studio archive by date with per-date completion status |
-| [signlab_studio_beta](https://github.com/Amsterdam-Humanities-Labs/signlab_studio_beta) | Studio & mocap | PHP | Camera Control — FX30 capture control, proxying, and capture/debug logs |
-| [signlab_mocap](https://github.com/Amsterdam-Humanities-Labs/signlab_mocap) | Studio & mocap | Python + PHP | Motion Capture NGT Recordings — capture lists, record matching, CSV/JSON→SQL importers |
-| [signlab_mocap_lab](https://github.com/Amsterdam-Humanities-Labs/signlab_mocap_lab) | Studio & mocap | PHP | Lab capture endpoints and reference media (images, topics, FBX uploads) |
-| [signlab_mocapDataPackage](https://github.com/Amsterdam-Humanities-Labs/signlab_mocapDataPackage) | Studio & mocap | PHP | Upload endpoint that receives and stores large zip packages of capture data |
-| [signlab_viconDashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_viconDashboard) | Studio & mocap | PHP + JS | Real-time dashboard for Vicon sessions — capture status, file completions, 3D viewer links |
-| [mocap_site](https://github.com/Amsterdam-Humanities-Labs/mocap_site) | Studio & mocap | HTML | Single-page Motion Capture Portal entry point. **Not yet renamed** — see the note below |
-| [signlab_videoFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoFix) | Video | PHP | Crop Fix Manager — track and apply per-video crop corrections |
-| [signlab_videoBackgroundFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoBackgroundFix) | Video | PHP | Background and framing correction for studio clips, with preview frames and a job queue |
-| [signlab_s3b_glb](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_glb) | 3D & assets | PHP | GLB viewer over the sign collection, backed by gloss and sense caches |
-| [signlab_s3b_server](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_server) | 3D & assets | PHP + Python | SAM3D-body upload and hand-cluster clustering server, with a cluster viewer |
-| [signlab_s3b_viewer](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_viewer) | 3D & assets | PHP | Standalone SAM 3D Body viewer over a small file API |
-| [signlab_mhr](https://github.com/Amsterdam-Humanities-Labs/signlab_mhr) | 3D & assets | — | MHR avatar mesh/animation sources. The binaries exceed GitHub's 100 MB limit and are gitignored; the repo README covers the Git LFS setup |
-| [signlab_client_monitor_api](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_api) | Monitoring | PHP + Python | Registration and heartbeat API for long-running scripts and cron jobs |
-| [signlab_client_monitor_dashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard) | Monitoring | PHP + JS | Dashboard UI over the client monitor API |
-| [interface_deploy](interface_deploy) | Deployment | Bash + PHP | Stands the SignCollect interface up on a demo VPS — provisions LAMP, clones the seven interface repos, rewrites production URLs, isolates the host. **Lives in this repo, not its own** |
+| Repo | Layer | Role | Language | Server | Status |
+|---|---|---|---|---|---|
+| [signlab_viconSync](https://github.com/Amsterdam-Humanities-Labs/signlab_viconSync) | Core stack | Vicon capture ingest | Python | core server | production |
+| [signlab_blackmagic_control](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control) | Core stack | `bmcam` — Blackmagic camera control | Python | unknown (a studio Mac) | production |
+| [signlab_blackmagic_RD_sync](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync) | Core stack | Camera → research drive sync | Python | unknown (a studio Mac) | production |
+| [signlab_Sony-SDK-MACOS-API](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API) | Core stack | FX30 multi-camera controller | C++ | DRS | production |
+| [signlab_pythonCron](https://github.com/Amsterdam-Humanities-Labs/signlab_pythonCron) | Core stack | Scheduler and watchdog | Python | core server | production |
+| [signlab_sC-Animation-PP](https://github.com/Amsterdam-Humanities-Labs/signlab_sC-Animation-PP) | Core stack | Animation post-processing manager | PHP | core server | production |
+| [signlab_sCAPI](https://github.com/Amsterdam-Humanities-Labs/signlab_sCAPI) | Core stack | Public read API | PHP | core server | production |
+| [signlab_signCollect-v2](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2) | Core stack | Gloss management interface | JavaScript + PHP | core server | production |
+| [signlab_hh](https://github.com/Amsterdam-Humanities-Labs/signlab_hh) | Core stack | Dutch health-content indexing | HTML + Python | core server | **dormant** |
+| [signlab_signcollect-lib](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-lib) | Shared | Database config + install-root resolver | PHP | core server | production |
+| [signlab_zin](https://github.com/Amsterdam-Humanities-Labs/signlab_zin) | Annotation | The main annotation tool | PHP + Python | core server | production |
+| [signlab_annotation-tool](https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-tool) | Annotation | Standalone EAF editor | JavaScript | core server (runs in the browser) | production |
+| [signlab_annotation-editors](https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-editors) | Annotation | The two `zin` editors, extracted | PHP | core server | production |
+| [signlab_mocapStudio](https://github.com/Amsterdam-Humanities-Labs/signlab_mocapStudio) | Studio & mocap | Motion Capture Studio UI | PHP | core server | production |
+| [signlab_studioIndex](https://github.com/Amsterdam-Humanities-Labs/signlab_studioIndex) | Studio & mocap | Studio archive, by date | PHP | core server | production |
+| [signlab_studio_beta](https://github.com/Amsterdam-Humanities-Labs/signlab_studio_beta) | Studio & mocap | Camera Control | PHP | core server | production |
+| [signlab_mocap](https://github.com/Amsterdam-Humanities-Labs/signlab_mocap) | Studio & mocap | Capture register and importers | Python + PHP | core server | production |
+| [signlab_mocap_lab](https://github.com/Amsterdam-Humanities-Labs/signlab_mocap_lab) | Studio & mocap | Lab capture endpoints | PHP | core server | production |
+| [signlab_mocapDataPackage](https://github.com/Amsterdam-Humanities-Labs/signlab_mocapDataPackage) | Studio & mocap | Capture-package upload endpoint | PHP | core server | production |
+| [signlab_viconDashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_viconDashboard) | Studio & mocap | Live Vicon session dashboard | PHP + JS | core server | production |
+| [mocap_site](https://github.com/Amsterdam-Humanities-Labs/mocap_site) | Studio & mocap | Motion Capture Portal entry point | HTML | core server | production |
+| [signlab_videoFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoFix) | Video | Crop Fix Manager | PHP | core server | production |
+| [signlab_videoBackgroundFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoBackgroundFix) | Video | Background and framing correction | PHP | core server | production |
+| [signlab_s3b_glb](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_glb) | 3D & assets | GLB viewer | PHP | core server | experimental |
+| [signlab_s3b_server](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_server) | 3D & assets | SAM3D upload and hand clustering | PHP + Python | core server | experimental |
+| [signlab_s3b_viewer](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_viewer) | 3D & assets | Standalone SAM 3D Body viewer | PHP | core server | experimental |
+| [signlab_blendAnims](https://github.com/Amsterdam-Humanities-Labs/signlab_blendAnims) | 3D & assets | `blendBaking` — `avatar.signcollect.nl` | PHP | core server | production |
+| [signlab_mhr](https://github.com/Amsterdam-Humanities-Labs/signlab_mhr) | 3D & assets | MHR avatar source assets | — | core server (assets, not a service) | experimental |
+| [signlab_client_monitor_api](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_api) | Monitoring | Registration and heartbeat API | PHP + Python | core server | production |
+| [signlab_client_monitor_dashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard) | Monitoring | Dashboard over that API | PHP + JS | core server | production |
+| [signlab_demo-media](https://github.com/Amsterdam-Humanities-Labs/signlab_demo-media) | Deployment | Demo video for seeding a demo host | — | demo hosts | production |
+| [interface_deploy](interface_deploy) | Deployment | The deploy toolchain. **Lives in this repo, not its own** | Bash + PHP | demo hosts | production |
 
-**`mocap_site` is the one repo without the prefix.** It was transferred into the
-organisation before the rename convention was applied, and renaming a repo
+**Reading the `Server` column.** *core server* is the production VPS that
+serves `signcollect.nl` — everything under `/web`, plus `/opt` services like
+`pythonCron`. *DRS* holds the USB connections to the Sony FX30s. *demo hosts*
+are the isolated demo VPSes: `dev2` on `/web` and `dev-1` on
+`/srv/signcollect/web` (see [docs/install.md](docs/install.md)). The Vicon PC
+appears in the diagram below but runs nothing from this organisation —
+`viconSync` pulls from it, over ssh, from the core server.
+
+*unknown* is deliberate, and there are two of them. The two Blackmagic repos
+run on a macOS machine: they need `hevc_videotoolbox` and the Blackmagic RAW
+SDK at its macOS path, they mount the research drive with `rclone` under
+`~/signcollect`, and they reach the camera on the studio LAN at
+`192.168.0.194` — none of which is true of the core server. Which Mac, though,
+is not recorded anywhere in either repository. Whoever knows should put the
+hostname here.
+
+**`signlab_hh` is flagged, not reclassified.** It is deployed at `/web/hh` on
+the core server and still answers, so it is not experimental; but nothing has
+been committed to it since 2025-07-04 and nothing in the capture-to-API path
+depends on it. Treat it as an archive.
+
+**`mocap_site` is the one repo without the prefix.** It was transferred into
+the organisation before the rename convention was applied, and renaming a repo
 requires organisation-owner rights. An owner needs to rename it to
 `signlab_mocap_site`; afterwards run
 `git -C /web/mocap_site remote set-url origin git@github.com:Amsterdam-Humanities-Labs/signlab_mocap_site.git`.
@@ -269,195 +292,23 @@ and heartbeat; `client_monitor_dashboard` shows who has gone quiet. Monitoring i
 deliberately never fatal — if the API is unreachable a job logs a warning and
 carries on.
 
-`hh` is not in this diagram. It reads the same database but sits outside the
-capture-to-API path and has been dormant since July 2025. `mhr` is not in it
-either — it is avatar source assets, not a running service.
+The diagram is the capture-to-API path, so several repos are deliberately not
+on it. `hh` reads the same database but sits outside that path and has been
+dormant since July 2025. `mhr` and `demo-media` are files, not running
+services. `blendAnims` is a tool over the baked-mocap corpus rather than a
+stage of it. `signcollect-lib` would be an edge from every PHP node at once —
+it is the one place the database credentials and the install root are read
+from — which is exactly the kind of edge a diagram is worse for having.
 
-## What each one does
+## Installing and deploying
 
-### signlab_signCollect-v2 — gloss management interface
+- **[docs/install.md](docs/install.md)** — what a brand-new host needs, the one
+  command that stands it up in either mode, every flag, what preflight checks,
+  and how to verify the result afterwards.
+- **[docs/deploy.md](docs/deploy.md)** — the git-only deploy model, what happens
+  per component on the host, redeploying, and how to add a component repository
+  to `repos.tsv`.
 
-A from-scratch rebuild of the gloss editor (`/web/menu_beta/`). Browse and edit
-glosses from the `form_data` table: paginated table, filters, inline editing,
-self-capture video recording, and studio videos linked through
-`matched_transcriptions.m_transcription = form_data.id`.
-
-- `php_api/` — the backend endpoints (`glosses_list`, `glosses_save`,
-  `lsm_video_upload`, `phonology_get`, `logbook_get`, …)
-- `signbank_sync/` — two-way sync with Signbank (`push_gloss`, `fetch_gloss`,
-  `force_pull`, `force_push`)
-- `docs/spec.md` — the data model, worth reading before touching `form_data`
-- Auth is the shared `sessionObject` cookie on `.signcollect.nl`
-
-### signlab_sCAPI — the public API
-
-Read API over the sign video collection at `https://api.signcollect.nl`.
-Search across words, sentences and glosses, with theme grouping and pagination;
-plus the `getList*` / `get*Videos` endpoints. Single-word queries use
-lemma-based search, multi-word queries require all words to match.
-
-### signlab_sC-Animation-PP — animation post-processing manager
-
-The human step in the mocap pipeline. Engineers download original FBX captures,
-clean them up in Unreal Engine, and upload the processed versions back; the app
-tracks who has which capture date and what state each file is in.
-
-- Deploys to `/web/animMIDI`; PHP 7.4+ MVC with PDO, Tailwind via CDN, no build
-  step
-- Reads the `vicon_files` table — the `unreal/CC` subdirectory of what
-  `viconSync` lands on disk, which is what ties this repo to the capture side
-- Admins delegate a capture date to one user; downloads, uploads and status
-  changes are all logged with timestamps
-- BabylonJS viewer for 3D preview, plus side-by-side original vs processed
-  comparison with per-bone rotation compensation
-
-### signlab_pythonCron — scheduling and supervision
-
-Runs every recurring job on the production host and restarts the ones that
-fail. Two schedulers currently run side by side (a deliberate, transitional
-state):
-
-- **Wrapper architecture** (current direction) — one long-lived process and one
-  systemd unit per service, driven by `services_config.json`, supervised by
-  `watchdog_daemon.py`
-- **Centralized scheduler v2** — the older `scheduler_v2.py` path with
-  `config.json`
-
-Roughly 16 services: media conversion, mocap record matching (`matchVicon.py`,
-`matchRecords.py`), MySQL backups, EAF/SRT backups, lemma lookup, disk checks,
-QR conversion. **This repo mirrors a live production system** — read its
-operational notes before running anything.
-
-### signlab_viconSync — Vicon mocap pipeline
-
-Pulls motion-capture output off the Vicon PC and gets it into storage and the
-database. The Vicon PC rejoins the tailnet under a new address after every
-Windows reinstall, so nothing is pinned: `vicon_host.py` discovers it at
-runtime from `tailscale status`.
-
-- `sync_vicon_rsync.py` — the primary sync (SCP over SSH), `E:\Recordings` and
-  `D:\PostExports\FBX` → `/web/gebarenoverleg_media/fbx`
-- `ftp_monitor.py` — watches the Vicon FTP share for new recordings
-- `glb_matcher.py` — pairs FBX files with their GLB counterparts
-- `compress_blackmagic.py` — transcodes studio Blackmagic 6K clips to 1080p
-  H.265 "mini" copies
-- `cleanup_vicon.py` — reclaims space on the Vicon PC
-
-Scheduled by `pythonCron`, which invokes `sync_vicon_rsync.py` directly.
-
-### signlab_blackmagic_control — `bmcam`
-
-CLI and Python library for a Blackmagic camera's Camera Control REST API
-(a 6K Pro by default): recording start/stop, video format, media listing,
-clip download. The camera serves port 80 but 404s on everything until **Web
-Media Manager** and **REST API** are switched on — that one-time setup step is
-the usual first stumble.
-
-### signlab_blackmagic_RD_sync — camera → research drive
-
-Autonomous cycle that moves every `.braw` off the camera's USB disk: download
-through the `bmcam` server, transcode to H.265 via the Blackmagic RAW SDK piped
-into ffmpeg's `hevc_videotoolbox`, upload to the research drive, verify, then
-delete the source from the camera.
-
-Two details that matter: the clip's **start timecode** is carried into the MP4
-as a SMPTE `tmcd` track so editorial sync survives, and verification checks the
-file is **durable upstream** rather than merely sitting in the rclone VFS
-write-back cache before anything is deleted. Undecodable clips are archived as
-the original `.braw` instead of being dropped. The pipeline is idempotent and
-resume-aware.
-
-Depends on `blackmagic_control` being up — it is the client of that REST server.
-
-### signlab_Sony-SDK-MACOS-API — FX30 multi-camera control
-
-`fx30MultiRecord`: a REST API plus embedded HTML dashboard for driving several
-Sony FX30 cameras over USB from macOS — synchronised record start/stop, property
-monitoring, media formatting, file download, and settings presets. Built on the
-Sony Camera Remote SDK; the repo also documents the SDK connection patterns.
-
-The only public repo here, and the only C++ one.
-
-### signlab_hh — Dutch health-content indexing (dormant)
-
-Crawls medical content from `thuisarts.nl`, lemmatises it with OpenDutchWordnet,
-and presents it through a browsing/search interface: `crawl.py` →
-`json_to_db.py` → `create_unique_words_table.py` → `lemma_load.py`, with
-autocue and concept-list pages on top.
-
-It sits at the edge of the stack rather than inside it. The link is vocabulary:
-it queries glosses across Signbank and SignCollect in the same
-`admin_gebarenoverleg` database, and its lemma work overlaps with the
-`convert_zinString_to_LemmaList` job `pythonCron` runs. Nothing in the live
-capture-to-API path depends on it.
-
-All of its commits land on a single day, 2025-07-04. Its ~110 MB is mostly the
-vendored `OpenDutchWordnet` tree, not project code. Treat it as an archive: read
-it for the crawler and lemmatisation approach, don't expect it to run as-is.
-
-## Cross-cutting things worth knowing
-
-**Health monitoring.** Long-running scripts register with the Client Monitor API
-at `https://signcollect.nl/client_monitor_api/api.php` and send heartbeats with
-stats; missing heartbeats are how a silently dead job gets noticed. Client IDs
-follow a `vicon-*` style convention (`vicon-sync-rsync`, `vicon-ftp-monitor`,
-`vicon-glb-matcher`, `vicon-blackmagic-mini`). Monitoring is always optional —
-if the API is unreachable the script logs a warning and continues, and sync work
-is never blocked by a monitoring failure.
-
-The `ClientMonitor` class lives in a `python_client.py` that has been **copied**
-into each repo rather than shared. The copies have already drifted. If you touch
-one, check whether the others need the same change — and it is a reasonable
-candidate for extraction into a real package.
-
-**Conventions.** Every repo defaults to `main`. Most carry a `CLAUDE.md` with
-repo-specific working notes. Production runs under systemd on the main host,
-with units either hand-written or generated by `pythonCron`'s
-`wrapper_generator.py`.
-
-**Credentials.** The intended pattern: config files holding passwords are
-gitignored, with a committed `*.example.*` template alongside. `viconSync`
-follows it — its password comes from `vicon_credentials.get_vicon_password()`
-(`$VICON_PASSWORD`, or the untracked `monitor_config.json`) and appears nowhere
-in the repo or its history.
-
-Every repo now follows it. On 2026-08-19 the `admin_gebarenoverleg` MySQL
-password was found committed in plaintext in 58 files across seven repos, and
-was purged from all of them — working files and full git history:
-
-| Repo | Files | How it was purged |
-|---|---|---|
-| `signlab_zin` | 26 | history replaced; reads `db_credentials.py` |
-| `signlab_hh` | 16 | history replaced; reads `db_credentials.{py,php}` |
-| `signlab_mocap` | 7 | history replaced; reads `db_credentials.py` |
-| `signlab_client_monitor_api` | 3 | history replaced; docs redacted |
-| `signlab_sC-Animation-PP` | 3+1 | path purged from history via filter-repo |
-| `signlab_sCAPI` | 2 | `mysql_config.php` untracked + purged |
-| `signlab_viconSync` | 1 | path purged from history via filter-repo |
-
-Each affected repo now carries a gitignored `db_credentials.py` (and
-`db_credentials.php` where PHP needs it) with a committed `*.example.*`
-template beside it. Deploying to a new host means copying the example and
-filling in the password.
-
-**The credential still needs rotating.** It was readable by all organisation
-members before the purge, so treat it as compromised regardless of the rewrite.
-Rotation is now a one-line change per host instead of an edit across 58 files.
-
-**Shared storage paths.** `/web/gebarenoverleg_media` is the media root on the
-production host (`fbx/`, `studioFiles/`); the research drive is reached through
-an rclone mount. Several repos hardcode these absolute paths.
-
-## Adding a repo to this index
-
-Add a row to the table, grouped with the others sharing its `Layer`.
-
-If it carries data along the camera-to-API path, mark it `Core stack` and also
-add a subsection under "What each one does" plus an edge in the diagram. Any
-other repo takes one of the remaining layers — `Annotation`, `Studio & mocap`,
-`Video`, `3D & assets`, `Monitoring` — and needs the table row only. Introduce
-a new layer only when a repo fits none of them.
-
-Keep the description about *what the thing is for* and *how it connects*;
-anything that is only true inside one repo belongs in that repo's own README.
-New repos go into the organisation with a `signlab_` prefix.
+Both describe [`interface_deploy/`](interface_deploy), which lives in this
+repository as a `git subtree` mirror of a separate one. Read it freely; commit
+changes upstream, because edits made here are lost on the next sync.
