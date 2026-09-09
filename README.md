@@ -38,8 +38,8 @@ Every repo is private except `signlab_Sony-SDK-MACOS-API`.
 | Repo | Layer | Role | Language | Server | Status |
 |---|---|---|---|---|---|
 | [signlab_viconSync](https://github.com/Amsterdam-Humanities-Labs/signlab_viconSync) | Core stack | Vicon capture ingest | Python | core server | production |
-| [signlab_blackmagic_control](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control) | Core stack | `bmcam` — Blackmagic camera control | Python | unknown (a studio Mac) | production |
-| [signlab_blackmagic_RD_sync](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync) | Core stack | Camera → research drive sync | Python | unknown (a studio Mac) | production |
+| [signlab_blackmagic_control](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control) | Core stack | `bmcam` — Blackmagic camera control | Python | Vicon PC | production |
+| [signlab_blackmagic_RD_sync](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync) | Core stack | Camera → research drive sync | Python | Vicon PC | production |
 | [signlab_Sony-SDK-MACOS-API](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API) | Core stack | FX30 multi-camera controller | C++ | DRS | production |
 | [signlab_pythonCron](https://github.com/Amsterdam-Humanities-Labs/signlab_pythonCron) | Core stack | Scheduler and watchdog | Python | core server | production |
 | [signlab_sC-Animation-PP](https://github.com/Amsterdam-Humanities-Labs/signlab_sC-Animation-PP) | Core stack | Animation post-processing manager | PHP | core server | production |
@@ -74,17 +74,20 @@ Every repo is private except `signlab_Sony-SDK-MACOS-API`.
 serves `signcollect.nl` — everything under `/web`, plus `/opt` services like
 `pythonCron`. *DRS* holds the USB connections to the Sony FX30s. *demo hosts*
 are the isolated demo VPSes: `dev2` on `/web` and `dev-1` on
-`/srv/signcollect/web` (see [docs/install.md](docs/install.md)). The Vicon PC
-appears in the diagram below but runs nothing from this organisation —
-`viconSync` pulls from it, over ssh, from the core server.
+`/srv/signcollect/web` (see [docs/install.md](docs/install.md)). The *Vicon PC*
+is the Windows box in the Visualisation Lab.
 
-*unknown* is deliberate, and there are two of them. The two Blackmagic repos
-run on a macOS machine: they need `hevc_videotoolbox` and the Blackmagic RAW
-SDK at its macOS path, they mount the research drive with `rclone` under
-`~/signcollect`, and they reach the camera on the studio LAN at
-`192.168.0.194` — none of which is true of the core server. Which Mac, though,
-is not recorded anywhere in either repository. Whoever knows should put the
-hostname here.
+The Vicon PC is the easy one to get backwards, because it appears in two roles.
+It **runs** the two Blackmagic repos — `bmcam` and the research-drive sync,
+which reach the camera on the studio LAN at `192.168.0.194`. It is also the
+machine `viconSync` **pulls from**, over ssh — but `viconSync` itself runs on
+the core server, not there. Both repos carry a macOS code path as well as a
+Windows one; only the Windows path is deployed.
+
+> 🖥️ **[What runs where →](docs/machines.md)**
+> The same estate indexed by machine instead of by repository: for each host,
+> what runs on it and **what the unit is called**, so an outage has a service
+> name to type. Read off the running hosts, not inferred from the repos.
 
 **`signlab_hh` is flagged, not reclassified.** It is deployed at `/web/hh` on
 the core server and still answers, so it is not experimental; but nothing has
@@ -117,7 +120,7 @@ scheduling ("this triggers that"); solid edges are data moving.
 ```mermaid
 flowchart TB
     subgraph capture["🎥 Capture — hardware on the studio floor"]
-        vicon["<b>Vicon mocap PC</b><br/>Windows, on the tailnet<br/>skeleton capture → FBX/GLB"]
+        vicon["<b>Vicon mocap PC</b><br/>Windows, on the tailnet<br/>skeleton capture → FBX/GLB<br/><i>also runs bmcam + RD_sync</i>"]
         bm["<b>Blackmagic 6K cameras</b><br/>.braw onto a USB disk"]
         sony["<b>Sony FX30 cameras</b><br/>USB to an operator's Mac"]
     end
@@ -302,6 +305,8 @@ from — which is exactly the kind of edge a diagram is worse for having.
 
 ## Installing and deploying
 
+- **[docs/machines.md](docs/machines.md)** — the estate indexed by machine: what
+  runs on each host and the unit, timer or cron entry it runs as.
 - **[docs/install.md](docs/install.md)** — what a brand-new host needs, the one
   command that stands it up in either mode, every flag, what preflight checks,
   and how to verify the result afterwards.
