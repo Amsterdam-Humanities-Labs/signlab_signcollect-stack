@@ -156,6 +156,8 @@ ever takes effect.
 - `scripts/repos.tsv`    - the interface repos and their docroot directories
 - `scripts/rewrite-urls.sh` - repoint production URLs at this demo (`DOMAIN=`)
 - `scripts/purge-artifacts.sh` - strip what must not ship
+- `scripts/fetch-ffmpeg-core.sh` - the 32MB ffmpeg.wasm core the annotation
+  editor loads and no longer carries in git, hash-pinned and host-cached
 - `scripts/host-config.sh` - the per-host files that are gitignored upstream
 - `scripts/pythoncron.sh` - the job scheduler, at `/opt/pythonCron`
 - `scripts/migrate.sh`   - apply SQL migrations from the deployed checkout

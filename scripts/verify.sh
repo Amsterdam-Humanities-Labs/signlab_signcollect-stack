@@ -47,6 +47,38 @@ chk /stats.html 404
 # from assets/. menu_beta's Glos Wizard, its batch entry page and nmm's
 # scripts all resolve it at this absolute path, so a 404 here is silent -
 # they get an HTML error page where they expect JSON.
+echo "== annotation editor =="
+for p in /annotation-tool/ /annotation-tool/v1/ /annotation-tool/v2/ \
+         /annotation-tool/v3/ /annotation-tool/webcam/ \
+         /annotation-tool/clusters/ /annotation-tool/clusters/tool/; do chk "$p" 200; done
+# The annotation editor ships five times over - v1, v2, v3, webcam and the
+# copy under clusters/ - and each loads ffmpeg.wasm's 32MB core by a relative
+# URL of its own. That core is not in git: four identical copies of it were,
+# and scripts/fetch-ffmpeg-core.sh puts a hash-verified one on the host
+# instead. Its absence does not break a page load, which is exactly why it is
+# checked here - it breaks the first video conversion, minutes later, in a
+# console message nobody is looking at. Asserted by length, because a 404 from
+# this Apache is an HTML error page that a naive 200-check would not catch and
+# a truncated download would pass anyway.
+echo "== annotation editor: ffmpeg.wasm core =="
+chklen() { # chklen <path> <bytes>
+  local got
+  got=$(curl -sSI --connect-timeout 12 --max-time 30 "$B$1" 2>/dev/null \
+        | awk 'tolower($1)=="content-length:"{gsub(/\r/,"",$2); n=$2} END{print n+0}')
+  if [ "$got" = "$2" ]; then printf '  ok   %-52s %s bytes\n' "$1" "$got"
+  else printf '  FAIL %-52s got %s want %s\n' "$1" "$got" "$2"; fail=1; fi
+}
+for d in v1 v2 v3 webcam clusters/tool; do
+  chklen "/annotation-tool/$d/vendor/ffmpeg/esm/ffmpeg-core.wasm" 32129114
+done
+# The loaders beside it. Tracked upstream in v1..webcam, so this is really
+# about clusters/tool, whose whole vendor/ directory only exists because the
+# deploy makes it - and about the module worker, which ffmpeg.js fetches by a
+# name no `src=` grep would ever have found.
+for f in ffmpeg.js util.js 814.ffmpeg.js esm/ffmpeg-core.js; do
+  chk "/annotation-tool/clusters/tool/vendor/ffmpeg/$f" 200
+done
+
 echo "== signbank export =="
 chk /signbank_data/glosses_transformed.json 200
 echo "== secrets must be denied =="
