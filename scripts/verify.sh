@@ -43,10 +43,6 @@ chk /stats.html 404
 # /api is the signlab_sCAPI submodule - a separate service, out of scope for
 # an interface-only deploy. One endpoint (/zin/api/getSamVideos.php) is called
 # from two places and will not work without it.
-# The Signbank ECV dump every gloss lookup reads, installed by host-config.sh
-# from assets/. menu_beta's Glos Wizard, its batch entry page and nmm's
-# scripts all resolve it at this absolute path, so a 404 here is silent -
-# they get an HTML error page where they expect JSON.
 echo "== annotation editor =="
 for p in /annotation-tool/ /annotation-tool/v1/ /annotation-tool/v2/ \
          /annotation-tool/v3/ /annotation-tool/webcam/ \
@@ -79,6 +75,10 @@ for f in ffmpeg.js util.js 814.ffmpeg.js esm/ffmpeg-core.js; do
   chk "/annotation-tool/clusters/tool/vendor/ffmpeg/$f" 200
 done
 
+# The Signbank ECV dump every gloss lookup reads, installed by host-config.sh
+# from assets/. menu_beta's Glos Wizard, its batch entry page and nmm's
+# scripts all resolve it at this absolute path, so a 404 here is silent -
+# they get an HTML error page where they expect JSON.
 echo "== signbank export =="
 chk /signbank_data/glosses_transformed.json 200
 echo "== secrets must be denied =="
