@@ -45,24 +45,28 @@ the host, so `gh auth login` here first:
 
     scripts/install.sh --host gomer@demo1
 
-**On the demo host itself, no ssh at all.** The host needs a GitHub login of
-its own here, because there is no workstation to take a token from - and it
-needs `git` before it can fetch the installer that would have installed it.
-That is the one bootstrap this mode cannot avoid, and it is four commands:
+**On the demo host itself, no ssh at all.** Open a terminal on the machine
+and paste this, all of it at once:
 
-    sudo apt update && sudo apt install -y git
-    git clone https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
-        # a private repo: git asks for your GitHub username and, as the
-        # password, a personal access token with `repo` scope
-    cd ~/signcollect-deploy/interface_deploy
+    sudo apt update && sudo apt install -y git gh
+    gh auth login --hostname github.com --git-protocol https --web
+    gh repo clone Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
+    ~/signcollect-deploy/interface_deploy/scripts/install.sh --local
 
-    scripts/host-auth.sh --local    # installs gh, then asks you to log in
-    gh auth login                   # your own GitHub account
-    scripts/install.sh --local
+The second line is the only one that needs you: it prints a one-time code and
+opens the browser (or, on a machine without one, go to
+<https://github.com/login/device> on any computer and type the code there).
+No personal access token to create first - the stack repository is private,
+and `gh` is what makes cloning it a browser login instead of a password
+prompt. Ubuntu 24.04 ships `gh` in `universe`, so the plain apt line gets it.
 
-`gh` is not in Ubuntu's archive, which is why `host-auth.sh` is what installs
-it - from GitHub's own apt repository. Everything else the installer still puts
-there itself: apache, php, mysql, composer, nftables.
+When it finishes it prints the demo's address. Apache, php, mysql, composer
+and nftables are all installed by the installer itself.
+
+Redeploying later is the last line again. If you run `install.sh --local` on a
+host that has never logged in to GitHub, it asks for that login itself at
+step 3 - it only stops and tells you to run `gh auth login` first when there
+is no terminal to ask on (piped, or run from another script).
 
 That is the whole thing, in either mode. It takes a bare Ubuntu box to a
 working demo at `https://<host>.<tailnet>.ts.net`, log in as `gomer` / `123`,
@@ -124,8 +128,9 @@ merely redirected, and both say so where they happen:
   being read out of.
 - `host-auth.sh` **cannot fabricate a login** under `--local`. Over ssh it
   hands the host a token from your workstation's `gh`; on the host itself
-  there is no other account, so it installs `gh`, tells you to run
-  `gh auth login`, and stops.
+  there is no other account, so it installs `gh` and runs the browser login
+  with you at the terminal - or, with no terminal to ask on, tells you to run
+  `gh auth login` and stops.
 
 ## How a deploy works
 

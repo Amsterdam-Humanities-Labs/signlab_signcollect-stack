@@ -289,10 +289,19 @@ say "verify - assert the result, by command output not assumption"
 if scripts/verify.sh --host "$HOST" "https://$DOMAIN"; then
   verdict="=== demo installed: https://$DOMAIN ==="
 else
-  verdict="=== demo installed, but verify.sh reported failures above ==="
+  verdict="=== demo installed at https://$DOMAIN, but verify.sh reported failures above ==="
 fi
 trap - EXIT
 echo
 echo "$verdict"
 echo "  log in as gomer / 123"
-echo "  re-run this same command any time to redeploy; every step is idempotent."
+echo "  redeploy any time with the same command - every step is idempotent:"
+echo "    $PWD/scripts/install.sh $(sc_retry_args)"
+
+# Someone installing on the demo machine's own desktop is looking at a
+# terminal with a browser one click away; open it for them. Over ssh, or on
+# a console with no graphical session, there is nothing to open.
+if [ "${SC_LOCAL:-0}" = "1" ] && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] &&
+   command -v xdg-open >/dev/null 2>&1; then
+  xdg-open "https://$DOMAIN/" >/dev/null 2>&1 &
+fi
