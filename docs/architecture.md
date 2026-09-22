@@ -158,3 +158,5 @@ the core server. The main tables:
 | `vicon_captures` | Mocap capture sessions (date, recording dir, file counts) |
 | `vicon_files` | Individual capture files, their subdirectory and status |
 | `matched_transcriptions` | Links recordings to sentences (`m_file`, `m_transcription`) |
+
+All 97 tables, with writers and readers: [schema.md](schema.md).

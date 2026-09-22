@@ -9,7 +9,8 @@ own README.
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | How the repos fit together (diagram) and the main database tables |
 | [docs/machines.md](docs/machines.md) | What runs on each machine, and the unit / timer / cron name it runs as |
-| [docs/runbook.md](docs/runbook.md) | Something is broken: what to check first |
+| [docs/runbook.md](docs/runbook.md) | Something is broken: first checks, unit names, blast radius, restarts, disk full |
+| [docs/schema.md](docs/schema.md) | Every database table: what it holds, which repo writes and reads it |
 | [docs/install.md](docs/install.md) | Standing up a demo or test host (the only install doc) |
 | [docs/deploy.md](docs/deploy.md) | How a deploy works, and adding a component repo |
 | [docs/readme-template.md](docs/readme-template.md) | The README skeleton every repo follows |
