@@ -78,9 +78,9 @@ echo "   source: $SRC   domain: $DOMAIN"
 # component it is about.
 CLEAN_KEEP=(-e mysql_config.php -e .env -e .session_secret -e node_modules)
 
-# /web/zin/api is the sCAPI service mounted at /api by
-# apache/signcollect-mounts.conf. It is a separate deployment, not part of
-# signlab_zin's tree, so an unguarded clean would delete a working API.
+# /web/zin/api is the sCAPI component (its own repos.tsv row), inside zin's
+# directory. zin ignores api/, and this keeps it explicitly too: an unguarded
+# clean of zin must never delete the API.
 per_component_keep() {
   case "$1" in
     signlab_zin) printf '%s\n' "-e" "/api/" ;;

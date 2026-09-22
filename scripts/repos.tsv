@@ -10,10 +10,12 @@
 # /web/<webdir>. Branch is what production actually has checked out:
 # signlab_hh is on master, the rest on main.
 #
+# zin/api is signlab_sCAPI, checked out inside zin's directory (zin ignores
+# api/). /api is Alias'd there by signcollect-mounts.conf. It used to be a
+# gitlink in zin with no .gitmodules, so a fresh host had an empty /api
+# (signlab_signcollect-stack#30). Listed after zin so zin's reset comes first.
+#
 # Not listed, deliberately:
-#   signlab_sCAPI  - /api is Alias'd to /web/zin/api by signcollect-mounts.conf,
-#                    so the API ships inside signlab_zin. sCAPI is the separate
-#                    api.signcollect.nl service and is out of scope here.
 #   mocap*         - see below; the portal and what it actually reaches are
 #                    now deployed, the rest of the mocap stack is not.
 #
@@ -68,6 +70,7 @@
 lib	signlab_signcollect-lib	main
 menu_beta	signlab_signCollect-v2	main
 zin	signlab_zin	main
+zin/api	signlab_sCAPI	main
 videoFix	signlab_videoFix	main
 studioIndex	signlab_studioIndex	main
 studio_beta	signlab_studio_beta	main
