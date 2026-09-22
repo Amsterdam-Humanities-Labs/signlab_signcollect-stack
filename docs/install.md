@@ -102,22 +102,18 @@ That is the whole thing.
 
 ### On the host itself, no ssh at all
 
-Here the host needs a GitHub login of its own, because there is no
-workstation to take a token from — and it needs `git` before it can fetch the
-installer that would otherwise have installed it. That is the one bootstrap
-this mode cannot avoid, and it is four commands:
+Open a terminal on the host and paste:
 
 ```
-sudo apt update && sudo apt install -y git
-git clone https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
-    # a private repo: git asks for your GitHub username and, as the password,
-    # a personal access token with `repo` scope
-cd ~/signcollect-deploy/interface_deploy
-
-scripts/host-auth.sh --local    # installs gh (it is not in Ubuntu's archive)
-gh auth login                   # your own GitHub account
-scripts/install.sh --local
+sudo apt update && sudo apt install -y git gh
+gh auth login --hostname github.com --git-protocol https --web
+gh repo clone Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
+~/signcollect-deploy/interface_deploy/scripts/install.sh --local
 ```
+
+Line 2 shows a one-time code; enter it at <https://github.com/login/device>.
+No personal access token needed. Tested on a bare Ubuntu 24.04 host (`stijn`):
+about 3.5 minutes to a verified demo.
 
 ### See what it would do, first
 
