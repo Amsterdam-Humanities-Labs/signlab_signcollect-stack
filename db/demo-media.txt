@@ -11,7 +11,7 @@
 # a different letter - the numeric suffix differs per angle within a take
 # (M20260227_5998, L20260227_7582 and R20260227_0221 are one recording), so
 # the mapping can only be read out of the row and never guessed from a
-# filename. studioIndex getStudioFiles.php returns exactly those five columns
+# filename. studioIndex api.php?page= returns exactly those five columns
 # and its front end builds every URL from them.
 #
 # m_file is recorded with a .wav extension - the audio track the take was

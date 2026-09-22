@@ -288,7 +288,7 @@ fi
 section "endpoints that resolve a path"
 for p in "/zin/getZinnen.php?action=listMocapFiles" "/hh/getGlosses.php?action=search&term=boek" \
          /hh/api.php /menu_beta/php_api/current_user.php \
-         "/zin/getSenses.php?glos=BOEK" /studio_beta/zin/getSenses.php; do
+         "/zin/getSenses.php?glos=BOEK" "/studio_beta/lookups.php?what=thema"; do
   is "loads and authenticates: $p" "$p" 200 400 401 403
 done
 # A 500 anywhere above would be the signature of a shim that could not be

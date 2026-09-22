@@ -161,27 +161,30 @@ has "hh/getGlosses.php found the BOEK gloss"  "$GLOSSES" '"glos":"BOEK"'
 hasnt "hh/getGlosses.php is not a config error" "$GLOSSES" 'Configuration error'
 hasnt "hh/getGlosses.php did not fail to connect" "$GLOSSES" 'Connection failed'
 
-SENSES=$(req GET "/studio_beta/zin/getSenses.php?sense=boek" "$ACOOK")
-is "studio_beta/zin/getSenses.php answers" 200
-has "studio_beta/zin/getSenses.php found the BOEK gloss" "$SENSES" '"glos":"BOEK"'
-hasnt "studio_beta/zin/getSenses.php is not a config error" "$SENSES" 'Configuration error'
-hasnt "studio_beta/zin/getSenses.php did not fail to connect" "$SENSES" 'Connection failed'
+# studio_beta's own copy of getSenses.php is gone (it called /zin/ anyway);
+# its db.php path is still exercised through lookups.php below. The gloss
+# comparison uses zin's endpoint, which reaches the database through zin's
+# own accessor - still a second repository reading through the library.
+SENSES=$(req GET "/zin/getSenses.php?sense=boek" "$ACOOK")
+is "zin/getSenses.php answers" 200
+has "zin/getSenses.php found the BOEK gloss" "$SENSES" '"glos":"BOEK"'
+hasnt "zin/getSenses.php is not a config error" "$SENSES" 'Configuration error'
+hasnt "zin/getSenses.php did not fail to connect" "$SENSES" 'Connection failed'
 
 # --- 4. one source of truth ---------------------------------------------
 # hh reads $db_config['host'|'user'|'password'|'database'] through
-# hh/db_config.php; studio_beta reads $servername/$username/$password/
-# $database through db.php and the compat shim. Different repositories,
+# hh/db_config.php; zin reads its own mysql_config through the compat shim. Different repositories,
 # different accessors, and until now different credentials. The same gloss
 # coming back with the same id through both is the whole point of the
 # library, so it is checked rather than assumed.
 section "both repos reach the same database"
 HH_ID=$(glosid_for "$GLOSSES" BOEK)
-SB_ID=$(glosid_for "$SENSES" BOEK)
-if [ -n "$HH_ID" ] && [ -n "$SB_ID" ]; then
-  [ "$HH_ID" = "$SB_ID" ] && ok "BOEK is glosID $HH_ID through both accessors" \
-                          || bad "BOEK is $HH_ID in hh but $SB_ID in studio_beta - two databases"
+ZIN_ID=$(glosid_for "$SENSES" BOEK)
+if [ -n "$HH_ID" ] && [ -n "$ZIN_ID" ]; then
+  [ "$HH_ID" = "$ZIN_ID" ] && ok "BOEK is glosID $HH_ID through both accessors" \
+                           || bad "BOEK is $HH_ID in hh but $ZIN_ID in zin - two databases"
 else
-  bad "could not read a glosID from both endpoints (hh='$HH_ID' studio_beta='$SB_ID')"
+  bad "could not read a glosID from both endpoints (hh='$HH_ID' zin='$ZIN_ID')"
 fi
 
 # --- 5. the rest of each repo's consumers --------------------------------
@@ -197,9 +200,9 @@ has "hh/get_begrippen.php returns a page of rows" "$r" '"total"'
 # GET is not a method it accepts; 405 still means it loaded its config first.
 req GET "/hh/save_subtitle.php" "$ACOOK" >/dev/null;   is "hh/save_subtitle.php past config" 200 405
 
-for p in /studio_beta/uniqueLabels.php /studio_beta/uniqueThema.php \
-         /studio_beta/fetch_all2.php /studio_beta/nmm/fetch_themas.php \
-         /studio_beta/hh/api.php; do
+for p in "/studio_beta/lookups.php?what=labels" "/studio_beta/lookups.php?what=thema" \
+         /studio_beta/fetch_all2.php "/studio_beta/lookups.php?what=nmm_themas" \
+         "/studio_beta/lookups.php?what=users"; do
   r=$(req GET "$p" "$ACOOK")
   is "studio_beta consumer: $p" 200
   hasnt "no config error from $p" "$r" 'Configuration error'
