@@ -90,6 +90,12 @@ SetEnv SC_WEB_ROOT @WEBROOT@
     Require all denied
 </Files>
 
+# annotation-tool's cluster corrections. io.php and merge_io.php read and
+# write them from PHP; nothing links to the files, so they are not served.
+<Directory "@WEBROOT@/annotation_data">
+    Require all denied
+</Directory>
+
 # Never serve dotfiles - .env, .git metadata, editor leftovers.
 <DirectoryMatch "^@WEBROOT@/.*/\.(git|svn)">
     Require all denied

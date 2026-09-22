@@ -6,8 +6,9 @@
 #
 # WHY THE FILE IS NOT IN GIT
 #
-# signlab_annotation-tool ships the editor five times - v1/, v2/, v3/, webcam/
-# and clusters/tool/ - and each one loads its converter by a relative URL:
+# signlab_annotation-tool ships the editor three times - v3/, webcam/ and
+# clusters/tool/ (v1/ and v2/ were removed as unlinked) - and each one loads
+# its converter by a relative URL:
 #
 #   wasmURL: new URL('vendor/ffmpeg/esm/ffmpeg-core.wasm', document.baseURI)
 #
@@ -59,7 +60,7 @@ CORE_URLS=(
 # from the tree rather than hardcoded would be cleverer and worse: a typo in a
 # glob would silently place nothing, and a missing converter is invisible until
 # somebody drops a video in.
-EDITORS=(v1 v2 v3 webcam clusters/tool)
+EDITORS=(v3 webcam clusters/tool)
 
 ROOT=${1:-}
 [ -n "$ROOT" ] || { echo "usage: $0 <annotation-tool-directory>" >&2; exit 2; }
