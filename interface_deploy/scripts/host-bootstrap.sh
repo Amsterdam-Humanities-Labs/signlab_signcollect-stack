@@ -146,6 +146,17 @@ echo "== vendored components (web_extra/) =="
 rm -rf "$STAGE"; mkdir -p "$STAGE"
 cp -a "$SRC/web_extra/." "$STAGE/"
 
+# The annotation editor's ffmpeg.wasm core. 32MB of binary that five copies of
+# the editor each load by a relative URL, that no clone carries any more, and
+# that the component reset above would have deleted if it did. Placed before
+# the rewrite so the small loaders it copies into clusters/tool/ go through the
+# same single pass as everything else - they have no production URL in them
+# today, and this is not the file that should have to know that.
+if [ -d "$WEBROOT/annotation-tool" ]; then
+  echo "== annotation-tool: ffmpeg.wasm core =="
+  "$SRC/scripts/fetch-ffmpeg-core.sh" "$WEBROOT/annotation-tool"
+fi
+
 echo "== rewriting production URLs =="
 # One pass over everything, components and vendored alike, so there is
 # exactly one place where a production hostname can survive.

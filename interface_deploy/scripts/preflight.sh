@@ -185,10 +185,18 @@ case "$(g github)" in
 esac
 
 # gh on the host. Over ssh this is filled in for you from the workstation's
-# token; with --local there is no other machine to take one from, so it is a
-# precondition rather than something the install can arrange.
-case "$(g gh)" in
-  absent)
+# token. With --local there is no other machine to take one from, but when
+# someone is at the terminal host-auth.sh installs gh and runs the browser
+# login itself, at step 3 - so only a --local run with nobody to ask (piped,
+# or from a script) needs it done beforehand.
+local_asks=0
+[ "${SC_LOCAL:-0}" = "1" ] && [ -t 0 ] && [ -t 1 ] && local_asks=1
+case "$local_asks:$(g gh)" in
+  1:absent)
+    ok "host gh" "absent - installed at step 3, then you log in in the browser" ;;
+  1:unauthed)
+    ok "host gh" "not logged in - you log in in the browser at step 3" ;;
+  *:absent)
     if [ "${SC_LOCAL:-0}" = "1" ]; then
       bad "host gh" "not installed, and --local has no workstation to borrow a login from" \
         "Fix, in order:" \
@@ -198,7 +206,7 @@ case "$(g gh)" in
     else
       ok "host gh" "absent - host-auth.sh will install it and hand it your token"
     fi ;;
-  unauthed)
+  *:unauthed)
     if [ "${SC_LOCAL:-0}" = "1" ]; then
       bad "host gh" "installed but not logged in" \
         "With --local the host is the only machine in the picture, so it needs" \

@@ -4,6 +4,10 @@
 # cookies.txt in signlab_sCAPI carries a real PHPSESSID for api.signcollect.nl.
 # The rest are committed test output and response captures - inert, but they
 # sit inside the docroot and serve no purpose in a demo.
+#
+# -exec rm, not -delete: -delete implies -depth, which cancels -prune, and GNU
+# find refuses that combination outright - it printed a warning and deleted
+# nothing, and the caller's `|| true` hid it.
 set -euo pipefail
 [ $# -ge 1 ] || { echo "usage: $0 <tree> [<tree> ...]" >&2; exit 2; }
 for tree in "$@"; do
@@ -13,5 +17,5 @@ for tree in "$@"; do
       -o -name 'test_*.log' -o -name 'test_complete*.log' \
       -o -name 'failed.json' -o -name 'user_simulation_results.json' \
       -o -name 'doen_api_response.json' \
-    \) -print -delete
+    \) -print -exec rm -f {} +
 done

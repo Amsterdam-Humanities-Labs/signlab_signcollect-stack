@@ -78,9 +78,19 @@ ssh "$HOST" 'set -e
     dpkg -s "$p" >/dev/null 2>&1 || need="$need $p"
   done
   if [ -n "$need" ]; then
+    # -qq silences apt but not dpkg, and mysql-server alone makes dpkg print
+    # some 600 lines (the mecab dictionaries) - enough to scroll every earlier
+    # line of the install out of sight. The full output goes to a log instead,
+    # and its tail is shown only if apt fails.
+    log=/tmp/signcollect-apt.log
     echo "  installing:$need"
-    sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $need
+    echo "  (a few minutes on a bare host; full apt output in $log)"
+    if ! { sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq &&
+           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $need; } >"$log" 2>&1; then
+      tail -25 "$log" >&2
+      exit 1
+    fi
+    echo "  packages installed"
   else
     echo "  packages already present"
   fi

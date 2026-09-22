@@ -101,6 +101,15 @@ ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
   id -nG "$USER" | tr " " "\n" | grep -qx www-data || sudo usermod -aG www-data "$USER"'
 echo "  $WEBROOT/signbank_data ready (www-data:www-data 2775, $HOST deploy user in group www-data)"
 
+# Group membership is read at login, so the usermod above reaches the
+# scheduled job (systemd starts it with a fresh group list) but not this run.
+# Over ssh every call is a new login and that difference never showed; under
+# --local the whole install is one process, still without www-data, and a
+# plain `cp` into the directory fails with "Permission denied" - on every
+# retry from the same terminal, too. So everything below that writes into
+# signbank_data goes through sudo and sets the owner itself, rather than
+# relying on a group this process may not have yet.
+
 # The gloss dump itself. It used to sit at the docroot root and every
 # consumer read it there; it now lives in the connector's directory, which is
 # the only place the web server can replace it atomically. Each consumer has
@@ -119,7 +128,8 @@ ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
     rm -f $WEBROOT/glosses_transformed.json
   elif [ -f $WEBROOT/glosses_transformed.json ]; then
     if [ ! -f $WEBROOT/signbank_data/glosses_transformed.json ]; then
-      mv $WEBROOT/glosses_transformed.json $WEBROOT/signbank_data/glosses_transformed.json
+      sudo mv $WEBROOT/glosses_transformed.json $WEBROOT/signbank_data/glosses_transformed.json
+      sudo chown www-data:www-data $WEBROOT/signbank_data/glosses_transformed.json
     else
       rm -f $WEBROOT/glosses_transformed.json
     fi
@@ -127,10 +137,10 @@ ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
 if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'test -s $WEBROOT/signbank_data/glosses_transformed.json'; then
   echo "  glosses_transformed.json present ($(ssh "$HOST" "export WEBROOT='$WEBROOT'; "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes) in $WEBROOT/signbank_data"
 else
-  ssh "$HOST" "cp $SRCDIR/assets/glosses_transformed.json $WEBROOT/signbank_data/glosses_transformed.json"
+  ssh "$HOST" "sudo install -o www-data -g www-data -m 664 $SRCDIR/assets/glosses_transformed.json $WEBROOT/signbank_data/glosses_transformed.json"
   echo "  glosses_transformed.json seeded from the host's own assets/ ($(ssh "$HOST" "export WEBROOT='$WEBROOT'; "'stat -c %s $WEBROOT/signbank_data/glosses_transformed.json') bytes)"
 fi
-ssh "$HOST" "export WEBROOT='$WEBROOT'; "'chmod 664 $WEBROOT/signbank_data/glosses_transformed.json 2>/dev/null || true'
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo chmod 664 $WEBROOT/signbank_data/glosses_transformed.json 2>/dev/null || true'
 
 # The API key. A key already on the host is left alone - it may have been
 # replaced by an admin on the connector page, and this script must not
@@ -141,9 +151,7 @@ elif [ -n "$SIGNBANK_API_KEY" ]; then
   # Piped over stdin, so the key never appears in a command line or in the
   # remote shell's history.
   printf '%s\n' "$SIGNBANK_API_KEY" |
-    ssh "$HOST" "export WEBROOT='$WEBROOT'; "'umask 027 && cat > $WEBROOT/signbank_data/.signbank_key &&
-                 sudo chown www-data:www-data $WEBROOT/signbank_data/.signbank_key &&
-                 sudo chmod 640 $WEBROOT/signbank_data/.signbank_key'
+    ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo install -o www-data -g www-data -m 640 /dev/stdin $WEBROOT/signbank_data/.signbank_key'
   echo "  signbank API key installed (value not shown)"
 else
   echo "  no SIGNBANK_API_KEY given - connector will report 'geen sleutel' until an admin sets one"

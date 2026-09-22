@@ -177,7 +177,11 @@ else
   eq "a relative SC_WEB_ROOT falls back to the compiled default" "$G" "/web"
 
   # Step 4: installed as <root>/lib, the parent is the root, with nothing set.
-  G=$(onhost "d=\$(mktemp -d); mkdir -p \$d/lib; cp $WEBROOT/lib/paths.php $WEBROOT/lib/db_config.php \$d/lib/; php -r 'require \"'\$d'/lib/paths.php\"; echo sc_root();'; rm -rf \$d")
+  # "Nothing set" includes the env file: provision.sh writes SC_WEB_ROOT into
+  # $WEBROOT/.env, which step 3 would find first, so on any host provisioned
+  # since then this read /web back. SC_ENV_FILE points it at a file that does
+  # not exist, which paths.php treats as no env file at all.
+  G=$(onhost "d=\$(mktemp -d); mkdir -p \$d/lib; cp $WEBROOT/lib/paths.php $WEBROOT/lib/db_config.php \$d/lib/; SC_ENV_FILE=\$d/none php -r 'require \"'\$d'/lib/paths.php\"; echo sc_root();'; rm -rf \$d")
   case "$G" in
     /*/lib) bad "a library at <x>/lib resolved the root to itself: $G" ;;
     /tmp/*|/var/folders/*) ok "a library installed at <x>/lib resolves the root to <x> ($G)" ;;

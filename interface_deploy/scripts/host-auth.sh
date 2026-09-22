@@ -57,8 +57,13 @@ ssh "$HOST" 'set -e
     sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" |
       sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-    sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gh
+    # dpkg ignores -qq; see provision.sh for why its output goes to a log.
+    log=/tmp/signcollect-apt.log
+    if ! { sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq &&
+           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gh; } >"$log" 2>&1; then
+      tail -25 "$log" >&2
+      exit 1
+    fi
     echo "  gh installed ($(gh --version | head -1))"
   fi'
 
@@ -66,8 +71,23 @@ ssh "$HOST" 'set -e
 sc_doing "authenticating the host to GitHub"
 if ssh "$HOST" 'gh auth status >/dev/null 2>&1'; then
   echo "  host gh already authenticated as $(ssh "$HOST" 'gh api user -q .login 2>/dev/null')"
+elif [ "${SC_LOCAL:-0}" = "1" ] && [ -t 0 ] && [ -t 1 ]; then
+  # Someone is at this terminal, so ask them now rather than stopping and
+  # telling them to type the same command and start over. --web is the device
+  # flow: gh prints a one-time code and opens the browser where it can, and
+  # the code works from any other machine's browser where it cannot.
+  echo "  this machine has no GitHub login yet - logging in now (once)"
+  echo "  gh will show a one-time code; enter it at https://github.com/login/device"
+  gh auth login --hostname github.com --git-protocol https --web ||
+    sc_fail "GitHub login did not complete" \
+"Try it again on its own, then re-run the install:
+
+    gh auth login
+    scripts/install.sh $(sc_retry_args)"
+  echo "  logged in as $(gh api user -q .login 2>/dev/null)"
 elif [ "${SC_LOCAL:-0}" = "1" ]; then
-  # The one thing this script cannot do for you.
+  # No terminal to ask on (piped, or run from a script): the one thing this
+  # script cannot do for you.
   sc_fail "this host has no GitHub login, and --local has no other machine to take one from" \
 "Over ssh the host is handed a token from the workstation's gh. Running on the
 host itself there is no workstation, so log in here, once:
