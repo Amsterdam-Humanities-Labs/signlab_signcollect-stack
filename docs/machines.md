@@ -19,10 +19,10 @@ a name here disagrees with a repository's own README, the machine wins.
 |---|---|---|
 | **signcollect core server** | The production VPS (`cloud`), serves `signcollect.nl` | Everything: the site, the API, the database, all scheduling |
 | **Vicon PC** | Windows box in the Visualisation Lab, on the tailnet | Skeleton capture, and Blackmagic camera control and transcode |
-| **DRS** | Holds the USB connections to the Sony FX30s | Multi-camera record; `studio_beta` loses its cameras |
+| **DRS** | macOS box holding the USB connections to the Sony FX30s; runs `signlab_drs` | Multi-camera record (`studio_beta` loses its cameras) and the render/crop pipeline |
 | **monsterfish** | GPU box, SSH-reachable | The nightly HEVC encode only — captures still land |
 | **Mac mini / studio Mac** | See [the open question](#the-mac-mini) below | Nothing known |
-| **dev2**, **dev-1** | Isolated demo VPSes | Demos only; production is unaffected by design |
+| **dev2**, **dev-1**, **stijn** | Isolated demo / test hosts | Demos only; production is unaffected by design |
 
 ---
 
@@ -215,15 +215,14 @@ is no per-camera addressing anywhere in the estate: this process exists
 precisely to broadcast one record command to every camera at once, which is why
 losing it loses the cameras as a group rather than one at a time.
 
-Two caveats a runbook should carry:
+It also runs [`signlab_drs`](https://github.com/Amsterdam-Humanities-Labs/signlab_drs),
+the video pipeline: `startupScript.py` starts and restarts its services
+(DaVinci Resolve render queue, MediaPipe crop, convert and upload, file
+mover, a Node camera/WebSocket server) and keeps macOS awake.
 
-- **No service supervision.** The repository says so in as many words — you
-  build it and you run it. There is no unit, no timer and no watchdog. If it
-  stops, someone starts it by hand.
-- **The name "DRS" is not written down in the repository.** The Sony repo
-  never names a host; it describes its machine only as macOS with the cameras
-  attached over USB. The DRS attribution is external knowledge, recorded here
-  and in the repository table but not verifiable from code.
+**No service supervision for the Sony controller.** The repository says so in
+as many words: you build it and you run it. There is no unit, no timer and no
+watchdog. If it stops, someone starts it by hand.
 
 ## monsterfish
 
@@ -248,18 +247,19 @@ repository names it, and no service in this index depends on it. It is left in
 the machine table so that the next person to ask gets this answer rather than
 re-deriving the same dead end.
 
-One loose thread worth pulling before anyone concludes the Mac mini is
-fictional: `signlab_Sony-SDK-MACOS-API` describes *its* machine as macOS with
-the cameras attached over USB, and that machine is what this estate calls DRS.
-"The studio Mac" and "DRS" may always have been the same box under two names.
+DRS is a Mac (`signlab_drs` keeps macOS awake and holds the Sony cameras), so
+"the studio Mac" and DRS are probably the same box under two names.
 
-## dev2 and dev-1
+## dev2, dev-1 and stijn
 
-The isolated demo VPSes, and the only machines in the estate that are fully
+The isolated demo and test hosts, and the only machines in the estate that are fully
 described by a file you can read: they are whatever
 [`interface_deploy/scripts/repos.tsv`](../interface_deploy/scripts/repos.tsv)
-says, cloned into a webroot, plus a scheduler. `dev2` serves from `/web`,
-`dev-1` from `/srv/signcollect/web`. See [install.md](install.md).
+says, cloned into a webroot, plus a scheduler. `dev2` (the current demo)
+serves from `/web`, `dev-1` from `/srv/signcollect/web`, and `stijn`
+(`stijn.taila8bdbd.ts.net`, a bare Ubuntu 24.04 test host installed with
+`--local`) from `/web`. `dev` (100.72.57.25) is offline. See
+[install.md](install.md).
 
 | | |
 |---|---|
