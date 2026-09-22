@@ -199,10 +199,3 @@ install uses. So a `--local` run deploys exactly what the mirror holds, and a
 change made here reaches it only after the `git subtree` push. If you have just
 edited something in this repository and want it on a host today, either deploy
 over ssh (which overlays your working tree) or push the subtree first.
-
-## Known gap
-
-`signlab_signCollect-v2` and `signlab_zin` have code running on production
-that was never committed - 15 and 5 files respectively, including the whole
-admin section (`users.html`, `labels_add.*`, `batch_add.*`). Until those are
-pushed, a GitHub-only deploy cannot reproduce production.

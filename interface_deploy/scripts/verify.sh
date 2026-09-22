@@ -44,11 +44,11 @@ chk /stats.html 404
 # an interface-only deploy. One endpoint (/zin/api/getSamVideos.php) is called
 # from two places and will not work without it.
 echo "== annotation editor =="
-for p in /annotation-tool/ /annotation-tool/v1/ /annotation-tool/v2/ \
+for p in /annotation-tool/ \
          /annotation-tool/v3/ /annotation-tool/webcam/ \
          /annotation-tool/clusters/ /annotation-tool/clusters/tool/; do chk "$p" 200; done
-# The annotation editor ships five times over - v1, v2, v3, webcam and the
-# copy under clusters/ - and each loads ffmpeg.wasm's 32MB core by a relative
+# The annotation editor ships three times over - v3, webcam and the copy
+# under clusters/ - and each loads ffmpeg.wasm's 32MB core by a relative
 # URL of its own. That core is not in git: four identical copies of it were,
 # and scripts/fetch-ffmpeg-core.sh puts a hash-verified one on the host
 # instead. Its absence does not break a page load, which is exactly why it is
@@ -64,10 +64,10 @@ chklen() { # chklen <path> <bytes>
   if [ "$got" = "$2" ]; then printf '  ok   %-52s %s bytes\n' "$1" "$got"
   else printf '  FAIL %-52s got %s want %s\n' "$1" "$got" "$2"; fail=1; fi
 }
-for d in v1 v2 v3 webcam clusters/tool; do
+for d in v3 webcam clusters/tool; do
   chklen "/annotation-tool/$d/vendor/ffmpeg/esm/ffmpeg-core.wasm" 32129114
 done
-# The loaders beside it. Tracked upstream in v1..webcam, so this is really
+# The loaders beside it. Tracked upstream in v3 and webcam, so this is really
 # about clusters/tool, whose whole vendor/ directory only exists because the
 # deploy makes it - and about the module worker, which ffmpeg.js fetches by a
 # name no `src=` grep would ever have found.
@@ -82,7 +82,8 @@ done
 echo "== signbank export =="
 chk /signbank_data/glosses_transformed.json 200
 echo "== secrets must be denied =="
-for p in /mysql_config.php /zin/mysql_config.php /zin/.env /.env; do chk "$p" 403; done
+for p in /mysql_config.php /zin/mysql_config.php /zin/.env /.env \
+         /annotation_data/clusters/status.json; do chk "$p" 403; done
 echo "== isolation from production =="
 for t in https://signcollect.nl/ https://136.144.170.87/ http://100.88.38.8/; do
   if ssh "$HOST" "curl -sS -o /dev/null --connect-timeout 6 $t" >/dev/null 2>&1; then
