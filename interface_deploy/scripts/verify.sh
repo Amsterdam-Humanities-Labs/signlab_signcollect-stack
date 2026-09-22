@@ -43,6 +43,9 @@ chk /stats.html 404
 # /api is the signlab_sCAPI submodule - a separate service, out of scope for
 # an interface-only deploy. One endpoint (/zin/api/getSamVideos.php) is called
 # from two places and will not work without it.
+# sCAPI, deployed into zin/api as its own component and served at /api.
+echo "== api (sCAPI) =="
+for p in /api/ /api/getListGlos.php; do chk "$p" 200; done
 echo "== annotation editor =="
 for p in /annotation-tool/ \
          /annotation-tool/v3/ /annotation-tool/webcam/ \

@@ -17,3 +17,4 @@ web_extra/.env
 # stays so a leftover cache on an old workstation can never be committed here
 # by accident - participant video belongs in that repo and nowhere else.
 media/
+.claude/settings.local.json
