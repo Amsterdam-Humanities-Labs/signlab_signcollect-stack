@@ -177,17 +177,3 @@ else
   echo "  .session_secret generated (value not shown)"
 fi
 
-# The annotation editors are each their own docroot with a zin/ beneath, so
-# they resolve mysql_config.php one level above zin/ and again at zin/api/.
-# Symlinks to the real $WEBROOT/mysql_config.php rather than copies, so there is
-# still one credential file on the host.
-for ed in subBeta8 3DAnn3; do
-  ssh "$HOST" "set -e
-    d=$WEBROOT/annotation-editors/$ed
-    [ -d \"\$d\" ] || exit 0
-    mkdir -p \"\$d/zin/api\" \"\$d/zin/cache\" \"\$d/zin/eaf/zin\"
-    ln -sfn $WEBROOT/mysql_config.php \"\$d/mysql_config.php\"
-    ln -sfn $WEBROOT/mysql_config.php \"\$d/zin/api/mysql_config.php\"
-    chmod 775 \"\$d/zin/cache\" \"\$d/zin/eaf/zin\" 2>/dev/null || true"
-  echo "  annotation-editors/$ed: mysql_config symlinked, runtime dirs ready"
-done
