@@ -29,8 +29,9 @@ same-origin paths before the first request is served.
 ## Before you start
 
 A host is an ordinary Ubuntu box — 24.04 is what these are tested on. It needs
-exactly four things beforehand. Everything else (apache, php, mysql, git,
-composer, `gh`, nftables) is installed for you.
+exactly four things beforehand. Everything else (apache, php, mysql, composer,
+nftables) is installed for you. On the host itself (`--local`) you install
+`git` and `gh` first, with one apt line (below).
 
 1. **A normal user you can ssh in as, by key.** `ssh gomer@demo1` must work.
 
@@ -54,12 +55,13 @@ composer, `gh`, nftables) is installed for you.
    repositories itself. Nothing else has to be reachable.
 
 Also worth knowing before you pick a box: it wants **3 GB of free disk**
-(5 GB is comfortable — the demo media alone is 291 MB, and there are
+(5 GB is comfortable — the demo media alone is 292 MB, and there are
 seventeen checkouts, a database and apt's cache on top) and **about 1 GB of
 RAM**, below which `mysql-server` tends not to start.
 
-The one thing the installer cannot invent is a **GitHub login**, and what it
-needs differs by mode — see below.
+The one thing the installer cannot invent is a **GitHub login**: over ssh it
+borrows your workstation's `gh`; on the host it is a browser login
+(`gh auth login --web`), no token.
 
 ## Check first, change nothing
 
@@ -149,11 +151,11 @@ was written.
 2. **provision** — apt packages (apache2, php and its modules, mysql-server,
    git, curl, nftables, composer, python3-psutil), the webroot, the database
    and its password in `.env`, a `tailscale cert`, the Apache vhost.
-3. **host-auth** — gives the host a GitHub login. Over ssh it hands over a
-   token from your workstation's `gh`; under `--local` it installs `gh` and
-   stops, because there is no other account to borrow from. Note the trade:
-   that token carries your full account scope, and `gh` stores it on the host
-   at `~/.config/gh/hosts.yml`. Revoke it if a host is ever lost.
+3. **host-auth** — gives the host a GitHub login. Over ssh: a token from your
+   workstation's `gh` (full account scope, stored in `~/.config/gh/hosts.yml`
+   on the host; revoke it if the host is lost). Under `--local`: if `gh` is not
+   logged in and a terminal is attached it runs `gh auth login --web`; with no
+   terminal it stops and says so.
 4. **host-src** — puts this deploy tree where the host can read it,
    at `~/signcollect-deploy`. Skipped entirely under `--local`: there is no
    second machine, and doing it anyway would reset the checkout the running
@@ -239,7 +241,8 @@ they check things over ssh that HTTP cannot see.
 
 | Host | Webroot | Command |
 |---|---|---|
-| `dev2` | `/web` | `scripts/install.sh --host gomer@dev2` |
+| `dev2` (current demo) | `/web` | `scripts/install.sh --host gomer@dev2` |
+| `stijn` (test, `stijn.taila8bdbd.ts.net`, bare Ubuntu 24.04) | `/web` | `scripts/install.sh --local` on the box |
 | `dev-1` | `/srv/signcollect/web` | `scripts/install.sh --host gomer@dev-1 --webroot /srv/signcollect/web` |
 
 `dev-1` is the reason `--webroot` exists, and the reason the estate's PHP
