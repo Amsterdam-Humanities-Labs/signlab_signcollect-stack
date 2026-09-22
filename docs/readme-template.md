@@ -1,11 +1,13 @@
 # README template
 
-Every `signlab_*` repo README follows this skeleton (#18). Target: 60 lines or
-fewer. Facts only; tables and bullets over prose. Do not restate the deploy
-mechanism, demo-host paths, credential conventions or org history: link to
-this repo ([install.md](install.md), [deploy.md](deploy.md),
-[machines.md](machines.md)) instead. Long API or vendor reference goes in the
-repo's own `docs/`.
+Every `signlab_*` repo README follows this skeleton (#18).
+
+- Aim for 60 lines or fewer.
+- Facts only. Prefer tables and bullets to prose.
+- Do not repeat how deploys work, demo-host paths, credential conventions or
+  the history of the organisation. Link to this repo instead
+  ([install.md](install.md), [deploy.md](deploy.md), [machines.md](machines.md)).
+- Put long API or vendor reference in the repo's own `docs/`.
 
 ```markdown
 # <repo>

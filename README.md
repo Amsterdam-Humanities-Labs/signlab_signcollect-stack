@@ -1,33 +1,36 @@
-# SignCollect Stack
+# signlab_signcollect-stack
 
-Index of the repositories behind **SignCollect / Zin**, the sign-language data
-collection platform: studio capture, media processing, the gloss database and
-the public API. No application code lives here. What each repo does is in its
-own README.
+An index of the repositories behind SignCollect and Zin, the platform that
+collects sign language data. It covers studio capture, media processing, the
+gloss database and the public API. This repo holds no application code. Each
+repo's own README says what it does.
 
-| Doc | What it answers |
+| Doc | Read it when you want to know |
 |---|---|
-| [docs/architecture.md](docs/architecture.md) | How the repos fit together (diagram) and the main database tables |
-| [docs/machines.md](docs/machines.md) | What runs on each machine, and the unit / timer / cron name it runs as |
-| [docs/runbook.md](docs/runbook.md) | Something is broken: first checks, unit names, blast radius, restarts, disk full |
-| [docs/schema.md](docs/schema.md) | Every database table: what it holds, which repo writes and reads it |
-| [docs/install.md](docs/install.md) | Standing up a demo or test host (the only install doc) |
-| [docs/deploy.md](docs/deploy.md) | How a deploy works, and adding a component repo |
-| [docs/readme-template.md](docs/readme-template.md) | The README skeleton every repo follows |
+| [docs/architecture.md](docs/architecture.md) How the repos fit together (diagram), and the main database tables |
+| [docs/machines.md](docs/machines.md) What runs on each machine, and the unit, timer or cron name it runs as |
+| [docs/runbook.md](docs/runbook.md) What to do when something breaks: first checks, unit names, blast radius, restarts, disk full |
+| [docs/schema.md](docs/schema.md) What each database table holds, and which repos write and read it |
+| [docs/install.md](docs/install.md) How to set up a demo or test host (the only install doc) |
+| [docs/deploy.md](docs/deploy.md) How a deploy works, and how to add a component repo |
+| [docs/readme-template.md](docs/readme-template.md) Which README skeleton every repo follows |
 
-All repos live in the [Amsterdam-Humanities-Labs](https://github.com/orgs/Amsterdam-Humanities-Labs/repositories?q=signlab_)
-organisation under a `signlab_` prefix; every member has access. All are
+All repos are in the [Amsterdam-Humanities-Labs](https://github.com/orgs/Amsterdam-Humanities-Labs/repositories?q=signlab_)
+organisation, with a `signlab_` prefix. Every member has access. All repos are
 private except `signlab_Sony-SDK-MACOS-API`.
 
 ## The repositories
 
-32 repositories, plus the deploy toolchain in this one. Entry paths are on
-`https://signcollect.nl` unless a full host is given; open the entry point, not
-the bare folder, which often 500s.
+There are 32 repositories, plus the deploy toolchain in this repo. Entry paths
+are on `https://signcollect.nl` unless a full host is given. Open the entry
+point. The bare folder often returns a 500 error.
 
-Tier: **1** core data path (camera → storage → database → interface/API; production breaks without it).
-**2** supporting: monitoring, tools used weekly, demo/deploy. **3** experimental or dormant.
-Derived from [machines.md](docs/machines.md), the [runbook](docs/runbook.md#blast-radius) blast radius, `repos.tsv` and each README's Status.
+Tiers:
+- 1: core data path (camera → storage → database → interface/API). Production breaks without it.
+- 2: supporting: monitoring, tools used weekly, demo/deploy.
+- 3: experimental or dormant.
+
+The tiers come from [machines.md](docs/machines.md), the [runbook](docs/runbook.md#blast-radius) blast radius, `repos.tsv` and the Status in each README.
 
 | Repo | Tier | Layer | Role | Language | Server | Status | Entry point |
 |---|---|---|---|---|---|---|---|
@@ -40,7 +43,7 @@ Derived from [machines.md](docs/machines.md), the [runbook](docs/runbook.md#blas
 | [signlab_sC-Animation-PP](https://github.com/Amsterdam-Humanities-Labs/signlab_sC-Animation-PP) | 1 | Core stack | Animation post-processing manager | PHP | core server | production | [/animMIDI/public/](https://signcollect.nl/animMIDI/public/) |
 | [signlab_sCAPI](https://github.com/Amsterdam-Humanities-Labs/signlab_sCAPI) | 1 | Core stack | Public read API | PHP | core server | production | [api.signcollect.nl](https://api.signcollect.nl) |
 | [signlab_signCollect-v2](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2) | 1 | Core stack | Gloss management interface | JavaScript + PHP | core server | production | [/menu_beta/](https://signcollect.nl/menu_beta/) |
-| [signlab_hh](https://github.com/Amsterdam-Humanities-Labs/signlab_hh) | 3 | Core stack | Dutch health-content indexing | HTML + Python | core server | **dormant** | [/hh/](https://signcollect.nl/hh/) |
+| [signlab_hh](https://github.com/Amsterdam-Humanities-Labs/signlab_hh) | 3 | Core stack | Dutch health-content indexing | HTML + Python | core server | dormant | [/hh/](https://signcollect.nl/hh/) |
 | [signlab_signcollect-lib](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-lib) | 1 | Shared | Database config + install-root resolver | PHP | core server | production | — (`/web/lib`, not servable) |
 | [signlab_zin](https://github.com/Amsterdam-Humanities-Labs/signlab_zin) | 1 | Annotation | The main annotation tool | PHP + Python | core server | production | [/zin/zinnen.html](https://signcollect.nl/zin/zinnen.html) |
 | [signlab_annotation-tool](https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-tool) | 2 | Annotation | Standalone EAF editor | JavaScript | core server (runs in the browser) | production | [/annotation-tool/](https://signcollect.nl/annotation-tool/) |
@@ -63,22 +66,22 @@ Derived from [machines.md](docs/machines.md), the [runbook](docs/runbook.md#blas
 | [signlab_client_monitor_api](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_api) | 2 | Monitoring | Registration and heartbeat API | PHP + Python | core server | production | `/client_monitor_api/api.php?action=…` |
 | [signlab_client_monitor_dashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard) | 2 | Monitoring | Dashboard over that API | PHP + JS | core server | production | [/client_monitor_dashboard/](https://signcollect.nl/client_monitor_dashboard/) |
 | [signlab_demo-media](https://github.com/Amsterdam-Humanities-Labs/signlab_demo-media) | 2 | Deployment | Demo video for seeding a demo host | — | demo hosts | production | — |
-| [interface_deploy](interface_deploy) | 2 | Deployment | The deploy toolchain. **Lives in this repo** | Bash + PHP | demo hosts | production | — |
+| [interface_deploy](interface_deploy) | 2 | Deployment | The deploy toolchain. Lives in this repo | Bash + PHP | demo hosts | production | — |
 
 ## Where things run
 
 | Server | What it is |
 |---|---|
-| core server | Production VPS (`cloud`) serving `signcollect.nl`: everything under `/web`, plus `/opt` and `/home/gomer` services such as `pythonCron` |
-| Vicon PC | Windows box in the Visualisation Lab. **Runs** `bmcam` and RD_sync; `viconSync` runs on the core server and **pulls from** it |
-| DRS | macOS box with the Sony FX30s on USB; runs Sony-SDK and `signlab_drs` |
+| core server | The production VPS (`cloud`) that serves `signcollect.nl`. Runs everything under `/web`, plus services in `/opt` and `/home/gomer` such as `pythonCron` |
+| Vicon PC | Windows PC in the Visualisation Lab. Runs `bmcam` and RD_sync. `viconSync` runs on the core server and pulls from the Vicon PC |
+| DRS | The studio Mac with the Sony FX30s on USB. Runs Sony-SDK and `signlab_drs` |
 | demo hosts | Isolated copies built by [install.md](docs/install.md): `dev2` (demo, `/web`), `stijn` (test, `stijn.taila8bdbd.ts.net`, bare Ubuntu 24.04, `--local`), `dev-1` (`/srv/signcollect/web`) |
 
-Full per-machine detail, unit names included: [docs/machines.md](docs/machines.md).
-`dev` (100.72.57.25), named in older specs, is offline.
+Full detail per machine, with unit names: [docs/machines.md](docs/machines.md).
+Older specs name `dev` (100.72.57.25). It is offline.
 
 ## interface_deploy
 
-[`interface_deploy/`](interface_deploy) is a `git subtree` mirror of a separate
-repository. Read it freely; commit changes upstream, because edits made here are
-lost on the next sync.
+[`interface_deploy/`](interface_deploy) is a `git subtree` copy of a separate
+repository. Read it here, but commit changes upstream. Edits made here are lost
+on the next sync.
