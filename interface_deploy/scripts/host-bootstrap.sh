@@ -152,6 +152,24 @@ while IFS=$'\t' read -r webdir repo branch; do
   [ -f "$WEBROOT/$webdir/composer.json" ] && composer_dirs+=("$webdir")
 done < "$SRC/scripts/repos.tsv"
 
+# mocap_lab was merged into signlab_mocapStudio as lab/. Pages still call
+# ../mocap_lab/..., so /web/mocap_lab becomes a symlink to it. A host that has
+# the old separate checkout gets it replaced - only when that checkout is
+# signlab_mocap_lab, so a production-style directory with other content is
+# never touched.
+ml=$WEBROOT/mocap_lab
+if [ -d "$WEBROOT/mocapStudio/lab" ]; then
+  if [ -d "$ml/.git" ] && [ ! -L "$ml" ] &&
+     git -C "$ml" remote get-url origin 2>/dev/null | grep -q '/signlab_mocap_lab'; then
+    rm -rf "$ml"
+    echo "  replaced old signlab_mocap_lab checkout"
+  fi
+  if [ ! -e "$ml" ] || [ -L "$ml" ]; then
+    ln -sfn mocapStudio/lab "$ml"
+    echo "  mocap_lab -> mocapStudio/lab"
+  fi
+fi
+
 # A directory the repository no longer tracks survives `clean -fd` when it
 # still holds ignored files - annotation-tool's v1/ and v2/ keep the ffmpeg
 # core the deploy placed there. Remove such leftovers, but only where git
