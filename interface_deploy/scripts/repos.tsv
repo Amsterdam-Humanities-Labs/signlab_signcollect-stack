@@ -23,7 +23,9 @@
 # That vhost's DocumentRoot is /web/mocap_site - a four-button portal - and
 # the buttons go to animMIDI (already listed), mocapStudio and viconDashboard.
 # mocapStudio in turn fetches /mocap/*.php and ../mocap_lab/*.php, so those two
-# come along or its page loads to an empty form. Everything else under /web
+# come along or its page loads to an empty form. mocap_lab now lives inside
+# signlab_mocapStudio as lab/ (signlab_signcollect-stack#37); host-bootstrap.sh
+# symlinks /web/mocap_lab to it so no URL changes. Everything else under /web
 # with "mocap" or "s3b" in the name is unreachable from that portal:
 #
 #   s3b_glb, s3b_server, s3b_viewer, mocapDataPackage, animDB - nothing in the
@@ -81,7 +83,6 @@ animMIDI	signlab_sC-Animation-PP	main
 mocap_site	signlab_mocap_site	main
 mocapStudio	signlab_mocapStudio	main
 mocap	signlab_mocap	main
-mocap_lab	signlab_mocap_lab	main
 viconDashboard	signlab_viconDashboard	main
 gebarenoverleg_media	signlab_demo-media	main
 blendBaking	signlab_blendAnims	main
