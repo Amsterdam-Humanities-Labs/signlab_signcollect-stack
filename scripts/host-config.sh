@@ -177,3 +177,14 @@ else
   echo "  .session_secret generated (value not shown)"
 fi
 
+
+# SC_UPLOAD_TOKEN - the shared token machine clients (capture-machine curl,
+# the OBS uploader) send as X-Api-Token to mocap/uploadOBS.php and
+# mocapDataPackage/upload.php. Those endpoints refuse everything when it is
+# unset, so a demo gets a random one, once, in the env file sc_env() reads.
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'grep -q "^SC_UPLOAD_TOKEN=" $WEBROOT/.env'; then
+  echo "  SC_UPLOAD_TOKEN already in .env - left alone"
+else
+  ssh "$HOST" "export WEBROOT='$WEBROOT'; "'printf "SC_UPLOAD_TOKEN=%s\n" "$(openssl rand -hex 24)" >> $WEBROOT/.env'
+  echo "  SC_UPLOAD_TOKEN generated in .env (value not shown)"
+fi
