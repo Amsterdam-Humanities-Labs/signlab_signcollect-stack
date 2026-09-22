@@ -128,12 +128,39 @@ sync_repo() { # sync_repo <repo> <branch> <dir>
     "$act" "$repo" "${dir#"$WEBROOT"/}" "$(git -C "$dir" rev-parse --short HEAD)"
 }
 
+# annotation-tool's cluster corrections (status.json, merge_decisions.json,
+# eaf/) used to be tracked inside the checkout, where the reset + clean below
+# reverted them on every deploy. They now live in $WEBROOT/annotation_data/
+# clusters/, which io.php seeds from clusters/edit/seed/ on first use. A host
+# that still has live copies at the old path gets them moved over once, before
+# the reset can touch them.
+ann_old=$WEBROOT/annotation-tool/clusters/edit
+ann_new=$WEBROOT/annotation_data/clusters
+if [ -f "$ann_old/status.json" ] && [ ! -e "$ann_new/status.json" ]; then
+  sudo install -d -o www-data -g www-data -m 2775 "$ann_new"
+  sudo cp -a "$ann_old/status.json" "$ann_new/"
+  [ -f "$ann_old/merge_decisions.json" ] && sudo cp -a "$ann_old/merge_decisions.json" "$ann_new/"
+  [ -d "$ann_old/eaf" ] && sudo cp -a "$ann_old/eaf" "$ann_new/"
+  sudo chown -R www-data:www-data "$ann_new"
+  echo "  moved annotation-tool cluster corrections -> $ann_new"
+fi
+
 composer_dirs=()
 while IFS=$'\t' read -r webdir repo branch; do
   case "$webdir" in ''|\#*) continue ;; esac
   sync_repo "$repo" "$branch" "$WEBROOT/$webdir"
   [ -f "$WEBROOT/$webdir/composer.json" ] && composer_dirs+=("$webdir")
 done < "$SRC/scripts/repos.tsv"
+
+# A directory the repository no longer tracks survives `clean -fd` when it
+# still holds ignored files - annotation-tool's v1/ and v2/ keep the ffmpeg
+# core the deploy placed there. Remove such leftovers, but only where git
+# confirms nothing under them is tracked.
+for d in v1 v2; do
+  t=$WEBROOT/annotation-tool/$d
+  [ -d "$t" ] && [ -z "$(git -C "$WEBROOT/annotation-tool" ls-files -- "$d" | head -1)" ] &&
+    rm -rf "$t" && echo "  removed untracked leftover annotation-tool/$d"
+done
 
 # The unversioned parts of production. They have no upstream repository of
 # their own, so they are vendored in this deploy repo under web_extra/ and

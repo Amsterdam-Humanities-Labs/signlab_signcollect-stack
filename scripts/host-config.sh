@@ -101,6 +101,13 @@ ssh "$HOST" "export WEBROOT='$WEBROOT'; "'set -e
   id -nG "$USER" | tr " " "\n" | grep -qx www-data || sudo usermod -aG www-data "$USER"'
 echo "  $WEBROOT/signbank_data ready (www-data:www-data 2775, $HOST deploy user in group www-data)"
 
+# annotation-tool's cluster corrections, kept outside its checkout so a
+# redeploy cannot revert them. io.php seeds the contents on first use; it only
+# needs a directory the web server may write. host-bootstrap.sh moves any
+# copies still at the old in-checkout path here before its reset.
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo install -d -o www-data -g www-data -m 2775 $WEBROOT/annotation_data/clusters'
+echo "  $WEBROOT/annotation_data/clusters ready (www-data:www-data 2775)"
+
 # Group membership is read at login, so the usermod above reaches the
 # scheduled job (systemd starts it with a fresh group list) but not this run.
 # Over ssh every call is a new login and that difference never showed; under
