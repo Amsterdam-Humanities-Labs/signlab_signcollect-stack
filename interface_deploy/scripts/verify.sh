@@ -44,6 +44,10 @@ chk /stats.html 404
 # an interface-only deploy. One endpoint (/zin/api/getSamVideos.php) is called
 # from two places and will not work without it.
 # sCAPI, deployed into zin/api as its own component and served at /api.
+# background-fix and the BabylonSignLab fork the mocap pages load scripts from.
+echo "== background-fix, BabylonSignLab =="
+chk /videoBackgroundFix/ 200
+chk /jari/BabylonSignLab/LoadingAnimation/initialize.js 200
 echo "== api (sCAPI) =="
 for p in /api/ /api/getListGlos.php; do chk "$p" 200; done
 echo "== annotation editor =="
