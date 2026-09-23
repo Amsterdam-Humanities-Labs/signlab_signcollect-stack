@@ -144,6 +144,7 @@ if [ "${SC_DRY:-0}" = "1" ]; then
   echo
   echo "=== dry run: what this would change on $(sc_where) ==="
   ncomp=$(grep -cvE '^[[:space:]]*(#|$)' scripts/repos.tsv)
+  PRIVATE_REPOS=$(sc_private_repos | tr "\n" " ")
   ssh "$HOST" "
     set +e
     W='$WEBROOT'
@@ -165,7 +166,8 @@ if [ "${SC_DRY:-0}" = "1" ]; then
                                            || echo '  2 provision   would issue a tailscale cert'
     [ -e /etc/apache2/sites-enabled/demo-ssl.conf ] && echo '  2 provision   apache vhost enabled - would be re-rendered and reloaded' \
                                                     || echo '  2 provision   would enable the apache vhost'
-    if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+    if [ -z \"$PRIVATE_REPOS\" ]; then echo '  3 host-auth   not needed, every repo is public'
+    elif command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
       echo \"  3 host-auth   gh already logged in as \$(gh api user -q .login 2>/dev/null)\"
     else echo '  3 host-auth   would install gh and give it a GitHub login'; fi
     have=0

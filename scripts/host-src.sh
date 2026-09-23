@@ -86,8 +86,8 @@ STACK_REPO=${STACK_REPO:-Amsterdam-Humanities-Labs/signlab_signcollect-stack}
 
 echo "== deploy source on $HOST =="
 
-# gh, not git, so the private-repo credential host-auth.sh installed is used
-# the same way every other clone here uses it.
+# Plain git: anonymous for a public stack repo, and through the credential
+# helper host-auth.sh installs (gh auth setup-git) for a private one.
 ssh "$HOST" "set -e
   d=$SRCROOT
   if [ -d \"\$d/.git\" ]; then
@@ -97,7 +97,7 @@ ssh "$HOST" "set -e
     echo \"  updated  $STACK_REPO -> \$d (\$(git -C \"\$d\" rev-parse --short HEAD))\"
   else
     rm -rf \"\$d\"
-    gh repo clone $STACK_REPO \"\$d\" -- --depth 1 --quiet
+    git clone --depth 1 --quiet https://github.com/$STACK_REPO \"\$d\"
     echo \"  cloned   $STACK_REPO -> \$d (\$(git -C \"\$d\" rev-parse --short HEAD))\"
   fi
   test -d \"\$d/interface_deploy\" || { echo '  no interface_deploy/ in the stack repo' >&2; exit 1; }"

@@ -61,7 +61,7 @@ ORG=${ORG:-Amsterdam-Humanities-Labs}
 
 command -v git >/dev/null || { echo "git is not installed on this host" >&2; exit 1; }
 git ls-remote "https://github.com/$ORG/signlab_zinnen-annotation" >/dev/null 2>&1 || {
-  echo "this host cannot read the private org repos - run scripts/host-auth.sh first" >&2; exit 1; }
+  echo "this host cannot read the org repos (private, or no network) - run scripts/host-auth.sh first" >&2; exit 1; }
 
 echo "== components -> $WEBROOT (clone, rewrite, purge) =="
 echo "   source: $SRC   domain: $DOMAIN"
