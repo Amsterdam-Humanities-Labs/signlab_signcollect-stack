@@ -15,6 +15,10 @@
 # gitlink in zin with no .gitmodules, so a fresh host had an empty /api
 # (signlab_signcollect-stack#30). Listed after zin so zin's reset comes first.
 #
+# videoBackgroundFix is signlab_background-fix (the day-batch background tool).
+# jari/BabylonSignLab is the org fork of J-Andersen-UvA/BabylonSignLab: the mocap
+# pages load its scripts from /jari/BabylonSignLab/, as on production.
+#
 # Not listed, deliberately:
 #   mocap*         - see below; the portal and what it actually reaches are
 #                    now deployed, the rest of the mocap stack is not.
@@ -84,5 +88,7 @@ mocap_site	signlab_mocap_site	main
 mocapStudio	signlab_mocapStudio	main
 mocap	signlab_mocap	main
 viconDashboard	signlab_viconDashboard	main
+videoBackgroundFix	signlab_background-fix	main
+jari/BabylonSignLab	signlab_BabylonSignLab	main
 gebarenoverleg_media	signlab_demo-media	main
 blendBaking	signlab_blendbaking	main
