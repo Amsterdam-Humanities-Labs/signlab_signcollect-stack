@@ -50,7 +50,7 @@ A missing heartbeat only means the API heard nothing. The job may still be runni
 | monsterfish | HEVC encode target | nothing resident; reached over SSH by `vicon-blackmagic-mini` |
 | demo hosts | Web, DB, scheduler | `apache2`, `php8.3-fpm`, `mysql`, `python-scheduler` `.service` (no wrappers) |
 
-pythonCron wrapper units. Each name is `service-` plus the job name in lower case. The script comes from `services_config.json`:
+pythonCron wrapper units. Each name is `service-` plus the job name in lower case. The script comes from production's `services_config.json`. After the pythonCron switch-over ([production.md](production.md#pending-switch-overs)), the repo's copy runs `pythonCron/video_converter.py`, `mysql_backup.php`, `zin_backup.py` and `move_studiofiles.py` instead of the `helpScripts` files, and drops `service-update_field_glosses_at_sentences`.
 
 | Unit | Runs |
 |---|---|
@@ -118,7 +118,7 @@ Order after a full outage: `mysql` → `rclone-mount` → `php8.3-fpm` → `apac
 - [ ] Is the disk full? Fix [the disk](#disk-full) first. MySQL does not start on a full disk.
 - [ ] `sudo systemctl restart mysql`, then `sudo mysql -e 'SELECT 1'`
 - [ ] If the log shows crash recovery in a loop: stop and ask the owner. Do not delete `ib_logfile*` or anything in `/var/lib/mysql`.
-- [ ] Restore: `service-mysql_backup` makes the backups (`/web/helpScripts/mysqlBackup.php`, not in git). Backup location: TODO: owner.
+- [ ] Restore: `service-mysql_backup` makes the backups (`/web/helpScripts/mysqlBackup.php`, copy in [signlab_helpScripts](https://github.com/Amsterdam-Humanities-Labs/signlab_helpScripts)). The code writes one `.sql` file per table to `/web/gebarenoverleg_media/studioFiles/sqlBackups/`. TODO: owner confirms.
 
 ### Apache
 

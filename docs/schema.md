@@ -20,8 +20,9 @@ Writers and readers were found by searching all 33 repos (main, 2026-09-22)
 for `INSERT|UPDATE|DELETE|REPLACE` and `FROM|JOIN <table>`.
 - `stack` means `interface_deploy/web_extra/` in this repo.
 - Not covered: dynamic table names (except `$table` in signCollect-v2), and
-  pythonCron jobs whose scripts are not in git (`/web/helpScripts`, `/web/qr`,
-  `/web/josBoard`, `/web/zin/eaf/zin/*.py`).
+  pythonCron job scripts that were not in git on that date (`/web/helpScripts`,
+  `/web/qr`, `/web/josBoard`, `/web/zin/eaf/zin/*.py`). The first three are now
+  in signlab_helpScripts, signlab_qr and signlab_josBoard.
 - "none found" means no repo has code that uses the table. Ask the owner.
 
 | Table | What it holds | Written by | Read by |

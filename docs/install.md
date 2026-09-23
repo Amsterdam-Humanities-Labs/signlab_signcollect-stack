@@ -124,6 +124,12 @@ Line 2 shows a one-time code. Enter it at <https://github.com/login/device>.
 You do not need a personal access token. Tested on a bare Ubuntu 24.04 host
 (`stijn`): about 3.5 minutes to a verified demo.
 
+### Shortcuts
+
+`interface_deploy/Makefile` wraps the same scripts. Run it from `interface_deploy/`:
+`make install` (on the host), `make install HOST=gomer@demo1` (over ssh),
+`make dry-run`, `make preflight`, `make verify`, `make test`.
+
 ### See what it would do first
 
 ```
@@ -175,10 +181,13 @@ written.
    addresses are rejected, so it cannot cut your own ssh.
 7. host-config: the files each host needs that are gitignored upstream, so a
    clone never brings them: `.session_secret` and the Signbank gloss dump. It
-   never overwrites a file that already exists.
+   also creates the data directories kept outside the checkouts:
+   `annotation_data/clusters` and `videofix_data`. It never overwrites a file
+   that already exists.
 8. pythoncron: the job scheduler, cloned to `/opt/pythonCron` and installed as
    a systemd service. A failure here does not stop the install: a demo without
-   a scheduler is still a demo.
+   a scheduler is still a demo. Set `PYTHONCRON_BRANCH` to install another
+   branch, for example to test a pull request.
 9. migrate: SQL migrations, read from the deployed `menu_beta` checkout, so
    they always match the code being served. Applied migrations are recorded in
    `schema_migrations`, so running it again is safe.
@@ -221,7 +230,8 @@ It checks that:
 - the pages and component entry points return 200
 - `/stats.html` is gone and stays gone
 - the Signbank gloss dump is served
-- every secret (`mysql_config.php`, `.env`) returns 403
+- every secret (`mysql_config.php`, `.env`) and the data files in
+  `annotation_data/` and `videofix_data/` return 403
 - production cannot be reached from the host
 - `gomer` / `123` can log in, and a wrong password cannot
 - the database holds its 99 objects

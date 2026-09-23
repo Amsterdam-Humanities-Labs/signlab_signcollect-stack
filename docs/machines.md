@@ -301,7 +301,7 @@ anything.
 
 You may see `video-transcription-cron`, `email-queue-processor`,
 `backup-script`, `analytics-worker` and `thumbnail-generator`. Ignore them.
-They are sample rows from `create_sample_data.php` and match nothing real.
+They are sample rows from `create_sample_data.php` (since removed from signlab_client_monitor_api) and match nothing real.
 
 ---
 

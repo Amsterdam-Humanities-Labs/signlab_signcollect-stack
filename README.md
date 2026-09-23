@@ -18,11 +18,11 @@ repo's own README says what it does.
 
 All repos are in the [Amsterdam-Humanities-Labs](https://github.com/orgs/Amsterdam-Humanities-Labs/repositories?q=signlab_)
 organisation, with a `signlab_` prefix. Every member has access. All repos are
-private except `signlab_Sony-SDK-MACOS-API`.
+private except `signlab_Sony-SDK-MACOS-API` and `signlab_BabylonSignLab`.
 
 ## The repositories
 
-There are 32 repositories, plus the deploy toolchain in this repo. Entry paths
+There are 36 repositories, plus the deploy toolchain in this repo. Entry paths
 are on `https://signcollect.nl` unless a full host is given. Open the entry
 point. The bare folder often returns a 500 error.
 
@@ -63,9 +63,13 @@ The tiers come from [machines.md](docs/machines.md), the [runbook](docs/runbook.
 | [signlab_s3b_server](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_server) | 3 | 3D & assets | SAM3D upload and hand clustering | PHP + Python | core server | experimental | [/s3b_server/top50.html](https://signcollect.nl/s3b_server/top50.html) |
 | [signlab_s3b_viewer](https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_viewer) | 3 | 3D & assets | Standalone SAM 3D Body viewer | PHP | core server | experimental | [/s3b_viewer/viewer.html](https://signcollect.nl/s3b_viewer/viewer.html) |
 | [signlab_blendAnims](https://github.com/Amsterdam-Humanities-Labs/signlab_blendAnims) | 2 | 3D & assets | `blendBaking` and the avatar site | PHP | core server | production | [avatar.signcollect.nl](https://avatar.signcollect.nl) |
+| [signlab_BabylonSignLab](https://github.com/Amsterdam-Humanities-Labs/signlab_BabylonSignLab) | 3 | 3D & assets | Babylon.js animation viewer (fork of the copy in `/web/jari/BabylonSignLab`) | JavaScript | core server | experimental | not deployed from the repo |
 | [signlab_mhr](https://github.com/Amsterdam-Humanities-Labs/signlab_mhr) | 3 | 3D & assets | MHR avatar source assets | — | core server (assets, not a service) | experimental | — |
 | [signlab_client_monitor_api](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_api) | 2 | Monitoring | Registration and heartbeat API | PHP + Python | core server | production | `/client_monitor_api/api.php?action=…` |
 | [signlab_client_monitor_dashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard) | 2 | Monitoring | Dashboard over that API | PHP + JS | core server | production | [/client_monitor_dashboard/](https://signcollect.nl/client_monitor_dashboard/) |
+| [signlab_qr](https://github.com/Amsterdam-Humanities-Labs/signlab_qr) | 1 | Core stack | Stores DRS QR scan results in `matched_transcriptions` | PHP | core server | production (copy, not deployed from the repo) | `/qr/qrResultReceiver.php` (POST) |
+| [signlab_helpScripts](https://github.com/Amsterdam-Humanities-Labs/signlab_helpScripts) | 2 | Tools | Helper endpoints, server jobs and one-off scripts | Python + PHP | core server | production (copy, not deployed from the repo) | `/helpScripts/emptyVideoTop.php` |
+| [signlab_josBoard](https://github.com/Amsterdam-Humanities-Labs/signlab_josBoard) | 2 | Tools | Josje-Board: how often target words occur in sentences | PHP + Python | core server | production (copy, not deployed from the repo) | [/josBoard/](https://signcollect.nl/josBoard/) |
 | [signlab_demo-media](https://github.com/Amsterdam-Humanities-Labs/signlab_demo-media) | 2 | Deployment | Demo video for seeding a demo host | — | demo hosts | production | — |
 | [interface_deploy](interface_deploy) | 2 | Deployment | The deploy toolchain. Lives in this repo | Bash + PHP | demo hosts | production | — |
 
