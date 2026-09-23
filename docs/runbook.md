@@ -41,12 +41,12 @@ A missing heartbeat only means the API heard nothing. The job may still be runni
 | core server | FBX → GLB (no org repo) | `fbx2glb-server.service`, `fbx2glb-batch.service` |
 | core server | Node servers (no repo) | `studio-support`, `unreal-server`, `llserver` `.service` |
 | core server | mailChecker (no repo) | `studio-monitor`, `videos-monitor-dashboard`, `studio-dashboard` `.service` |
-| core server | zin / annotation-tool nightly jobs | `crontab -l` of `gomer` (4 entries, [list](machines.md#5-crontab--l-for-gomer)) |
+| core server | zinnen-annotation / annotation-tool nightly jobs | `crontab -l` of `gomer` (4 entries, [list](machines.md#5-crontab--l-for-gomer)) |
 | Vicon PC | `bmcam serve` :8000 (blackmagic_control) | no unit; started by hand in a shell |
 | Vicon PC | Pineapple adapter :8780 (blackmagic_control) | no unit; `blackmagic_pineapple_service/service.py` by hand |
 | Vicon PC | Camera → research drive (blackmagic_RD_sync) | no unit; `python -m scripts.sync_clips` by hand |
 | DRS | FX30 controller :8080 (Sony-SDK-MACOS-API) | no unit; `./Release/fx30MultiRecord --port 8080` by hand |
-| DRS | Video pipeline (drs) | `startupScript.py` + `scripts/watchdog.sh` |
+| DRS | Video pipeline (drs-pipeline) | `startupScript.py` + `scripts/watchdog.sh` |
 | monsterfish | HEVC encode target | nothing resident; reached over SSH by `vicon-blackmagic-mini` |
 | demo hosts | Web, DB, scheduler | `apache2`, `php8.3-fpm`, `mysql`, `python-scheduler` `.service` (no wrappers) |
 
@@ -88,7 +88,7 @@ pythonCron wrapper units. Each name is `service-` plus the job name in lower cas
 | `client-monitor-metrics` | Dashboard metrics go stale | Whoever opens the dashboard |
 | `blendanims` | avatar.signcollect.nl | Avatar site users |
 | Vicon PC | Skeleton capture, Blackmagic control and transcode | Studio operator |
-| DRS | Multi-camera record (studio_beta loses cameras), render and crop | Studio operator |
+| DRS | Multi-camera record (Camera Control loses cameras), render and crop | Studio operator |
 | monsterfish | Nightly HEVC Mini copies only; sources stay on the core server | Nobody |
 | A demo host | Demos only | Whoever is demoing |
 

@@ -19,6 +19,7 @@ The database `admin_gebarenoverleg` (MySQL 8.0) on the core server. Source:
 Writers and readers were found by searching all 33 repos (main, 2026-09-22)
 for `INSERT|UPDATE|DELETE|REPLACE` and `FROM|JOIN <table>`.
 - `stack` means `interface_deploy/web_extra/` in this repo.
+- Repo names are the current ones. `mocapStudio/lab` was signlab_mocap_lab. signlab_mocapDataPackage is archived.
 - Not covered: dynamic table names (except `$table` in signCollect-v2), and
   pythonCron job scripts that were not in git on that date (`/web/helpScripts`,
   `/web/qr`, `/web/josBoard`, `/web/zin/eaf/zin/*.py`). The first three are now
@@ -27,10 +28,10 @@ for `INSERT|UPDATE|DELETE|REPLACE` and `FROM|JOIN <table>`.
 
 | Table | What it holds | Written by | Read by |
 |---|---|---|---|
-| `CameraRecords` | Studio camera takes per gloss, camera1-5 file names | studio_beta/save_video_studio.php, stack nmm/mt_cr_sync.php, nmm/emptyVideo.php | studio_beta, zin, studioIndex, hh, client_monitor_dashboard, stack nmm/ |
+| `CameraRecords` | Studio camera takes per gloss, camera1-5 file names | camera-control/save_video_studio.php, stack nmm/mt_cr_sync.php, nmm/emptyVideo.php | camera-control, zinnen-annotation, studio-archive, patient-info, client_monitor_dashboard, stack nmm/ |
 | `activity_log` | Page visits per user | signCollect-v2/users_api.php | signCollect-v2/php_api/activity_log.php |
-| `capture_assignments` | Which user post-processes which capture date | sC-Animation-PP/app/models/Assignment.php | sC-Animation-PP |
-| `captures` | Mocap capture register: name, theme, fbx/glb/csv/mp4 flags | mocap/addCaptures.php, getCaptures.php; mocap_lab/save_fbx_studio.php | mocap |
+| `capture_assignments` | Which user post-processes which capture date | mocap-postprocessing/app/models/Assignment.php | mocap-postprocessing |
+| `captures` | Mocap capture register: name, theme, fbx/glb/csv/mp4 flags | mocap/addCaptures.php, getCaptures.php; mocapStudio/lab/save_fbx_studio.php | mocap |
 | `chat_history` | Chat messages and responses per session | none found | none found |
 | `client_metrics` | CPU, memory, disk samples per monitored client | client_monitor_api/src/ClientMonitorService.php | client_monitor_api |
 | `client_monitors` | Registered clients, heartbeat and thresholds | client_monitor_api/src/ClientMonitorService.php | client_monitor_api |
@@ -41,9 +42,9 @@ for `INSERT|UPDATE|DELETE|REPLACE` and `FROM|JOIN <table>`.
 | `deaftech_sessions` | Deaftech CMS login sessions | none found | none found |
 | `deaftech_settings` | Deaftech CMS key/value settings | none found | none found |
 | `deaftech_users` | Deaftech CMS users | none found | none found |
-| `download_logs` | Animation file downloads per user | sC-Animation-PP/app/controllers/{Upload,Download}Controller.php, public/mark-processed.php | sC-Animation-PP |
-| `form_data` | Glosses: the core NGT vocabulary, videos, status | signCollect-v2/php_api/glosses_{create,save,delete}.php, upload_video.php, signbank_sync/, batch_add.php; studio_beta/save_video_studio.php; sCAPI/admin/api.php | sCAPI, signCollect-v2, zin, studio_beta, hh, studioIndex, videoFix, mocapStudio, s3b_glb, sC-Animation-PP, drs, stack |
-| `form_submissions` | Search queries submitted via the public form | sCAPI/submit.php | none found |
+| `download_logs` | Animation file downloads per user | mocap-postprocessing/app/controllers/{Upload,Download}Controller.php, public/mark-processed.php | mocap-postprocessing |
+| `form_data` | Glosses: the core NGT vocabulary, videos, status | signCollect-v2/php_api/glosses_{create,save,delete}.php, upload_video.php, signbank_sync/, batch_add.php; camera-control/save_video_studio.php; signCollect-API-TYD/admin/api.php | signCollect-API-TYD, signCollect-v2, zinnen-annotation, camera-control, patient-info, studio-archive, crop-fix-manager, mocapStudio, body-animation-viewer, mocap-postprocessing, drs-pipeline, stack |
+| `form_submissions` | Search queries submitted via the public form | signCollect-API-TYD/submit.php | none found |
 | `freemocap_data` | FreeMoCap takes per gloss | none found | none found |
 | `gloss_notes` | User notes per gloss per dataset | signCollect-v2/php_api/notes_add.php | signCollect-v2 |
 | `hand_pose_files` | Hand-pose source files and processing status | none found | view `hand_pose_similarity_search` |
@@ -51,47 +52,47 @@ for `INSERT|UPDATE|DELETE|REPLACE` and `FROM|JOIN <table>`.
 | `hand_pose_finger_spreads` | Per-frame finger spread angles per hand | none found | view |
 | `hand_pose_fingertip_distances` | Per-frame fingertip-to-fingertip distances | none found | none found |
 | `handshapes` | Handshape pool entries with median landmarks | none found | none found |
-| `hh_index` | Health-content pages to translate, with status | hh/getZinnen.php, api.php | hh, mocapStudio, studio_beta/hh/ |
-| `hh_index_glos` | Glosses linked to an `hh_index` page | hh/api.php | hh, studio_beta/hh/ |
-| `hh_lemma` | Lemma → video lookup | none found | hh/api.php |
-| `hh_logs` | hh action log | hh/getZinnen.php | hh |
-| `hh_segments` | hh video segments and file sizes | hh/segment_api.php | hh |
-| `hh_sentences` | Sentence list | none found | hh/api.php |
-| `hh_synonyms` | Lemma synonyms for search | none found | sCAPI/src/services/{Search,Suggestion}Service.php |
-| `hh_words` | Word → lemma → video lookup | none found | hh, sCAPI |
+| `hh_index` | Health-content pages to translate, with status | patient-info/getZinnen.php, api.php | patient-info, mocapStudio, camera-control/hh/ |
+| `hh_index_glos` | Glosses linked to an `hh_index` page | patient-info/api.php | patient-info, camera-control/hh/ |
+| `hh_lemma` | Lemma → video lookup | none found | patient-info/api.php |
+| `hh_logs` | patient-info action log | patient-info/getZinnen.php | patient-info |
+| `hh_segments` | patient-info video segments and file sizes | patient-info/segment_api.php | patient-info |
+| `hh_sentences` | Sentence list | none found | patient-info/api.php |
+| `hh_synonyms` | Lemma synonyms for search | none found | signCollect-API-TYD/src/services/{Search,Suggestion}Service.php |
+| `hh_words` | Word → lemma → video lookup | none found | patient-info, signCollect-API-TYD |
 | `jb_woorden` | Word list with lemma, theme, form_data id | none found | none found |
-| `labels` | Gloss labels with colour, per dataset | signCollect-v2/labels_add.php, php_api/labels_create.php | signCollect-v2, zin, studio_beta, sC-Animation-PP, stack |
-| `lemmaTable` | Lemma list | zin/updateLemmas.php, migrateLemmas.php, processLemmasWithAI.php | zin |
+| `labels` | Gloss labels with colour, per dataset | signCollect-v2/labels_add.php, php_api/labels_create.php | signCollect-v2, zinnen-annotation, camera-control, mocap-postprocessing, stack |
+| `lemmaTable` | Lemma list | zinnen-annotation/updateLemmas.php, migrateLemmas.php, processLemmasWithAI.php | zinnen-annotation |
 | `lsm_data` | LSM dataset glosses, same shape as `form_data` | signCollect-v2 (same `$table` files as `form_data`), migrations/2026-05-21-seed-lsm-*.sql | signCollect-v2 |
-| `matched_transcriptions` | Recording files ↔ sentence/gloss, transcriptions, post-processing | mocapStudio/update{Tekst,Zin,Bak}Mocap.php; mocapDataPackage/upload.php, batch_process.php; signCollect-v2/php_api/studio_video_*.php, lsm_video_upload.php; zin/getZinnen.php; hh/getZinnen.php; drs/services/qrConvert.py; stack nmm/ | sCAPI, zin, mocapStudio, hh, signCollect-v2, studioIndex, studio_beta, viconDashboard, videoFix, s3b_glb, sC-Animation-PP, drs, client_monitor_dashboard, stack |
-| `mocap_data` | Mocap takes per gloss | mocap_lab/saveThree.php, save_fbx_studio.php | mocap |
-| `mocap_files` | Mocap takes: LiveLink, Vicon FBX/CSV, video, review | mocap/matchRecords.py, matchVicon.py; mocapDataPackage/upload.php, batch_process.php; mocap_lab/save_fbx_studio.php | mocap, mocap_lab, mocapDataPackage, sCAPI, studio_beta |
+| `matched_transcriptions` | Recording files ↔ sentence/gloss, transcriptions, post-processing | mocapStudio/update{Tekst,Zin,Bak}Mocap.php; mocapDataPackage/upload.php, batch_process.php; signCollect-v2/php_api/studio_video_*.php, lsm_video_upload.php; zinnen-annotation/getZinnen.php; patient-info/getZinnen.php; drs-pipeline/services/qrConvert.py; stack nmm/ | signCollect-API-TYD, zinnen-annotation, mocapStudio, patient-info, signCollect-v2, studio-archive, camera-control, viconDashboard, crop-fix-manager, body-animation-viewer, mocap-postprocessing, drs-pipeline, client_monitor_dashboard, stack |
+| `mocap_data` | Mocap takes per gloss | mocapStudio/lab/saveThree.php, save_fbx_studio.php | mocap |
+| `mocap_files` | Mocap takes: LiveLink, Vicon FBX/CSV, video, review | mocap/matchRecords.py, matchVicon.py; mocapDataPackage/upload.php, batch_process.php; mocapStudio/lab/save_fbx_studio.php | mocap, mocapStudio/lab, mocapDataPackage, signCollect-API-TYD, camera-control |
 | `mocap_recording_logs` | One row per mocap recording started | mocapStudio/logMocapRecording.php | mocapStudio |
 | `ngt_data` | NGT gloss takes (same shape as `mocap_data`) | none found | none found |
-| `nmm_data` | Non-manual markers per gloss, with theme | stack nmm/update_nmm.php, upload_video_nmm.php, modify_videofile.php; studio_beta/nmm/fetch_nmm_liteGlos.php | sCAPI, studio_beta, studioIndex, hh, s3b_glb, stack |
+| `nmm_data` | Non-manual markers per gloss, with theme | stack nmm/update_nmm.php, upload_video_nmm.php, modify_videofile.php; camera-control/nmm/fetch_nmm_liteGlos.php | signCollect-API-TYD, camera-control, studio-archive, patient-info, body-animation-viewer, stack |
 | `reference_handshapes` | Named reference handshapes with finger metrics | none found | none found |
-| `sb_records` | Signbank export: lemmas, senses, phonology | none found | sCAPI/src/services/{Search,Signbank,Video}Service.php |
+| `sb_records` | Signbank export: lemmas, senses, phonology | none found | signCollect-API-TYD/src/services/{Search,Signbank,Video}Service.php |
 | `search_cache` | Hand-pose search cache headers | none found | none found |
 | `search_cache_results` | Cached hand-pose search results | none found | none found |
 | `search_history` | Hand-pose searches run | none found | none found |
 | `search_tasks` | Queued hand-pose search jobs | none found | none found |
-| `sentences` | Sentences: text, glosses, EAF, annotation status | zin/addZinnen.php, getZinnen.php, getRows.php, syncEafToDatabase.php, resync_video_count.php, *Lemmas*.php; hh/syncEafToDatabase.php; sC-Animation-PP/app/models/MocapFile.php; studio_beta/zin/getRows.php | zin, sCAPI, mocapStudio, viconDashboard, studioIndex, studio_beta, hh, s3b_glb, sC-Animation-PP |
-| `sentences_logs` | Sentence edit log | zin/addZinnen.php, getZinnen.php | zin |
+| `sentences` | Sentences: text, glosses, EAF, annotation status | zinnen-annotation/addZinnen.php, getZinnen.php, getRows.php, syncEafToDatabase.php, resync_video_count.php, *Lemmas*.php; patient-info/syncEafToDatabase.php; mocap-postprocessing/app/models/MocapFile.php; camera-control/zin/getRows.php | zinnen-annotation, signCollect-API-TYD, mocapStudio, viconDashboard, studio-archive, camera-control, patient-info, body-animation-viewer, mocap-postprocessing |
+| `sentences_logs` | Sentence edit log | zinnen-annotation/addZinnen.php, getZinnen.php | zinnen-annotation |
 | `sequence_items` | Signs in a sequence with frame ranges | none found | none found |
 | `sequences` | Named sign sequences per user | none found | none found |
-| `studio_data` | Per-day studio file counts per camera | drs/services/qrConvert.py, tools/check_studiofiles.py; studio_beta/fetch_last_capture.php | drs, studio_beta |
-| `subtitles` | Subtitle lines per content item | hh/save_subtitle.php | none found |
+| `studio_data` | Per-day studio file counts per camera | drs-pipeline/services/qrConvert.py, tools/check_studiofiles.py; camera-control/fetch_last_capture.php | drs-pipeline, camera-control |
+| `subtitles` | Subtitle lines per content item | patient-info/save_subtitle.php | none found |
 | `threeGlosses` | Three.js gloss takes (same shape as `mocap_data`) | none found | none found |
 | `transcriptions` | File name → transcription text | none found | none found |
 | `upload_history` | Hand-pose uploads | none found | none found |
-| `users` | Logins, roles, allowed datasets | signCollect-v2/users_api.php; sCAPI/admin/api.php; stack login_sc.php | signCollect-v2, sCAPI, studio_beta, hh, sC-Animation-PP, client_monitor_dashboard, stack |
+| `users` | Logins, roles, allowed datasets | signCollect-v2/users_api.php; signCollect-API-TYD/admin/api.php; stack login_sc.php | signCollect-v2, signCollect-API-TYD, camera-control, patient-info, mocap-postprocessing, client_monitor_dashboard, stack |
 | `vicon_captures` | Vicon capture sessions: dir, file count, size | viconSync/db_writer.py | viconDashboard, viconSync |
-| `vicon_files` | Vicon capture files, status, review | viconSync/db_writer.py, glb_matcher.py; sC-Animation-PP/app/models/MocapFile.php | viconDashboard, viconSync, sC-Animation-PP |
+| `vicon_files` | Vicon capture files, status, review | viconSync/db_writer.py, glb_matcher.py; mocap-postprocessing/app/models/MocapFile.php | viconDashboard, viconSync, mocap-postprocessing |
 | `vicon_monitor_metadata` | viconSync FTP monitor run totals | viconSync/db_writer.py | none found |
 | `videoMetaData` | Video path, time, tags | none found | none found |
 | `woordenlijst_approvals` | Word-list approvals and picked videos | none found | none found |
 | `word_request_count` | Word request counts per session | none found | none found |
-| `zin_api_log` | sCAPI request log | sCAPI/src/services/ApiLogger.php | none found |
+| `zin_api_log` | signCollect-API-TYD request log | signCollect-API-TYD/src/services/ApiLogger.php | none found |
 
 ## Unused tables: candidates to drop, with the owner's OK
 

@@ -39,7 +39,7 @@ tree in place, and `clean` removes whatever the repository no longer has.
 `clean` keeps anything the component itself gitignores (`vendor/`, `.env`,
 credential files per repo). It also explicitly keeps `mysql_config.php`,
 `.session_secret` and `node_modules`. One exclusion is anchored to a path:
-`/web/zin/api` is the sCAPI mount at `/api` and not part of the tree of
+`/web/zin/api` is the [signlab_signCollect-API-TYD](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-API-TYD) mount at `/api` and not part of the tree of
 `signlab_zinnen-annotation`. A clean without that guard would delete it.
 
 Then, once for the whole docroot:
