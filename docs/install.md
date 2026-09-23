@@ -51,6 +51,12 @@ install `git` and `gh` with one apt line (below).
    you must supply both yourself: `--domain <name>` and a certificate at
    `/etc/ssl/demo/<name>.{crt,key}`.
 
+   **A public name instead (for example `test.signcollect.nl`):** point its DNS
+   A record at the server, keep port 80 open, and let the installer get a free
+   Let's Encrypt certificate that renews itself:
+
+       LETSENCRYPT_EMAIL=you@uva.nl scripts/install.sh --local --domain test.signcollect.nl
+
 4. Outbound HTTPS to github.com. The host clones about seventeen private
    repositories itself. Nothing else has to be reachable.
 
