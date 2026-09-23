@@ -28,6 +28,7 @@ sc_resolve_domain
 sc_on_error "scripts/provision.sh $(sc_retry_args)"
 DB=admin_gebarenoverleg
 DBUSER=signcollect
+LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-}   # set it (with a public --domain) to get a Let's Encrypt cert
 
 echo "=== provisioning $(sc_where) as $DOMAIN, into $WEBROOT ==="
 
@@ -162,11 +163,22 @@ sc_doing "creating the database and $WEBROOT/.env" \
 ssh "$HOST" "set -e
   if [ ! -f /etc/ssl/demo/\$(basename $DOMAIN).crt ]; then
     sudo mkdir -p /etc/ssl/demo
-    if sudo tailscale cert --cert-file /etc/ssl/demo/$DOMAIN.crt \
+    if [ -n \"$LETSENCRYPT_EMAIL\" ]; then
+      # A public name (not a tailnet one): Let's Encrypt over HTTP on port 80.
+      # The challenge is answered from /var/www/html, which apache's default
+      # site serves on a fresh host and the demo vhost aliases for renewals.
+      command -v certbot >/dev/null || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot >/dev/null
+      sudo mkdir -p /var/www/html/.well-known/acme-challenge
+      sudo certbot certonly --webroot -w /var/www/html -d $DOMAIN -m \"$LETSENCRYPT_EMAIL\" \\
+           --agree-tos -n --deploy-hook 'systemctl reload apache2' >/dev/null
+      sudo ln -sfn /etc/letsencrypt/live/$DOMAIN/fullchain.pem /etc/ssl/demo/$DOMAIN.crt
+      sudo ln -sfn /etc/letsencrypt/live/$DOMAIN/privkey.pem   /etc/ssl/demo/$DOMAIN.key
+      echo \"  Let's Encrypt cert issued for $DOMAIN (renews itself; certbot timer)\"
+    elif sudo tailscale cert --cert-file /etc/ssl/demo/$DOMAIN.crt \
                            --key-file  /etc/ssl/demo/$DOMAIN.key $DOMAIN 2>/dev/null; then
       echo '  tailscale cert issued'
     else
-      echo '  WARNING: tailscale cert failed - supply a cert at /etc/ssl/demo/$DOMAIN.{crt,key}'
+      echo '  WARNING: no cert - use a tailnet name, set LETSENCRYPT_EMAIL for a public one, or supply /etc/ssl/demo/$DOMAIN.{crt,key}'
     fi
   else
     echo '  cert already present'
