@@ -4,6 +4,9 @@ What happens when you run the install, for when it goes wrong or when you are
 adding something to it. The steps to type are in [install.md](install.md),
 and nowhere else.
 
+This covers demo hosts only. Production (the core server) is updated by hand:
+see [production.md](production.md).
+
 The scripts are in [`interface_deploy/`](../interface_deploy), a `git subtree`
 mirror of a separate repository. Read them; change them upstream.
 

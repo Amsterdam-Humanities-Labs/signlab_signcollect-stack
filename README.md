@@ -13,6 +13,7 @@ own README.
 | [docs/schema.md](docs/schema.md) | Every database table: what it holds, which repo writes and reads it |
 | [docs/install.md](docs/install.md) | Standing up a demo or test host (the only install doc) |
 | [docs/deploy.md](docs/deploy.md) | How a deploy works, and adding a component repo |
+| [docs/production.md](docs/production.md) | The core server: what is checked out where, how it is updated today, pending switch-overs |
 | [docs/readme-template.md](docs/readme-template.md) | The README skeleton every repo follows |
 
 All repos live in the [Amsterdam-Humanities-Labs](https://github.com/orgs/Amsterdam-Humanities-Labs/repositories?q=signlab_)
