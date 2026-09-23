@@ -60,7 +60,8 @@ CORE_URLS=(
 # from the tree rather than hardcoded would be cleverer and worse: a typo in a
 # glob would silently place nothing, and a missing converter is invisible until
 # somebody drops a video in.
-EDITORS=(v3 webcam clusters/tool)
+# webcam/ and clusters/tool/ became redirects to v3/?mode=... (signlab_annotation-tool#7).
+EDITORS=(v3)
 
 ROOT=${1:-}
 [ -n "$ROOT" ] || { echo "usage: $0 <annotation-tool-directory>" >&2; exit 2; }

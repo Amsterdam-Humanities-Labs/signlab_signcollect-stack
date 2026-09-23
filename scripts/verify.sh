@@ -50,9 +50,8 @@ echo "== annotation editor =="
 for p in /annotation-tool/ \
          /annotation-tool/v3/ /annotation-tool/webcam/ \
          /annotation-tool/clusters/ /annotation-tool/clusters/tool/; do chk "$p" 200; done
-# The annotation editor ships three times over - v3, webcam and the copy
-# under clusters/ - and each loads ffmpeg.wasm's 32MB core by a relative
-# URL of its own. That core is not in git: four identical copies of it were,
+# The annotation editor is v3/ (webcam/ and clusters/tool/ redirect to its
+# modes) and loads ffmpeg.wasm's 32MB core by a relative URL. That core is not in git: four identical copies of it were,
 # and scripts/fetch-ffmpeg-core.sh puts a hash-verified one on the host
 # instead. Its absence does not break a page load, which is exactly why it is
 # checked here - it breaks the first video conversion, minutes later, in a
@@ -67,15 +66,13 @@ chklen() { # chklen <path> <bytes>
   if [ "$got" = "$2" ]; then printf '  ok   %-52s %s bytes\n' "$1" "$got"
   else printf '  FAIL %-52s got %s want %s\n' "$1" "$got" "$2"; fail=1; fi
 }
-for d in v3 webcam clusters/tool; do
+for d in v3; do
   chklen "/annotation-tool/$d/vendor/ffmpeg/esm/ffmpeg-core.wasm" 32129114
 done
-# The loaders beside it. Tracked upstream in v3 and webcam, so this is really
-# about clusters/tool, whose whole vendor/ directory only exists because the
-# deploy makes it - and about the module worker, which ffmpeg.js fetches by a
-# name no `src=` grep would ever have found.
+# The loaders beside it, including the module worker, which ffmpeg.js fetches
+# by a name no `src=` grep would ever have found.
 for f in ffmpeg.js util.js 814.ffmpeg.js esm/ffmpeg-core.js; do
-  chk "/annotation-tool/clusters/tool/vendor/ffmpeg/$f" 200
+  chk "/annotation-tool/v3/vendor/ffmpeg/$f" 200
 done
 
 # The Signbank ECV dump every gloss lookup reads, installed by host-config.sh
