@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Remove test artefacts and caches that must not reach a web server.
 #
-# cookies.txt in signlab_sCAPI carries a real PHPSESSID for api.signcollect.nl.
+# cookies.txt in signlab_signCollect-API-TYD carries a real PHPSESSID for api.signcollect.nl.
 # The rest are committed test output and response captures - inert, but they
 # sit inside the docroot and serve no purpose in a demo.
 #

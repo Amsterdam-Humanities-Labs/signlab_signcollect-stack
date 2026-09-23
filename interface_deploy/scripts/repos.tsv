@@ -10,7 +10,7 @@
 # /web/<webdir>. Branch is what production actually has checked out:
 # signlab_hh is on master, the rest on main.
 #
-# zin/api is signlab_sCAPI, checked out inside zin's directory (zin ignores
+# zin/api is signlab_signCollect-API-TYD, checked out inside zin's directory (zin ignores
 # api/). /api is Alias'd there by signcollect-mounts.conf. It used to be a
 # gitlink in zin with no .gitmodules, so a fresh host had an empty /api
 # (signlab_signcollect-stack#30). Listed after zin so zin's reset comes first.
@@ -72,7 +72,7 @@
 lib	signlab_signcollect-lib	main
 menu_beta	signlab_signCollect-v2	main
 zin	signlab_zin	main
-zin/api	signlab_sCAPI	main
+zin/api	signlab_signCollect-API-TYD	main
 videoFix	signlab_videoFix	main
 studioIndex	signlab_studioIndex	main
 studio_beta	signlab_studio_beta	main

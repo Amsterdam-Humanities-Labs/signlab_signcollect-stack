@@ -132,7 +132,7 @@ flowchart TB
     click zin "https://github.com/Amsterdam-Humanities-Labs/signlab_zin" "zin"
     click at "https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-tool" "annotation-tool"
     click ae "https://github.com/Amsterdam-Humanities-Labs/signlab_annotation-editors" "annotation-editors"
-    click api "https://github.com/Amsterdam-Humanities-Labs/signlab_sCAPI" "sCAPI"
+    click api "https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-API-TYD" "sCAPI"
     click ui "https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2" "signCollect-v2"
     click glb "https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_glb" "s3b_glb"
     click s3s "https://github.com/Amsterdam-Humanities-Labs/signlab_s3b_server" "s3b_server"
