@@ -106,7 +106,7 @@ WEBROOT=${WEBROOT:-/web}
 
 ORG=Amsterdam-Humanities-Labs
 REPO=signlab_pythonCron
-BRANCH=main
+BRANCH=${PYTHONCRON_BRANCH:-main}   # override to test a PR branch on a demo host
 UNIT=python-scheduler.service
 
 PC_HOME=/opt/pythonCron

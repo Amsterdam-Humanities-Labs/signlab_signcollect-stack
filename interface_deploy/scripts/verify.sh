@@ -86,7 +86,7 @@ echo "== signbank export =="
 chk /signbank_data/glosses_transformed.json 200
 echo "== secrets must be denied =="
 for p in /mysql_config.php /zin/mysql_config.php /zin/.env /.env \
-         /annotation_data/clusters/status.json; do chk "$p" 403; done
+         /annotation_data/clusters/status.json /videofix_data/crop_fixes.json; do chk "$p" 403; done
 echo "== isolation from production =="
 for t in https://signcollect.nl/ https://136.144.170.87/ http://100.88.38.8/; do
   if ssh "$HOST" "curl -sS -o /dev/null --connect-timeout 6 $t" >/dev/null 2>&1; then

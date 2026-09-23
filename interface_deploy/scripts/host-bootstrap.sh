@@ -145,6 +145,16 @@ if [ -f "$ann_old/status.json" ] && [ ! -e "$ann_new/status.json" ]; then
   echo "  moved annotation-tool cluster corrections -> $ann_new"
 fi
 
+# videoFix's crop queue (crop_fixes.json) moved out of its checkout for the
+# same reason; api.php seeds it from seed/ on first use. Move a live copy once.
+vf_old=$WEBROOT/videoFix/crop_fixes.json
+vf_new=$WEBROOT/videofix_data
+if [ -f "$vf_old" ] && [ ! -e "$vf_new/crop_fixes.json" ]; then
+  sudo install -d -o www-data -g www-data -m 2775 "$vf_new"
+  sudo cp -a "$vf_old" "$vf_new/" && sudo chown www-data:www-data "$vf_new/crop_fixes.json"
+  echo "  moved videoFix crop_fixes.json -> $vf_new"
+fi
+
 composer_dirs=()
 while IFS=$'\t' read -r webdir repo branch; do
   case "$webdir" in ''|\#*) continue ;; esac

@@ -95,6 +95,10 @@ SetEnv SC_WEB_ROOT @WEBROOT@
 <Directory "@WEBROOT@/annotation_data">
     Require all denied
 </Directory>
+# videoFix's crop queue; served through videoFix/api.php, not directly.
+<Directory "@WEBROOT@/videofix_data">
+    Require all denied
+</Directory>
 
 # Never serve dotfiles - .env, .git metadata, editor leftovers.
 <DirectoryMatch "^@WEBROOT@/.*/\.(git|svn)">
