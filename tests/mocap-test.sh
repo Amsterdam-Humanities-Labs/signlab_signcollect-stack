@@ -112,13 +112,13 @@ section "portal (was mocap.signcollect.nl)"
 req GET /mocap_site "$COOK" >/dev/null;   is "/mocap_site redirects to the directory" 301
 PORTAL=$(req GET /mocap_site/ "$COOK");   is "/mocap_site/" 200
 has "portal is the Motion Capture Portal" "Motion Capture Portal" "$PORTAL"
-for h in '/animMIDI/public/index.php' '/mocapStudio/3dOpname_test.html' '/viconDashboard/'; do
+for h in '/animMIDI/public/index.php' '/mocapStudio/capture.html' '/viconDashboard/'; do
   has "portal button -> $h" "href=\"$h\"" "$PORTAL"
 done
 
 # --- 3. what the portal buttons open ------------------------------------
 section "portal destinations"
-req GET /mocapStudio/3dOpname_test.html "$COOK" >/dev/null; is "3D Studio Capture Site" 200
+req GET /mocapStudio/capture.html "$COOK" >/dev/null; is "3D Studio Capture Site" 200
 req GET /viconDashboard/ "$COOK" >/dev/null;                is "Vicon Dashboard Sync"  200
 # animMIDI's front controller requires vendor/autoload.php, which Composer
 # generates and which is gitignored upstream - there is no composer on the
@@ -137,7 +137,7 @@ esac
 req GET /avatar-not-deployed/blendAnims/ "$COOK" >/dev/null
 is "avatar player is an honest 404, not a bad hostname" 404
 # Dead in production too: /web/sCApp does not exist there either. Reproduced
-# faithfully, like /opnameViewTest.html.
+# faithfully, like /opnameView.html.
 req GET /sCApp/3DViewer_viconDashboard.html "$COOK" >/dev/null
 is "viconDashboard 3D viewer link is dead (as in production)" 404
 
@@ -154,7 +154,7 @@ json_ok "getTeksten.php (texts)"          "$(req GET /mocapStudio/getTeksten.php
 
 # --- 5. the components mocapStudio fetches from -------------------------
 # /mocap and /mocap_lab are not linked from any menu; they are here because
-# 3dOpname_test.html fetches them by relative path.
+# capture.html fetches them by relative path.
 section "mocap / mocap_lab"
 req GET /mocap/opnameLijst.html "$COOK" >/dev/null; is "/mocap/opnameLijst.html (linked from mocapStudio)" 200
 req GET /mocap/index.html "$COOK" >/dev/null;       is "/mocap/index.html" 200
@@ -198,7 +198,7 @@ done
 # (viconDashboard ships a CLAUDE.md that names the production host), and none
 # of it is executed. The egress block covers anything a reader might paste.
 section "isolation from production"
-for p in /mocap_site/ /mocapStudio/3dOpname_test.html /viconDashboard/ \
+for p in /mocap_site/ /mocapStudio/capture.html /viconDashboard/ \
          /viconDashboard/js/dashboard.js /mocap/opnameLijst.html /mocap/index.html; do
   body=$(req GET "$p" "$COOK")
   case "$body" in
