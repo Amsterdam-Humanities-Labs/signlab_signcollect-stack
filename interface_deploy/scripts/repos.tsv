@@ -19,6 +19,9 @@
 # jari/BabylonSignLab is the org fork of J-Andersen-UvA/BabylonSignLab: the mocap
 # pages load its scripts from /jari/BabylonSignLab/, as on production.
 #
+# mocapOverview is the mocap dataset overview and file-search API (for the
+# avatar team); its data/ (inventory, API keys) is runtime state, not in git.
+#
 # Not listed, deliberately:
 #   mocap*         - see below; the portal and what it actually reaches are
 #                    now deployed, the rest of the mocap stack is not.
@@ -90,5 +93,6 @@ mocap	signlab_mocap	main
 viconDashboard	signlab_viconDashboard	main
 videoBackgroundFix	signlab_background-fix	main
 jari/BabylonSignLab	signlab_BabylonSignLab	main
+mocapOverview	signlab_mocapOverview	main
 gebarenoverleg_media	signlab_demo-media	main
 blendBaking	signlab_blendbaking	main

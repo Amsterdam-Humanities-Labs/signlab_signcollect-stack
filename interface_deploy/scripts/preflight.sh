@@ -222,7 +222,10 @@ esac
 # issues for that name and no other - a name we guessed could not have a cert.
 if [ -n "${DOMAIN:-}" ]; then
   ok "domain" "$DOMAIN (given)"
-  [ "$(g ts)" = "absent" ] && warn "tls" "no tailscale: supply /etc/ssl/demo/$DOMAIN.{crt,key} yourself"
+  if [ "$(g ts)" = "absent" ]; then
+    if [ -n "${LETSENCRYPT_EMAIL:-}" ]; then ok "tls" "Let's Encrypt for $DOMAIN (DNS must point here, port 80 open)"
+    else warn "tls" "no tailscale: set LETSENCRYPT_EMAIL=<you@uva.nl> for a public name, or supply /etc/ssl/demo/$DOMAIN.{crt,key}"; fi
+  fi
 elif [ "$(g ts)" = "absent" ] || [ -z "$(g ts)" ]; then
   bad "domain" "no tailscale on the host and no --domain given" \
     "The demo's hostname is read off the host with 'tailscale status --self'," \
