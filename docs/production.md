@@ -32,7 +32,7 @@ Each directory is a git checkout of one repo. Apache, PHP-FPM and MySQL serve th
 
 - `/web/mocap_lab`: `signlab_mocap_lab` was merged into `signlab_mocapStudio` as `lab/` ([#37](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack/issues/37)). Demo hosts symlink `/web/mocap_lab` to `/web/mocapStudio/lab`. TODO: confirm whether production still has a separate `mocap_lab` checkout, and when to switch it.
 - `/web/gebarenoverleg_media/studioFiles` is the research drive, mounted by `rclone-mount.service`. Not a repo.
-- In no repo: `/web/helpScripts`, `/web/qr`, `/web/josBoard` (run by pythonCron), `/web/jari/BabylonSignLab` (see [#35](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack/issues/35)).
+- Copied into a repo on 2026-09-22 but not deployed from it ([#35](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack/issues/35)): `/web/helpScripts` (signlab_helpScripts), `/web/qr` (signlab_qr; `qrConvert.py` is missing from it), `/web/josBoard` (signlab_josBoard). pythonCron runs files from all three. `/web/jari/BabylonSignLab` is forked as signlab_BabylonSignLab, also not deployed from it.
 - Production vhosts (`signcollect.nl`, `api.`, `mocap.`, `avatar.`) are not in this repo. The files in `interface_deploy/apache/` are demo templates. TODO: confirm the production vhost files and certificate renewal.
 
 ### Services outside `/web`
@@ -104,7 +104,7 @@ Merged in the repos, not yet applied on production. Apply each group together.
 - [ ] `git status` in every checkout you will touch. Local changes: commit and push them, or stop and ask.
 - [ ] `git remote -v`: the remote must be the org repo, not `rem0g/*`.
 - [ ] Back up the directory, including untracked files: `tar czf ~/backup-<dir>-$(date +%F).tgz -C /web <dir>`.
-- [ ] Database dump: `mysqldump --single-transaction <db> > ~/db-$(date +%F).sql`. TODO: confirm database name and where `service-mysql_backup` writes its dumps.
+- [ ] Database dump: `mysqldump --single-transaction <db> > ~/db-$(date +%F).sql`. The database is `admin_gebarenoverleg`. `service-mysql_backup` writes per-table dumps to `/web/gebarenoverleg_media/studioFiles/sqlBackups/` (from the code; TODO: confirm on the server).
 - [ ] For pythonCron and viconSync, also back up `/etc/systemd/system/` units, `logs/`, `state/`, `*.db` and `*_state.json`. Never delete `scheduler_state.db`.
 - [ ] Check disk space first: `df -h`.
 - [ ] Afterwards: open the component's entry page, `systemctl --failed`, `tail /var/log/apache2/error.log`.

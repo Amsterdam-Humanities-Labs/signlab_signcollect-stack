@@ -1,33 +1,33 @@
 # Runbook
 
-First stop when something on the estate misbehaves. Details per machine:
+Start here when something in the stack goes wrong. Details per machine:
 [machines.md](machines.md). Entry URLs: [repository table](../README.md#the-repositories).
-Tables: [schema.md](schema.md).
+Database tables: [schema.md](schema.md).
 
 > Production (`signcollect.nl`, host `cloud`) is read-only from this repo.
-> The commands below are for the owner, or with the owner's OK.
+> Only the owner runs the commands below, or someone with the owner's OK.
 
-## First 3 checks
+## First three checks
 
-1. [ ] [client_monitor_dashboard](https://signcollect.nl/client_monitor_dashboard/): which machine or job went quiet ([naming](machines.md#asking-the-estate-what-is-alive)).
+1. [ ] [client_monitor_dashboard](https://signcollect.nl/client_monitor_dashboard/): which machine or job stopped reporting ([naming](machines.md#asking-the-estate-what-is-alive)).
 2. [ ] `systemctl --failed` on the core server.
-3. [ ] `df -h` on the core server. Full disk: [Disk full](#disk-full).
+3. [ ] `df -h` on the core server. If the disk is full, see [Disk full](#disk-full).
 
-Then, as needed:
+Then, if needed:
 
-| Check | Command / place |
+| Check | Command or location |
 |---|---|
 | Research-drive mount | `systemctl status rclone-mount.service` |
-| One unit's log | `journalctl -u <unit> -n 200` |
-| A pythonCron job's log / state | `/home/gomer/pythonCron/logs/<Job_Name>.log`, `state/<Job_Name>.json` |
+| Log of one unit | `journalctl -u <unit> -n 200` |
+| Log and state of a pythonCron job | `/home/gomer/pythonCron/logs/<Job_Name>.log`, `state/<Job_Name>.json` |
 | Timers | `systemctl list-timers 'vicon-*'` |
 | Apache / PHP errors | `/var/log/apache2/error.log` |
 
-A missing heartbeat means "nobody is listening", not "the job died". Check the unit first.
+A missing heartbeat only means the API heard nothing. The job may still be running. Check the unit first.
 
-## Machine → service → unit
+## Machine, service and unit
 
-| Machine | Service (repo) | Unit / how it runs |
+| Machine | Service (repo) | Unit, or how it runs |
 |---|---|---|
 | core server | Every web component under `/web` | `apache2.service`, `php8.3-fpm.service` |
 | core server | Database | `mysql.service` |
@@ -50,7 +50,7 @@ A missing heartbeat means "nobody is listening", not "the job died". Check the u
 | monsterfish | HEVC encode target | nothing resident; reached over SSH by `vicon-blackmagic-mini` |
 | demo hosts | Web, DB, scheduler | `apache2`, `php8.3-fpm`, `mysql`, `python-scheduler` `.service` (no wrappers) |
 
-pythonCron wrapper units (`service-` + job name, lowercased; script from `services_config.json`):
+pythonCron wrapper units. Each name is `service-` plus the job name in lower case. The script comes from production's `services_config.json`. After the pythonCron switch-over ([production.md](production.md#pending-switch-overs)), the repo's copy runs `pythonCron/video_converter.py`, `mysql_backup.php`, `zin_backup.py` and `move_studiofiles.py` instead of the `helpScripts` files, and drops `service-update_field_glosses_at_sentences`.
 
 | Unit | Runs |
 |---|---|
@@ -82,9 +82,9 @@ pythonCron wrapper units (`service-` + job name, lowercased; script from `servic
 | `mysql` | Every page, API and job that reads the DB | Everyone, at once |
 | `apache2` / `php8.3-fpm` | All of `signcollect.nl`, `api.signcollect.nl`, heartbeats to client_monitor_api | Everyone; dashboard shows all jobs offline |
 | `rclone-mount` | Studio files for every job and page reading the research drive | Jobs log missing files; studio / video pages show gaps |
-| `python-scheduler` + wrappers | Recordings stop being matched to sentences; lemma, gloss and EAF syncs stop; backups stop | Nobody until data looks stale; dashboard if the job heartbeats |
+| `python-scheduler` + wrappers | Recordings stop being matched to sentences; lemma, gloss and EAF syncs stop; backups stop | Nobody, until data looks out of date. The dashboard, if the job sends heartbeats |
 | `service-mysql_backup` | No new DB backups | Nobody |
-| viconSync units | New Vicon captures do not reach the server / viconDashboard | Studio operator, in viconDashboard |
+| viconSync units | New Vicon captures do not reach the server or viconDashboard | Studio operator, in viconDashboard |
 | `client-monitor-metrics` | Dashboard metrics go stale | Whoever opens the dashboard |
 | `blendanims` | avatar.signcollect.nl | Avatar site users |
 | Vicon PC | Skeleton capture, Blackmagic control and transcode | Studio operator |
@@ -98,65 +98,65 @@ Order after a full outage: `mysql` → `rclone-mount` → `php8.3-fpm` → `apac
 
 | Service | Command |
 |---|---|
-| Web | `sudo apache2ctl configtest && sudo systemctl reload apache2` (restart only if reload fails) |
+| Web | `sudo apache2ctl configtest && sudo systemctl reload apache2` (restart only if the reload fails) |
 | PHP | `sudo systemctl restart php8.3-fpm` |
-| MySQL | see [MySQL](#mysql) |
-| Research drive | `sudo systemctl restart rclone-mount.service`; if "transport endpoint is not connected": `sudo fusermount -uz /web/gebarenoverleg_media/studioFiles` first |
-| Scheduler | `sudo systemctl restart python-scheduler.service` (never delete `scheduler_state.db`: every job would run at once) |
+| MySQL | See [MySQL](#mysql) |
+| Research drive | `sudo systemctl restart rclone-mount.service`. If you see "transport endpoint is not connected", first run `sudo fusermount -uz /web/gebarenoverleg_media/studioFiles` |
+| Scheduler | `sudo systemctl restart python-scheduler.service` (never delete `scheduler_state.db`, or every job runs at once) |
 | One job | `sudo systemctl restart service-<job>.service` |
 | All wrappers | `sudo systemctl restart 'service-*.service'`, then `sudo systemctl restart watchdog-daemon.service` |
 | viconSync | `sudo systemctl restart vicon-ftp-monitor vicon-glb-matcher vicon-sync-rsync` |
 | Other core units | `sudo systemctl restart <unit>` |
-| Vicon PC | in a shell: `.venv\Scripts\bmcam serve --bind 0.0.0.0 --port 8000` (blackmagic_control checkout) |
-| DRS, cameras | in a shell: `./Release/fx30MultiRecord --port 8080 --download-path /tmp/fx30_downloads` |
+| Vicon PC | In a shell: `.venv\Scripts\bmcam serve --bind 0.0.0.0 --port 8000` (blackmagic_control checkout) |
+| DRS, cameras | In a shell: `./Release/fx30MultiRecord --port 8080 --download-path /tmp/fx30_downloads` |
 | DRS, pipeline | `/usr/bin/python3 startupScript.py` (signlab_drs checkout) |
-| Demo host | re-run the install; every step is idempotent ([install.md](install.md#if-it-stops-half-way)) |
+| Demo host | Run the install again. Every step is idempotent ([install.md](install.md#if-it-stops-half-way)) |
 
 ### MySQL
 
 - [ ] `systemctl status mysql`; `sudo tail -n 100 /var/log/mysql/error.log`
-- [ ] Disk full? Fix [disk](#disk-full) first; MySQL will not start on a full disk.
+- [ ] Is the disk full? Fix [the disk](#disk-full) first. MySQL does not start on a full disk.
 - [ ] `sudo systemctl restart mysql`, then `sudo mysql -e 'SELECT 1'`
-- [ ] Crash recovery loops in the log: stop, ask the owner. Do not delete `ib_logfile*` or anything in `/var/lib/mysql`.
-- [ ] Restore: backups come from `service-mysql_backup` (`/web/helpScripts/mysqlBackup.php`, not in git). Backup location: TODO: owner.
+- [ ] If the log shows crash recovery in a loop: stop and ask the owner. Do not delete `ib_logfile*` or anything in `/var/lib/mysql`.
+- [ ] Restore: `service-mysql_backup` makes the backups (`/web/helpScripts/mysqlBackup.php`, copy in [signlab_helpScripts](https://github.com/Amsterdam-Humanities-Labs/signlab_helpScripts)). The code writes one `.sql` file per table to `/web/gebarenoverleg_media/studioFiles/sqlBackups/`. TODO: owner confirms.
 
 ### Apache
 
-- [ ] `sudo apache2ctl configtest`: fix the named file and line before any restart.
+- [ ] `sudo apache2ctl configtest`: fix the file and line it names before you restart anything.
 - [ ] `sudo apache2ctl -S`: vhosts and the cert files they use.
 - [ ] `sudo tail -n 100 /var/log/apache2/error.log`
-- [ ] Only PHP pages fail: `sudo systemctl restart php8.3-fpm`.
+- [ ] If only PHP pages fail: `sudo systemctl restart php8.3-fpm`.
 
 ### Certificate
 
 - [ ] Expiry: `echo | openssl s_client -connect signcollect.nl:443 -servername signcollect.nl 2>/dev/null | openssl x509 -noout -enddate` (same for `api.` and `avatar.`)
-- [ ] Production: renewal tool is not recorded in any repo. If certbot: `sudo certbot certificates`, `sudo certbot renew`, `sudo systemctl reload apache2`. TODO: owner to confirm.
+- [ ] Production: no repo records which tool renews the certificate. If it is certbot: `sudo certbot certificates`, `sudo certbot renew`, `sudo systemctl reload apache2`. TODO: owner to confirm.
 - [ ] Demo hosts: `tailscale cert` into `/etc/ssl/demo/` (see `interface_deploy/scripts/provision.sh`), then reload Apache.
 
 ## Disk full
 
 - [ ] `df -h` and `df -i` (inodes).
-- [ ] Biggest: `sudo du -xh --max-depth=2 / 2>/dev/null | sort -h | tail -20`
+- [ ] Largest folders: `sudo du -xh --max-depth=2 / 2>/dev/null | sort -h | tail -20`
 - [ ] Usual suspects: `/home/gomer/pythonCron/logs` (50-100 MB per log), `/var/log`, `/var/lib/mysql`, `/web`.
-- [ ] Logs: **truncate, never `rm`**. An open log keeps its space after `rm`. `: > /home/gomer/pythonCron/logs/<Job_Name>.log` or `sudo truncate -s 0 <file>`.
-- [ ] Or `python3 /home/gomer/pythonCron/emergency_log_cleanup.py --log-dir /home/gomer/pythonCron/logs --dry-run`, then without `--dry-run`: keeps the last 50 MB of every log over 100 MB. Not scheduled ([#21](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack/issues/21)); its default `--log-dir` is the pythonCron root, not `logs/`.
+- [ ] Logs: truncate them, never `rm` them. An open log keeps its space after `rm`. `: > /home/gomer/pythonCron/logs/<Job_Name>.log` or `sudo truncate -s 0 <file>`.
+- [ ] Or `python3 /home/gomer/pythonCron/emergency_log_cleanup.py --log-dir /home/gomer/pythonCron/logs --dry-run`, then without `--dry-run`. It keeps the last 50 MB of every log over 100 MB. It is not scheduled ([#21](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack/issues/21)). Its default `--log-dir` is the pythonCron root, not `logs/`.
 - [ ] journald: `sudo journalctl --vacuum-size=500M`
-- [ ] Space still gone: `sudo lsof +L1` (deleted but open); restart that process.
+- [ ] Space still not freed: `sudo lsof +L1` lists files that are deleted but still open. Restart that process.
 - [ ] Never delete: `scheduler_state.db`, anything in `/var/lib/mysql`, anything under the research-drive mount.
-- [ ] After: `systemctl --failed`; restart `mysql` first if it stopped.
+- [ ] Afterwards: `systemctl --failed`. If `mysql` stopped, restart it first.
 
 ## Known symptoms
 
-| Symptom | Cause / fix |
+| Symptom | Cause and fix |
 |---|---|
-| A page returns 500 | Usually a directory with no index file. Open the entry point from the repo table, not the bare folder. |
-| A script cannot reach the database | Check the credentials file exists and is readable by the process: `/web/.env` via `signcollect-lib`, or the component's `mysql_config.php`. PHP runs as `www-data`; a mode-600 file owned by someone else is unreadable to it. |
+| A page returns 500 | Usually a directory with no index file. Open the entry point from the repo table instead of the bare folder. |
+| A script cannot reach the database | Check that the credentials file exists and that the process can read it: `/web/.env` via `signcollect-lib`, or the component's `mysql_config.php`. PHP runs as `www-data`. It cannot read a mode-600 file owned by another user. |
 | Every `bmcam` call 404s | Web Media Manager and the REST API are not enabled in the Blackmagic camera's settings. |
 | Vicon sync stopped after a Windows reinstall | The Vicon PC's tailnet address changed. `vicon_host.py` should rediscover it from `tailscale status`. |
-| A capture is stuck yellow in viconDashboard | All five subdirectories arrived but files are still growing: the upload has not finished. Red means a required subdirectory is really missing. |
-| A file is on the recording machine but not on the web | Not every subdirectory is synced. Livelink CSV, metadata JSON, `unreal/CC`, `unreal/Vicon` and shogun_post files stay on Windows by design. |
+| A capture is stuck yellow in viconDashboard | All five subdirectories have arrived, but files are still growing: the upload has not finished. Red means a required subdirectory is really missing. |
+| A file is on the recording machine but not on the web | Not every subdirectory is synced. Livelink CSV, metadata JSON, `unreal/CC`, `unreal/Vicon` and shogun_post files stay on Windows, by design. |
 | Jobs report missing studio files | `rclone-mount.service` dropped. Almost everything downstream reads through that mount. |
-| FX30 cameras do not record | `fx30MultiRecord` on DRS has no supervisor. Someone starts it by hand (see [machines.md](machines.md#drs)). |
+| FX30 cameras do not record | Nothing supervises `fx30MultiRecord` on DRS. Someone has to start it by hand (see [machines.md](machines.md#drs)). |
 
 ## Escalation
 

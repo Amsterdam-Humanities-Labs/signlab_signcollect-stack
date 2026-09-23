@@ -1,28 +1,31 @@
 # Database schema
 
-Database `admin_gebarenoverleg` (MySQL 8.0) on the core server. Source:
-[`interface_deploy/db/schema.sql`](../interface_deploy/db/schema.sql), dumped
-2026-09-01: 97 tables, 1 view (`hand_pose_similarity_search`), no rows.
+The database `admin_gebarenoverleg` (MySQL 8.0) on the core server. Source:
+[`interface_deploy/db/schema.sql`](../interface_deploy/db/schema.sql), dumped on
+2026-09-01. It has 97 tables and 1 view (`hand_pose_similarity_search`), and no rows.
 
-- **Relations are by convention.** No foreign keys between the core tables
-  (`form_data`, `sentences`, `matched_transcriptions`, `users`, `labels`, ...).
-  The 13 FKs that exist stay inside side modules: `deaftech_*`, `hand_pose_*`,
+- Relations between tables are a convention only. There are no foreign keys
+  between the core tables (`form_data`, `sentences`, `matched_transcriptions`,
+  `users`, `labels`, ...). The 13 foreign keys that do exist stay inside side
+  modules: `deaftech_*`, `hand_pose_*`,
   `search_*`, `sequence*`, `client_*`, `vicon_files` → `vicon_captures`.
-- Diagram of the core tables: signCollect-v2
+- A diagram of the core tables is in signCollect-v2:
   [docs/architecture/signcollect-architecture.html](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2/blob/main/docs/architecture/signcollect-architecture.html) (page 06).
-- Columns added after the dump live in migrations, mainly
-  `signlab_signCollect-v2/migrations/`; `interface_deploy/scripts/migrate.sh` applies them.
+- Columns added after the dump are in migrations, mainly in
+  `signlab_signCollect-v2/migrations/`. `interface_deploy/scripts/migrate.sh` applies them.
 
 ## Tables
 
-Writers / readers found by grepping `INSERT|UPDATE|DELETE|REPLACE` and
-`FROM|JOIN <table>` across all 33 repos (main, 2026-09-22). `stack` =
-`interface_deploy/web_extra/` in this repo. Not covered: dynamic table names
-(except `$table` in signCollect-v2) and pythonCron jobs whose scripts are not in
-git (`/web/helpScripts`, `/web/qr`, `/web/josBoard`, `/web/zin/eaf/zin/*.py`).
-**none found** = no code reference in any repo; ask the owner.
+Writers and readers were found by searching all 33 repos (main, 2026-09-22)
+for `INSERT|UPDATE|DELETE|REPLACE` and `FROM|JOIN <table>`.
+- `stack` means `interface_deploy/web_extra/` in this repo.
+- Not covered: dynamic table names (except `$table` in signCollect-v2), and
+  pythonCron job scripts that were not in git on that date (`/web/helpScripts`,
+  `/web/qr`, `/web/josBoard`, `/web/zin/eaf/zin/*.py`). The first three are now
+  in signlab_helpScripts, signlab_qr and signlab_josBoard.
+- "none found" means no repo has code that uses the table. Ask the owner.
 
-| Table | Holds (≤10 words) | Written by | Read by |
+| Table | What it holds | Written by | Read by |
 |---|---|---|---|
 | `CameraRecords` | Studio camera takes per gloss, camera1-5 file names | studio_beta/save_video_studio.php, stack nmm/mt_cr_sync.php, nmm/emptyVideo.php | studio_beta, zin, studioIndex, hh, client_monitor_dashboard, stack nmm/ |
 | `activity_log` | Page visits per user | signCollect-v2/users_api.php | signCollect-v2/php_api/activity_log.php |
@@ -90,9 +93,9 @@ git (`/web/helpScripts`, `/web/qr`, `/web/josBoard`, `/web/zin/eaf/zin/*.py`).
 | `word_request_count` | Word request counts per session | none found | none found |
 | `zin_api_log` | sCAPI request log | sCAPI/src/services/ApiLogger.php | none found |
 
-## Junk tables — candidate to drop, needs owner OK
+## Unused tables: candidates to drop, with the owner's OK
 
-Nothing has been dropped. 32 tables, no code reference in any repo:
+Nothing has been dropped yet. These 32 tables are not used by code in any repo:
 
 - `matched_transcriptions_backup_*` (10): `_20251222`, `_20260106_{111021,111110,111149,112758,113646,114200,144142}`, `_20260112_{095913,095938}`
 - `sentences_backup_*` (18): `_20250728_{113520,113601}`, `_20250729_{081049,081103}`, `_before_{csv_import,deletion,duplicate_fix,proper_id_fix,status_update}_2025072*`, `_pre_id_restore_*` (9, 2026-01-06 / 2026-01-12)
@@ -100,17 +103,17 @@ Nothing has been dropped. 32 tables, no code reference in any repo:
 
 ## Regenerating schema.sql
 
-`scripts/dump-schema.sh` — read-only `mysqldump --no-data`, strips `DEFINER`
-and `AUTO_INCREMENT`. Output goes to stdout.
+`scripts/dump-schema.sh` runs a read-only `mysqldump --no-data` and strips
+`DEFINER` and `AUTO_INCREMENT`. It writes to stdout.
 
 ```sh
 sudo scripts/dump-schema.sh > schema.sql   # on the database host
 ```
 
-- Re-run: after a migration lands on production, after junk tables are dropped,
-  or before building a new demo host if the last dump is older than the newest
-  migration.
-- The output replaces `interface_deploy/db/schema.sql`. That is a subtree:
-  commit it upstream, then sync.
-- Then update the object count in `interface_deploy/scripts/verify.sh`, also upstream
-  (now 99 = 97 tables + 1 view + `schema_migrations`).
+- Run it again after a migration lands on production, after unused tables are
+  dropped, or before you build a new demo host if the last dump is older than
+  the newest migration.
+- The output replaces `interface_deploy/db/schema.sql`. That file is in the
+  subtree, so commit it upstream and then sync.
+- Then update the object count in `interface_deploy/scripts/verify.sh`, also
+  upstream. It is now 99: 97 tables + 1 view + `schema_migrations`.

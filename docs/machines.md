@@ -1,28 +1,27 @@
 # What runs where
 
-The [repository table](../README.md#the-repositories) is indexed by repo: pick
-a repo, learn which machine it lands on. This page is the same estate indexed
-the other way round — pick a machine, learn what it runs and **what the thing
-is called**, so that an outage has a unit name to type rather than a repo name
-to guess.
+The [repository table](../README.md#the-repositories) is sorted by repo: pick a
+repo and see which machine it runs on. This page works the other way round:
+pick a machine and see what it runs and what each thing is called. During an
+outage you then have a unit name to type, instead of a repo name to guess.
 
-Every service, timer and cron entry below was read off the running hosts. Where
-a name here disagrees with a repository's own README, the machine wins.
+Every service, timer and cron entry below was read from the running hosts. If a
+name here disagrees with a repository's own README, the machine is right.
 
-> **Production `signcollect.nl` is read-only to anyone working from this
-> repository.** Everything below can be checked with `systemctl status` and
-> `journalctl`. Nothing below should be restarted without the owner.
+> Production `signcollect.nl` is read-only for anyone working from this
+> repository. You can check everything below with `systemctl status` and
+> `journalctl`. Do not restart anything below without the owner.
 
 ## The machines
 
-| Machine | What it is | Loses what, if it dies |
+| Machine | What it is | What stops if it dies |
 |---|---|---|
-| **signcollect core server** | The production VPS (`cloud`), serves `signcollect.nl` | Everything: the site, the API, the database, all scheduling |
-| **Vicon PC** | Windows box in the Visualisation Lab, on the tailnet | Skeleton capture, and Blackmagic camera control and transcode |
-| **DRS** | macOS box holding the USB connections to the Sony FX30s; runs `signlab_drs` | Multi-camera record (`studio_beta` loses its cameras) and the render/crop pipeline |
-| **monsterfish** | GPU box, SSH-reachable | The nightly HEVC encode only — captures still land |
-| **Mac mini / studio Mac** | See [the open question](#the-mac-mini) below | Nothing known |
-| **dev2**, **dev-1**, **stijn** | Isolated demo / test hosts | Demos only; production is unaffected by design |
+| signcollect core server | The production VPS (`cloud`). Serves `signcollect.nl` | Everything: the site, the API, the database, all scheduling |
+| Vicon PC | Windows PC in the Visualisation Lab, on the tailnet | Skeleton capture, and Blackmagic camera control and transcode |
+| DRS | The studio Mac with the USB connections to the Sony FX30s. Runs `signlab_drs` | Multi-camera recording (`studio_beta` loses its cameras) and the render/crop pipeline |
+| monsterfish | GPU machine, reachable over SSH | Only the nightly HEVC encode. Captures still arrive |
+| Mac mini / studio Mac | See [the open question](#the-mac-mini) below | Nothing known |
+| dev2, dev-1, stijn | Isolated demo and test hosts | Only demos. By design, production is not affected |
 
 ---
 
@@ -31,35 +30,34 @@ a name here disagrees with a repository's own README, the machine wins.
 The production VPS. Hostname `cloud`, user `gomer`. Almost every repository in
 the table runs here, in one of five ways.
 
-### 1. Web components — Apache, no unit of their own
+### 1. Web components: Apache, no unit of their own
 
 `apache2.service`, `php8.3-fpm.service` and `mysql.service` serve everything
-under `/web`. A web
-component has no service name: it is a directory, and it is up when Apache is
-up. These are the repos deployed as docroot directories — `zin`, `menu_beta`
-(`signCollect-v2`), `videoFix`, `studioIndex`, `studio_beta`, `hh`,
-`annotation-tool`, `annotation-editors`, `animMIDI` (`sC-Animation-PP`),
-`mocap_site`, `mocapStudio`, `mocap`, `mocap_lab`, `viconDashboard`,
-`blendBaking` (`blendAnims`), `lib` (`signcollect-lib`), plus `sCAPI`,
-`s3b_glb`, `s3b_server`, `s3b_viewer`, `mocapDataPackage`,
+under `/web`. A web component has no service name. It is a directory, and it is
+up when Apache is up. These are the repos deployed as docroot directories:
+`zin`, `menu_beta` (`signCollect-v2`), `videoFix`, `studioIndex`,
+`studio_beta`, `hh`, `annotation-tool`, `annotation-editors`, `animMIDI`
+(`sC-Animation-PP`), `mocap_site`, `mocapStudio`, `mocap`, `mocap_lab`,
+`viconDashboard`, `blendBaking` (`blendAnims`), `lib` (`signcollect-lib`), plus
+`sCAPI`, `s3b_glb`, `s3b_server`, `s3b_viewer`, `mocapDataPackage`,
 `client_monitor_api` and `client_monitor_dashboard`.
 
-To restart any of them you restart Apache, which restarts all of them.
+To restart one of them, you restart Apache. That restarts all of them.
 
-### 2. The scheduler — `signlab_pythonCron`
+### 2. The scheduler: `signlab_pythonCron`
 
-Two generations of the same scheduler run side by side out of
+Two generations of the same scheduler run side by side from
 `/home/gomer/pythonCron`:
 
 | Unit | What it is |
 |---|---|
 | `python-scheduler.service` | The v2 scheduler, `scheduler_v2.py`, reading `config.json` |
 | `watchdog-daemon.service` | Restarts wrapper services that hang, from `services_config.json` |
-| `server-monitor.service` | `server_monitor.py` — disk, rclone mount, MySQL |
+| `server-monitor.service` | `server_monitor.py`: disk, rclone mount, MySQL |
 | `service-<job>.service` ×20 | One wrapper unit per job, generated by `wrapper_generator.py` |
 
-The twenty wrapper units are the ones that actually do the recurring work.
-Their names are the job names lowercased:
+The twenty wrapper units do the recurring work. Their names are the job names
+in lower case:
 
 ```
 service-backup_zin_eaf_srt_files          service-mysql_backup
@@ -74,19 +72,19 @@ service-get_themas                        service-match_records_for_livelink_vid
 service-move_studiofiles                  service-match_vicon_fbx_csv_files_with_mocap_records
 ```
 
-Logs are `/home/gomer/pythonCron/logs/<Job_Name>.log`; state is
+Logs are in `/home/gomer/pythonCron/logs/<Job_Name>.log`. State is in
 `/home/gomer/pythonCron/state/<Job_Name>.json`.
 
-> **The repository is behind the machine.** Production's `services_config.json`
+> The repository is behind the machine. Production's `services_config.json`
 > has 21 entries; the committed one has 16. `git status` in
 > `/home/gomer/pythonCron` shows five modified files and three untracked
-> backups, and its `origin` is still the personal `rem0g/pythonCron`, not the
-> organisation repo. Read production's config, not the repository's, when you
-> need to know what is scheduled.
+> backups. Its `origin` is still the personal `rem0g/pythonCron`, not the
+> organisation repo. To know what is scheduled, read production's config, not
+> the repository's.
 
-### 3. Vicon ingest — `signlab_viconSync`
+### 3. Vicon ingest: `signlab_viconSync`
 
-Out of `/home/gomer/viconSync`, as `User=gomer`:
+From `/home/gomer/viconSync`, as `User=gomer`:
 
 | Unit | Runs | Schedule |
 |---|---|---|
@@ -96,15 +94,15 @@ Out of `/home/gomer/viconSync`, as `User=gomer`:
 | `vicon-blackmagic-mini.timer` | `compress_blackmagic.py --once` | daily 04:00 |
 | `vicon-cc-pipeline.timer` | `cc_pipeline/convert_all.sh -j 2` | hourly |
 
-Two things here are worth knowing before an incident:
+Two things to know before an incident:
 
-- **`sync_vicon_rsync.py` is scheduled twice.** `vicon-sync-rsync.service` runs
-  it directly, and `service-sync_vicon_files_rsync.service` runs it again
-  through the pythonCron wrapper. Both are enabled and active.
-- **`vicon-cc-pipeline` is not in git.** Both `cc_pipeline/` and
-  `vicon-cc-pipeline.service` show as untracked on production, so the code
-  behind a running timer exists only on that box. As with `pythonCron`, this
-  checkout's `origin` is the personal `rem0g/viconSync`.
+- `sync_vicon_rsync.py` is scheduled twice. `vicon-sync-rsync.service` runs it
+  directly, and `service-sync_vicon_files_rsync.service` runs it again through
+  the pythonCron wrapper. Both are enabled and active.
+- `vicon-cc-pipeline` is not in git. Both `cc_pipeline/` and
+  `vicon-cc-pipeline.service` are untracked on production. The code behind a
+  running timer exists only on that machine. As with `pythonCron`, the `origin`
+  of this checkout is the personal `rem0g/viconSync`.
 
 ### 4. Storage, monitoring and the Node services
 
@@ -115,49 +113,48 @@ Two things here are worth knowing before an incident:
 | `blendanims.service` | `vite` in `/home/gomer/node_servers/blendAnims` | personal `rem0g/blendAnims` |
 | `fbx2glb-server.service` | `node fbxtoglb.js` | personal `rem0g/fbx2glb` |
 | `fbx2glb-batch.service` | `node batch_convert_hourly.js` | personal `rem0g/fbx2glb` |
-| `studio-support.service` | `node studioSupport/start.js` | **none** |
-| `unreal-server.service` | `node unrealServer/server.js` | **none** |
-| `llserver.service` | `node llServer/llserver.js` | **none** |
-| `studio-monitor.service` | `/home/gomer/mailChecker/monitor.py` | **none** |
-| `videos-monitor-dashboard.service` | `/home/gomer/mailChecker/dashboard.py` | **none** |
-| `studio-dashboard.service` | `/home/gomer/mailChecker/dashboard.py` | **none** |
+| `studio-support.service` | `node studioSupport/start.js` | none |
+| `unreal-server.service` | `node unrealServer/server.js` | none |
+| `llserver.service` | `node llServer/llserver.js` | none |
+| `studio-monitor.service` | `/home/gomer/mailChecker/monitor.py` | none |
+| `videos-monitor-dashboard.service` | `/home/gomer/mailChecker/dashboard.py` | none |
+| `studio-dashboard.service` | `/home/gomer/mailChecker/dashboard.py` | none |
 
-`rclone-mount.service` is the one to check first when a job reports missing
-studio files: almost everything downstream reads through that mount, and
-`service-rclone_mount_monitor.service` exists precisely because it drops.
+When a job reports missing studio files, check `rclone-mount.service` first.
+Almost everything downstream reads through that mount. The mount drops now and
+then, which is why `service-rclone_mount_monitor.service` exists.
 
-`blendanims.service` is the Vite dev server behind `avatar.signcollect.nl`,
-which Apache reverse-proxies on `localhost:5173`. Note that it runs out of
-`/home/gomer/node_servers/blendAnims`, *not* the `/web/blendBaking` docroot
-that `signlab_blendAnims` deploys to — the repository name covers two different
-things on this box.
+`blendanims.service` is the Vite dev server behind `avatar.signcollect.nl`.
+Apache reverse-proxies it on `localhost:5173`. It runs from
+`/home/gomer/node_servers/blendAnims`. That is a different place from the
+`/web/blendBaking` docroot that `signlab_blendAnims` deploys to. On this
+machine, the one repository name covers two different things.
 
-**`studio-dashboard.service` and `videos-monitor-dashboard.service` run the
-same script.** One of the two sits in `activating` and never reaches `active`,
-which is what you would expect of a second copy losing a race for the same
-port. One of them should be disabled.
+`studio-dashboard.service` and `videos-monitor-dashboard.service` run the same
+script. One of the two stays in `activating` and never reaches `active`. That
+fits a second copy that loses the race for the same port. One of them should be
+disabled.
 
-### Code on this box that no organisation repository covers
+### Code on this machine that no organisation repository covers
 
-This is the gap the index cannot close, gathered in one place because a runbook
-needs to know where it will find nothing to read:
+The index cannot close this gap. It is listed here so that during an incident
+you know where there is nothing to read:
 
-- `/home/gomer/mailChecker` — three units, not a git repository at all.
-- `/home/gomer/node_servers/studioSupport`, `unrealServer`, `llServer` — three
-  units, none a git repository.
-- `/home/gomer/node_servers/blendAnims` and `fbx2glb` — git, but pointing at
-  personal `rem0g/*` remotes rather than the organisation.
-- `/home/gomer/viconSync` and `/home/gomer/pythonCron` — likewise still on
-  personal `rem0g/*` remotes, with uncommitted local changes.
+- `/home/gomer/mailChecker`: three units. Not a git repository at all.
+- `/home/gomer/node_servers/studioSupport`, `unrealServer`, `llServer`: three
+  units. None of them is a git repository.
+- `/home/gomer/node_servers/blendAnims` and `fbx2glb`: git, but with personal
+  `rem0g/*` remotes instead of the organisation.
+- `/home/gomer/viconSync` and `/home/gomer/pythonCron`: also still on personal
+  `rem0g/*` remotes, with uncommitted local changes.
 
-That last pair matters most, because those two are in the repository table and
-therefore look accounted for. They are the estate's two most active
-components, and production is not running what the organisation repository
-holds.
+The last pair matters most. Both are in the repository table, so they look
+accounted for. They are the two most active components, and production does not
+run what the organisation repository holds.
 
 ### 5. `crontab -l` for `gomer`
 
-Four entries, none of them owned by any repository's README:
+Four entries. No repository's README mentions them:
 
 ```cron
 30 3 * * *  /usr/bin/php /web/zin/resync_video_count.php
@@ -173,166 +170,168 @@ There is no root crontab.
 
 ## Vicon PC
 
-Windows, in the Visualisation Lab, on the tailnet. Its address is not written
-down anywhere on purpose — a Windows reinstall changes it, so `viconSync`
-rediscovers it each run via `tailscale status --json`.
+Windows, in the Visualisation Lab, on the tailnet. Its address is deliberately
+not written down anywhere. A Windows reinstall changes it, so `viconSync` finds
+it again on every run with `tailscale status --json`.
 
-It is easy to get this machine backwards, so, plainly:
+People often get this machine the wrong way round. So, plainly:
 
-- **Runs on it:** [`signlab_blackmagic_control`](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control)
-  (`bmcam`, REST control of the Blackmagic 6K, and `bmcam serve` on
+- Runs on it: [`signlab_blackmagic_control`](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_control)
+  (`bmcam`: REST control of the Blackmagic 6K, and `bmcam serve` on
   `localhost:8000`) and
   [`signlab_blackmagic_RD_sync`](https://github.com/Amsterdam-Humanities-Labs/signlab_blackmagic_RD_sync)
-  (`.braw` → H.265, then research drive). `RD_sync` expects `bmcam` on
-  localhost, which is the same box.
-- **Does not run on it:** `signlab_viconSync`. That runs on the core server and
-  reaches this machine *remotely*, over SSH/SCP and FTP.
+  (`.braw` → H.265, then the research drive). `RD_sync` expects `bmcam` on
+  localhost, which is this same machine.
+- Does not run on it: `signlab_viconSync`. That runs on the core server and
+  reaches this machine remotely, over SSH/SCP and FTP.
 
-Both Blackmagic repositories carry a macOS code path as well as the Windows one
-— a `clang++` build script and `hevc_videotoolbox` alongside
-`E:\BlackmagicTemp`, an `os.name == "nt"` branch and `libx265`. **Only the
-Windows path is deployed.** The camera is reached on the studio LAN at
+Both Blackmagic repositories also have a macOS code path next to the Windows
+one: a `clang++` build script and `hevc_videotoolbox` next to
+`E:\BlackmagicTemp`, and an `os.name == "nt"` branch next to `libx265`. Only
+the Windows path is deployed. The camera is on the studio LAN at
 `192.168.0.194`.
 
-No systemd here, and no unit names: this is Windows, and nothing in either
-repository is installed as a service. Both entry points are started from a
-shell and stay up only as long as that shell does:
+There is no systemd and there are no unit names here. This is Windows, and
+neither repository installs anything as a service. Both entry points are
+started from a shell and only stay up as long as that shell does:
 
-| Entry point | Listens on |
+| Entry point | Port |
 |---|---|
-| `bmcam serve` (FastAPI/uvicorn, binds `0.0.0.0`) | **8000** |
-| `blackmagic_pineapple_service/service.py` (PowerShell; advertises `_mocap._tcp.local.` over Zeroconf) | **8780** (`BMCAM_SERVICE_PORT`) |
+| `bmcam serve` (FastAPI/uvicorn, binds `0.0.0.0`) | 8000 |
+| `blackmagic_pineapple_service/service.py` (PowerShell; advertises `_mocap._tcp.local.` over Zeroconf) | 8780 (`BMCAM_SERVICE_PORT`) |
 
 `signlab_pythonCron` has no job for either of them, so nothing restarts them.
 
 ## DRS
 
-Holds the USB connections to the Sony FX30s and runs
-[`signlab_Sony-SDK-MACOS-API`](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API)
-— `./Release/fx30MultiRecord`, a REST service with an embedded dashboard,
-listening on **:8080**. `studio_beta` on the core server proxies to it. There
-is no per-camera addressing anywhere in the estate: this process exists
-precisely to broadcast one record command to every camera at once, which is why
-losing it loses the cameras as a group rather than one at a time.
+DRS holds the USB connections to the Sony FX30s and runs
+[`signlab_Sony-SDK-MACOS-API`](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API):
+`./Release/fx30MultiRecord`, a REST service with a built-in dashboard, on port
+8080. `studio_beta` on the core server forwards requests to it. Nothing in the
+stack addresses one camera on its own. This process exists to send one record
+command to every camera at once. So if it stops, all cameras are lost together.
 
-It also runs [`signlab_drs`](https://github.com/Amsterdam-Humanities-Labs/signlab_drs),
-the video pipeline: `startupScript.py` starts and restarts its services
-(DaVinci Resolve render queue, MediaPipe crop, convert and upload, file
-mover, a Node camera/WebSocket server) and keeps macOS awake.
+DRS also runs [`signlab_drs`](https://github.com/Amsterdam-Humanities-Labs/signlab_drs),
+the video pipeline. `startupScript.py` starts and restarts its services
+(DaVinci Resolve render queue, MediaPipe crop, convert and upload, file mover,
+a Node camera/WebSocket server) and keeps macOS awake.
 
-**No service supervision for the Sony controller.** The repository says so in
-as many words: you build it and you run it. There is no unit, no timer and no
-watchdog. If it stops, someone starts it by hand.
+Nothing supervises the Sony controller. Its repository says so directly: you
+build it and you run it. There is no unit, no timer and no watchdog. If it
+stops, someone has to start it by hand.
 
 ## monsterfish
 
-A GPU box reached over SSH. It runs nothing of this estate's own code; it is
-the **encode target** that `compress_blackmagic.py` on the core server offloads
-its HEVC work to. If it is down, `vicon-blackmagic-mini.timer` fails and the
-Mini copies do not get made — but nothing is lost, because the sources are
-already on the core server.
+A GPU machine, reached over SSH. It runs none of this stack's own code.
+`compress_blackmagic.py` on the core server sends its HEVC encoding work to it.
+If monsterfish is down, `vicon-blackmagic-mini.timer` fails and the Mini copies
+are not made. Nothing is lost, because the sources are already on the core
+server.
 
 ## The Mac mini
 
-Listed here because people ask about it, and because the answer changed.
+This section exists because people ask about it, and because the answer
+changed.
 
-The two Blackmagic repositories were long recorded as running on "a studio
-Mac", on the strength of the macOS code paths in them. That was wrong: the
-owner has confirmed both run on the Vicon PC. The macOS support in those repos
-is real code, but it is not the deployment.
+For a long time, the two Blackmagic repositories were recorded as running on
+"a studio Mac", because they contain macOS code paths. That was wrong. The
+owner has confirmed that both run on the Vicon PC. The macOS support in those
+repos is real code, but it is not what is deployed.
 
-**What remains unknown is whether a macOS deployment ever existed**, and
-therefore whether this machine has a job in the estate at all. Nothing in any
-repository names it, and no service in this index depends on it. It is left in
-the machine table so that the next person to ask gets this answer rather than
-re-deriving the same dead end.
+It is still unknown whether a macOS deployment ever existed, and so whether
+this machine has any job in the stack. No repository names it, and no service
+in this index depends on it. It stays in the machine table so that the next
+person who asks finds this answer.
 
-DRS is a Mac (`signlab_drs` keeps macOS awake and holds the Sony cameras), so
-"the studio Mac" and DRS are probably the same box under two names.
+DRS is a Mac (`signlab_drs` keeps macOS awake and holds the Sony cameras). So
+"the studio Mac" and DRS are probably the same machine under two names.
 
 ## dev2, dev-1 and stijn
 
-The isolated demo and test hosts, and the only machines in the estate that are fully
-described by a file you can read: they are whatever
+The isolated demo and test hosts. They are the only machines here that a file
+fully describes. They are whatever
 [`interface_deploy/scripts/repos.tsv`](../interface_deploy/scripts/repos.tsv)
-says, cloned into a webroot, plus a scheduler. `dev2` (the current demo)
-serves from `/web`, `dev-1` from `/srv/signcollect/web`, and `stijn`
-(`stijn.taila8bdbd.ts.net`, a bare Ubuntu 24.04 test host installed with
-`--local`) from `/web`. `dev` (100.72.57.25) is offline. See
-[install.md](install.md).
+says, cloned into a webroot, plus a scheduler:
+- `dev2` (the current demo) serves from `/web`.
+- `dev-1` serves from `/srv/signcollect/web`.
+- `stijn` (`stijn.taila8bdbd.ts.net`, a bare Ubuntu 24.04 test host installed
+  with `--local`) serves from `/web`.
+- `dev` (100.72.57.25) is offline.
 
-| | |
+See [install.md](install.md).
+
+| Item | Where |
 |---|---|
 | Web components | the 17 rows of `repos.tsv`, each a git checkout in the webroot |
-| Scheduler | `python-scheduler.service` only — **no wrapper units, no watchdog** |
-| Code | `/opt/pythonCron` (root-owned, replaced every deploy) |
+| Scheduler | only `python-scheduler.service`. No wrapper units, no watchdog |
+| Code | `/opt/pythonCron` (owned by root, replaced on every deploy) |
 | Job list | `/etc/opt/pythonCron/config.json` |
-| State and logs | `/var/opt/pythonCron` (never touched by a deploy) |
+| State and logs | `/var/opt/pythonCron` (a deploy never touches it) |
 
-The demo hosts run a deliberately smaller job list than production, and the
-three-way `/opt` · `/etc/opt` · `/var/opt` split is what lets a deploy replace
-the code without destroying `scheduler_state.db`. Losing that database makes
-every job read as never-executed and therefore due immediately, which for this
-job set means an unscheduled rebuild against a third-party service.
+The demo hosts run a smaller job list than production, on purpose. The split
+into `/opt`, `/etc/opt` and `/var/opt` lets a deploy replace the code without
+destroying `scheduler_state.db`. If that database is lost, every job looks as
+if it never ran, so every job is due at once. For this job set, that means an
+unplanned rebuild against a third-party service.
 
-Every network path from these hosts back to production is cut at install time,
-both publicly and over the tailnet.
+The install cuts every network path from these hosts back to production, both
+publicly and over the tailnet.
 
 ---
 
 ## Asking the estate what is alive
 
 `signlab_client_monitor_api` is the fastest way to see which machines and jobs
-are still reporting, and the
+still report in. The
 [dashboard](https://github.com/Amsterdam-Humanities-Labs/signlab_client_monitor_dashboard)
-renders it as online · warning · offline. Two naming conventions to read it by:
+shows them as online, warning or offline. Two naming rules help you read it:
 
-- **Machines** register as `server-<IP>`. Five exist: `136.144.170.87` is the
-  production core server; `145.100.134.164`, `145.100.134.185`,
+- Machines register as `server-<IP>`. There are five. `136.144.170.87` is the
+  production core server. `145.100.134.164`, `145.100.134.185`,
   `146.50.10.128` and `146.50.49.31` are the others.
-- **Jobs** register under their own name — `vicon-sync-rsync`,
-  `rclone-mount-monitor`, `check-disk`, `metrics-collector-service`, and from
-  `signlab_mocap` the three daily ones: `match-livelink-mocap` (~22:30),
+- Jobs register under their own name: `vicon-sync-rsync`,
+  `rclone-mount-monitor`, `check-disk`, `metrics-collector-service`, and three
+  daily jobs from `signlab_mocap`: `match-livelink-mocap` (~22:30),
   `match-vicon-fbx-csv` (~23:00) and `convert-livelink-videos` (~22:00).
 
-Monitoring is deliberately never fatal: a job that cannot reach the API logs a
-warning and carries on. A missing heartbeat therefore means "nobody is
-listening", not "the job died" — check the unit before concluding anything.
+Monitoring never stops a job, by design. A job that cannot reach the API logs a
+warning and continues. So a missing heartbeat only tells you that the API heard
+nothing. The job may still be running. Check the unit before you conclude
+anything.
 
-Ignore `video-transcription-cron`, `email-queue-processor`, `backup-script`,
-`analytics-worker` and `thumbnail-generator` if you see them. They are sample
-rows from `create_sample_data.php` and correspond to nothing.
+You may see `video-transcription-cron`, `email-queue-processor`,
+`backup-script`, `analytics-worker` and `thumbnail-generator`. Ignore them.
+They are sample rows from `create_sample_data.php` (since removed from signlab_client_monitor_api) and match nothing real.
 
 ---
 
-## A scheduled job that points at a file that does not exist
+## A scheduled job that points to a missing file
 
-`signlab_pythonCron`'s committed `config.json` schedules
-`/home/gomer/viconSync/cleanup_obs.py` weekly, and that filename has never
-existed in `signlab_viconSync` — the repository has `cleanup_vicon.py`. The
-machine settles it, and the answer is neither "always broken" nor "fine":
+The committed `config.json` of `signlab_pythonCron` schedules
+`/home/gomer/viconSync/cleanup_obs.py` weekly. That file name has never existed
+in `signlab_viconSync`; the repository has `cleanup_vicon.py`. The machine
+shows what happened, and the job was neither always broken nor fine:
 
-1. **It existed and it worked.** `cleanup_obs.py` was an uncommitted file on
-   the server. `/home/gomer/pythonCron/Cleanup_OBS_from_Vicon_PC.log` records a
-   successful run on **2026-03-18** that matched 1,036 OBS `.mkv` files on the
+1. It existed and it worked. `cleanup_obs.py` was an uncommitted file on the
+   server. `/home/gomer/pythonCron/Cleanup_OBS_from_Vicon_PC.log` records a
+   successful run on 2026-03-18 that matched 1,036 OBS `.mkv` files on the
    Vicon PC for deletion.
-2. **Then it vanished.** From **2026-04-01** every run failed with
+2. Then it disappeared. From 2026-04-01 every run failed with
    `/usr/bin/python3: can't open file '/home/gomer/viconSync/cleanup_obs.py':
-   [Errno 2] No such file or directory`. Six failures, the last at
-   **2026-04-17 06:00**.
-3. **Then it was switched off.** Production's `services_config.json` carries
-   `Cleanup_OBS_from_Vicon_PC` with `"enabled": false`, and no
-   `service-cleanup_obs.service` wrapper unit was ever generated — there are
-   twenty wrapper units and none is this one.
+   [Errno 2] No such file or directory`. There were six failures. The last was
+   at 2026-04-17 06:00.
+3. Then it was switched off. Production's `services_config.json` has
+   `Cleanup_OBS_from_Vicon_PC` with `"enabled": false`. No
+   `service-cleanup_obs.service` wrapper unit was ever generated: there are
+   twenty wrapper units and none of them is this one.
 
-So the job is not silently failing today; it is disabled and inert, and has
-been since April 2026. The committed `config.json` still advertises it as an
-active weekly job, which is the only reason it still looks alarming.
+So the job is not failing silently today. It has been disabled and inactive
+since April 2026. It only looks alarming because the committed `config.json`
+still lists it as an active weekly job.
 
-The operational consequence is the part worth carrying into a runbook:
-**nothing has automatically cleaned OBS recordings off the Vicon PC since
-2026-03-18.** `cleanup_vicon.py` is the surviving script and its own README
-calls it manual.
+What this means in practice: nothing has cleaned OBS recordings off the Vicon
+PC automatically since 2026-03-18. `cleanup_vicon.py` is the script that is
+left, and its own README calls it manual.
 
-Tracked as
+Tracked in
 [#29](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack/issues/29).
