@@ -269,16 +269,14 @@ for p in /signbank_data/glosses_transformed.json /zin/zinnen.html /hh/index.html
   is "still served: $p" "$p" 200
 done
 if [ -n "$HOST" ]; then
-  # zin/iss_client/test.html is the one pre-existing offender: two of its
-  # fetches carry a /web/ prefix and have therefore always 404'd. It predates
-  # this migration by a long way and fixing it would be a behaviour change,
-  # so it is named here rather than silently swept into the pattern - the
-  # assertion is that this list does not grow.
+  # The one pre-existing offender, iss_client/test.html (two /web/-prefixed
+  # fetches that always 404'd), now lives in zin/archive/, which apache denies.
+  # archive/ trees are skipped: they are not served. The assertion is that
+  # nothing served acquires a /web/ prefix.
   U=$(onhost "grep -rlE '(href|src|fetch\\(|url\\()[\"'\\''( ]*/web/' --include='*.html' --include='*.js' --include='*.css' $WEBROOT 2>/dev/null \
-      | grep -v '/zin/iss_client/test.html$' | head -5")
+      | grep -v '/archive/' | head -5")
   [ -z "$U" ] && ok "no browser URL acquired a /web/ prefix" \
               || bad "browser URL with a /web/ prefix in: $(printf '%s' "$U" | tr '\n' ' ')"
-  note "pre-existing, not touched: /zin/iss_client/test.html fetches two /web/-prefixed URLs"
 fi
 
 # --- 7. the endpoints whose paths moved still answer --------------------
