@@ -120,7 +120,7 @@ echo "== pythonCron =="
 # it is never a tree somebody edited by hand.
 #
 # The rewrite is not optional, even though nothing here is served over HTTP.
-# Five files - checkDisk.py, rclone_monitor.py, sync_mocap_files.py,
+# Five files - check_disk.py, rclone_monitor.py, sync_mocap_files.py,
 # python_client.py and php_client.php - post monitoring results to
 # https://signcollect.nl/... The demo host is firewalled from production and
 # none of those five is scheduled, but "no code on this host names
