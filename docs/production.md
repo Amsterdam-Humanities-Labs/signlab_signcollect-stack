@@ -21,7 +21,7 @@ Each directory is a git checkout of one repo. Apache, PHP-FPM and MySQL serve th
 | `lib` | signlab_signcollect-lib | main |
 | `menu_beta` | signlab_signCollect-v2 | main |
 | `zin` | signlab_zin | main |
-| `zin/api` | signlab_sCAPI (also `api.signcollect.nl`) | main |
+| `zin/api` | signlab_signCollect-API-TYD (also `api.signcollect.nl`) | main |
 | `videoFix`, `studioIndex`, `studio_beta` | signlab_videoFix, _studioIndex, _studio_beta | main |
 | `hh` | signlab_hh | **master** |
 | `annotation-tool`, `annotation-editors` | signlab_annotation-tool, _annotation-editors | main |
