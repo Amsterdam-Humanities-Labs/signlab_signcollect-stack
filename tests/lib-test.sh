@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # End-to-end tests for signcollect-lib - the shared database configuration at
-# /web/lib - and for its first two consumers, signlab_hh and
-# signlab_studio_beta.
+# /web/lib - and for its first two consumers, signlab_patient-info and
+# signlab_camera-control.
 #
 # What it asserts, in the order it matters:
 #

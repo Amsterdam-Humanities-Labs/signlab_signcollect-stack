@@ -124,13 +124,13 @@ ssh "$HOST" 'gh auth setup-git && echo "  git credential helper configured"'
 
 # --- 4. prove it, rather than assume -------------------------------------
 sc_doing "proving the host can read a private org repo"
-ssh "$HOST" 'git ls-remote https://github.com/Amsterdam-Humanities-Labs/signlab_zin >/dev/null 2>&1' ||
+ssh "$HOST" 'git ls-remote https://github.com/Amsterdam-Humanities-Labs/signlab_zinnen-annotation >/dev/null 2>&1' ||
   sc_fail "the host still cannot read the private org repos" \
-"gh reports a login but git cannot fetch Amsterdam-Humanities-Labs/signlab_zin.
+"gh reports a login but git cannot fetch Amsterdam-Humanities-Labs/signlab_zinnen-annotation.
 Usually the account is not a member of that organisation, or the token lacks
 the 'repo' scope.
 
 Check, on the host:
     gh auth status
-    git ls-remote https://github.com/Amsterdam-Humanities-Labs/signlab_zin"
+    git ls-remote https://github.com/Amsterdam-Humanities-Labs/signlab_zinnen-annotation"
 echo "  verified: host can read a private org repo"
