@@ -22,5 +22,10 @@
 <VirtualHost *:80>
 	ServerName @DOMAIN@
 	DocumentRoot @WEBROOT@
-	Redirect permanent / https://@DOMAIN@/
+	# Let's Encrypt renewals answer over plain HTTP; everything else goes to https.
+	Alias /.well-known/acme-challenge/ /var/www/html/.well-known/acme-challenge/
+	<Directory /var/www/html/.well-known/acme-challenge>
+		Require all granted
+	</Directory>
+	RedirectMatch permanent ^/(?!\.well-known/acme-challenge/)(.*)$ https://@DOMAIN@/$1
 </VirtualHost>

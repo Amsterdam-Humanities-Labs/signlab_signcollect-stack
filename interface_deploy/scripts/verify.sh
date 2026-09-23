@@ -48,6 +48,11 @@ chk /stats.html 404
 echo "== background-fix, BabylonSignLab =="
 chk /videoBackgroundFix/ 200
 chk /jari/BabylonSignLab/LoadingAnimation/initialize.js 200
+# mocapOverview: pages answer, the API needs a key, data/ and lib/ are not served.
+echo "== mocapOverview =="
+chk /mocapOverview/ 200
+chk /mocapOverview/api/files.php 401
+chk /mocapOverview/lib/auth.php 403
 echo "== api (sCAPI) =="
 for p in /api/ /api/getListGlos.php; do chk "$p" 200; done
 echo "== annotation editor =="
