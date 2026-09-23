@@ -18,7 +18,7 @@ name here disagrees with a repository's own README, the machine is right.
 |---|---|---|
 | signcollect core server | The production VPS (`cloud`). Serves `signcollect.nl` | Everything: the site, the API, the database, all scheduling |
 | Vicon PC | Windows PC in the Visualisation Lab, on the tailnet | Skeleton capture, and Blackmagic camera control and transcode |
-| DRS | The studio Mac with the USB connections to the Sony FX30s. Runs `signlab_drs` | Multi-camera recording (`studio_beta` loses its cameras) and the render/crop pipeline |
+| DRS | The studio Mac with the USB connections to the Sony FX30s. Runs `signlab_drs-pipeline` | Multi-camera recording (`studio_beta` loses its cameras) and the render/crop pipeline |
 | monsterfish | GPU machine, reachable over SSH | Only the nightly HEVC encode. Captures still arrive |
 | Mac mini / studio Mac | See [the open question](#the-mac-mini) below | Nothing known |
 | dev2, dev-1, stijn | Isolated demo and test hosts | Only demos. By design, production is not affected |
@@ -127,7 +127,7 @@ then, which is why `service-rclone_mount_monitor.service` exists.
 `blendanims.service` is the Vite dev server behind `avatar.signcollect.nl`.
 Apache reverse-proxies it on `localhost:5173`. It runs from
 `/home/gomer/node_servers/blendAnims`. That is a different place from the
-`/web/blendBaking` docroot that `signlab_blendAnims` deploys to. On this
+`/web/blendBaking` docroot that `signlab_blendbaking` deploys to. On this
 machine, the one repository name covers two different things.
 
 `studio-dashboard.service` and `videos-monitor-dashboard.service` run the same
@@ -211,7 +211,7 @@ DRS holds the USB connections to the Sony FX30s and runs
 stack addresses one camera on its own. This process exists to send one record
 command to every camera at once. So if it stops, all cameras are lost together.
 
-DRS also runs [`signlab_drs`](https://github.com/Amsterdam-Humanities-Labs/signlab_drs),
+DRS also runs [`signlab_drs-pipeline`](https://github.com/Amsterdam-Humanities-Labs/signlab_drs-pipeline),
 the video pipeline. `startupScript.py` starts and restarts its services
 (DaVinci Resolve render queue, MediaPipe crop, convert and upload, file mover,
 a Node camera/WebSocket server) and keeps macOS awake.
@@ -243,7 +243,7 @@ this machine has any job in the stack. No repository names it, and no service
 in this index depends on it. It stays in the machine table so that the next
 person who asks finds this answer.
 
-DRS is a Mac (`signlab_drs` keeps macOS awake and holds the Sony cameras). So
+DRS is a Mac (`signlab_drs-pipeline` keeps macOS awake and holds the Sony cameras). So
 "the studio Mac" and DRS are probably the same machine under two names.
 
 ## dev2, dev-1 and stijn

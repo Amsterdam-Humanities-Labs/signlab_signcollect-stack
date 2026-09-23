@@ -19,7 +19,7 @@
 # on macOS's case-insensitive disk, pairs like vitamine-D.json/vitamine-d.json
 # would overwrite each other. Extract on a case-sensitive file system.
 #
-# Example (signlab_hh pipeline output, from the 2026-09-22 backup bundle):
+# Example (signlab_patient-info pipeline output, from the 2026-09-22 backup bundle):
 #   scripts/package-for-lvs.sh -r c84c448^ -n signlab_hh-data \
 #     ~/signlab-history-backups/signlab_hh-2026-09-22.bundle data
 set -euo pipefail

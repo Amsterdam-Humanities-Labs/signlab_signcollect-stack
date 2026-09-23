@@ -109,7 +109,7 @@ Order after a full outage: `mysql` → `rclone-mount` → `php8.3-fpm` → `apac
 | Other core units | `sudo systemctl restart <unit>` |
 | Vicon PC | In a shell: `.venv\Scripts\bmcam serve --bind 0.0.0.0 --port 8000` (blackmagic_control checkout) |
 | DRS, cameras | In a shell: `./Release/fx30MultiRecord --port 8080 --download-path /tmp/fx30_downloads` |
-| DRS, pipeline | `/usr/bin/python3 startupScript.py` (signlab_drs checkout) |
+| DRS, pipeline | `/usr/bin/python3 startupScript.py` (signlab_drs-pipeline checkout) |
 | Demo host | Run the install again. Every step is idempotent ([install.md](install.md#if-it-stops-half-way)) |
 
 ### MySQL

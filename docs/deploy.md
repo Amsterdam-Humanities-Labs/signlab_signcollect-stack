@@ -40,7 +40,7 @@ tree in place, and `clean` removes whatever the repository no longer has.
 credential files per repo). It also explicitly keeps `mysql_config.php`,
 `.session_secret` and `node_modules`. One exclusion is anchored to a path:
 `/web/zin/api` is the sCAPI mount at `/api` and not part of the tree of
-`signlab_zin`. A clean without that guard would delete it.
+`signlab_zinnen-annotation`. A clean without that guard would delete it.
 
 Then, once for the whole docroot:
 - Composer autoloaders are generated for every component with a
@@ -73,7 +73,7 @@ webdir<TAB>repo<TAB>branch
   `/hh/` and the rest.
 - `repo`: the repository name inside `Amsterdam-Humanities-Labs`.
 - `branch`: the branch production has checked out. Everything is on `main`
-  except `signlab_hh`, which is on `master`.
+  except `signlab_patient-info`, which is on `master`.
 
 Nothing else needs to change. The bootstrap clones the repo, rewrites its URLs,
 purges it, and generates an autoloader if it has a `composer.json`. If it is not

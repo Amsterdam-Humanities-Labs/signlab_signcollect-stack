@@ -20,14 +20,14 @@ Each directory is a git checkout of one repo. Apache, PHP-FPM and MySQL serve th
 |---|---|---|
 | `lib` | signlab_signcollect-lib | main |
 | `menu_beta` | signlab_signCollect-v2 | main |
-| `zin` | signlab_zin | main |
+| `zin` | signlab_zinnen-annotation | main |
 | `zin/api` | signlab_signCollect-API-TYD (also `api.signcollect.nl`) | main |
-| `videoFix`, `studioIndex`, `studio_beta` | signlab_videoFix, _studioIndex, _studio_beta | main |
-| `hh` | signlab_hh | **master** |
+| `videoFix`, `studioIndex`, `studio_beta` | signlab_crop-fix-manager, _studioIndex, _studio_beta | main |
+| `hh` | signlab_patient-info | **master** |
 | `annotation-tool`, `annotation-editors` | signlab_annotation-tool, _annotation-editors | main |
-| `animMIDI` | signlab_sC-Animation-PP | main |
+| `animMIDI` | signlab_mocap-postprocessing | main |
 | `mocap_site` (vhost `mocap.signcollect.nl`), `mocap`, `mocapStudio`, `viconDashboard` | the repo of the same name | main |
-| `blendBaking` | signlab_blendAnims | main |
+| `blendBaking` | signlab_blendbaking | main |
 | `videoBackgroundFix`, `mocapDataPackage`, `s3b_glb`, `s3b_server`, `s3b_viewer`, `mhr`, `client_monitor_api`, `client_monitor_dashboard` | the repo of the same name | TODO: confirm |
 
 - `/web/mocap_lab`: `signlab_mocap_lab` was merged into `signlab_mocapStudio` as `lab/` ([#37](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack/issues/37)). Demo hosts symlink `/web/mocap_lab` to `/web/mocapStudio/lab`. TODO: confirm whether production still has a separate `mocap_lab` checkout, and when to switch it.
@@ -74,12 +74,12 @@ git fetch && git reset --hard origin/<branch>
 
 | Repo | On the core server |
 |---|---|
-| signlab_zin | `/web/zin` |
-| signlab_hh | `/web/hh` (branch `master`) |
+| signlab_zinnen-annotation | `/web/zin` |
+| signlab_patient-info | `/web/hh` (branch `master`) |
 | signlab_annotation-tool | `/web/annotation-tool` |
-| signlab_sC-Animation-PP | `/web/animMIDI` |
-| signlab_videoBackgroundFix | `/web/videoBackgroundFix` |
-| signlab_s3b_server | `/web/s3b_server` |
+| signlab_mocap-postprocessing | `/web/animMIDI` |
+| signlab_background-fix | `/web/videoBackgroundFix` |
+| signlab_sam3d-body-queue | `/web/s3b_server` |
 | signlab_Sony-SDK-MACOS-API | not here (DRS) |
 
 `reset --hard` throws away uncommitted changes. That is why `git status` comes first.
