@@ -1,5 +1,7 @@
 # signlab_signcollect-stack
 
+> 📖 **User documentation:** https://amsterdam-humanities-labs.github.io/signlab_docs/ — how to use every interface, how-to guides and 180 troubleshooting entries ([source](https://github.com/Amsterdam-Humanities-Labs/signlab_docs)).
+
 An index of the repositories behind SignCollect and Zin, the platform that
 collects sign language data. It covers studio capture, media processing, the
 gloss database and the public API. This repo holds no application code. Each
