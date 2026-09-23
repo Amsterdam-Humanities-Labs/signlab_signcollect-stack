@@ -18,7 +18,7 @@ name here disagrees with a repository's own README, the machine is right.
 |---|---|---|
 | signcollect core server | The production VPS (`cloud`). Serves `signcollect.nl` | Everything: the site, the API, the database, all scheduling |
 | Vicon PC | Windows PC in the Visualisation Lab, on the tailnet | Skeleton capture, and Blackmagic camera control and transcode |
-| DRS | The studio Mac with the USB connections to the Sony FX30s. Runs `signlab_drs-pipeline` | Multi-camera recording (`studio_beta` loses its cameras) and the render/crop pipeline |
+| DRS | The studio Mac with the USB connections to the Sony FX30s. Runs `signlab_drs-pipeline` | Multi-camera recording (Camera Control loses its cameras) and the render/crop pipeline |
 | monsterfish | GPU machine, reachable over SSH | Only the nightly HEVC encode. Captures still arrive |
 | Mac mini / studio Mac | See [the open question](#the-mac-mini) below | Nothing known |
 | dev2, dev-1, stijn | Isolated demo and test hosts | Only demos. By design, production is not affected |
@@ -35,12 +35,15 @@ the table runs here, in one of five ways.
 `apache2.service`, `php8.3-fpm.service` and `mysql.service` serve everything
 under `/web`. A web component has no service name. It is a directory, and it is
 up when Apache is up. These are the repos deployed as docroot directories:
-`zin`, `menu_beta` (`signCollect-v2`), `videoFix`, `studioIndex`,
-`studio_beta`, `hh`, `annotation-tool`, `annotation-editors`, `animMIDI`
-(`sC-Animation-PP`), `mocap_site`, `mocapStudio`, `mocap`, `mocap_lab`,
-`viconDashboard`, `blendBaking` (`blendAnims`), `lib` (`signcollect-lib`), plus
-`sCAPI`, `s3b_glb`, `s3b_server`, `s3b_viewer`, `mocapDataPackage`,
-`client_monitor_api` and `client_monitor_dashboard`.
+`zin` (`zinnen-annotation`), `menu_beta` (`signCollect-v2`), `videoFix`
+(`crop-fix-manager`), `studioIndex` (`studio-archive`), `studio_beta`
+(`camera-control`), `hh` (`patient-info`), `annotation-tool`,
+`annotation-editors`, `animMIDI` (`mocap-postprocessing`), `mocap_site`,
+`mocapStudio`, `mocap`, `mocap_lab` (archived, now `mocapStudio/lab`),
+`viconDashboard`, `blendBaking` (`blendbaking`), `lib` (`signcollect-lib`), plus
+`zin/api` (`signCollect-API-TYD`), `s3b_glb` (`body-animation-viewer`),
+`s3b_server` (`sam3d-body-queue`), `s3b_viewer` (archived), `mocapDataPackage`
+(archived), `client_monitor_api` and `client_monitor_dashboard`.
 
 To restart one of them, you restart Apache. That restarts all of them.
 
@@ -207,7 +210,7 @@ started from a shell and only stay up as long as that shell does:
 DRS holds the USB connections to the Sony FX30s and runs
 [`signlab_Sony-SDK-MACOS-API`](https://github.com/Amsterdam-Humanities-Labs/signlab_Sony-SDK-MACOS-API):
 `./Release/fx30MultiRecord`, a REST service with a built-in dashboard, on port
-8080. `studio_beta` on the core server forwards requests to it. Nothing in the
+8080. Camera Control (`/web/studio_beta`) on the core server forwards requests to it. Nothing in the
 stack addresses one camera on its own. This process exists to send one record
 command to every camera at once. So if it stops, all cameras are lost together.
 
