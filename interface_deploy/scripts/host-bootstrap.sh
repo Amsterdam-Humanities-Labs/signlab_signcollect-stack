@@ -7,7 +7,7 @@
 #
 #   - rsync. The new demo host does not have it and may not have it, so a
 #     deploy that needs it cannot run at all.
-#   - macOS is case-insensitive. signlab_hh tracks both
+#   - macOS is case-insensitive. signlab_patient-info tracks both
 #     data/pages/vitamine-D.json and data/pages/vitamine-d.json (and the same
 #     pair under backup/); a checkout on a Mac silently collapses each to one
 #     file, so 7659 of 7661 files were ever deployed and nobody could see
@@ -60,7 +60,7 @@ ORG=${ORG:-Amsterdam-Humanities-Labs}
 [ -n "$DOMAIN" ] || { echo "DOMAIN is not set - refusing to bake a wrong hostname into cookies" >&2; exit 2; }
 
 command -v git >/dev/null || { echo "git is not installed on this host" >&2; exit 1; }
-git ls-remote "https://github.com/$ORG/signlab_zin" >/dev/null 2>&1 || {
+git ls-remote "https://github.com/$ORG/signlab_zinnen-annotation" >/dev/null 2>&1 || {
   echo "this host cannot read the private org repos - run scripts/host-auth.sh first" >&2; exit 1; }
 
 echo "== components -> $WEBROOT (clone, rewrite, purge) =="
@@ -83,7 +83,7 @@ CLEAN_KEEP=(-e mysql_config.php -e .env -e .session_secret -e node_modules)
 # clean of zin must never delete the API.
 per_component_keep() {
   case "$1" in
-    signlab_zin) printf '%s\n' "-e" "/api/" ;;
+    signlab_zinnen-annotation) printf '%s\n' "-e" "/api/" ;;
   esac
 }
 
@@ -253,7 +253,7 @@ done
 printf '  %-24s -> %s/ (%s files)\n' "root files" "$WEBROOT" "$n"
 
 # Composer autoloaders. Today that is exactly one component: animMIDI (the
-# repo is signlab_sC-Animation-PP). Its composer.json declares no packages -
+# repo is signlab_mocap-postprocessing). Its composer.json declares no packages -
 # only PHP extensions, which provision.sh installs - but it declares a PSR-4
 # map, App\ -> app/, and vendor/ is gitignored upstream. So a clone never
 # carries an autoloader and the nine files under public/ that require it on

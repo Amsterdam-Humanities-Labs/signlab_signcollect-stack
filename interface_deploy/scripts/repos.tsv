@@ -8,7 +8,7 @@
 #
 # Clone target is build/<repo> (existing convention), deploy target is
 # /web/<webdir>. Branch is what production actually has checked out:
-# signlab_hh is on master, the rest on main.
+# signlab_patient-info is on master, the rest on main.
 #
 # zin/api is signlab_signCollect-API-TYD, checked out inside zin's directory (zin ignores
 # api/). /api is Alias'd there by signcollect-mounts.conf. It used to be a
@@ -63,7 +63,7 @@
 # database credentials are read from, and the first thing anything else
 # resolves. It ships as a component rather than as a Composer package on
 # purpose: there is no build step anywhere in install.sh, deploy.sh is
-# rsync -a --delete, and signlab_sC-Animation-PP already demonstrates the
+# rsync -a --delete, and signlab_mocap-postprocessing already demonstrates the
 # failure mode - it has a composer.json whose vendor/ is gitignored and
 # therefore absent from the clone. A dependency that needs `composer install`
 # on the host is a deploy that 500s until someone remembers a step no script
@@ -71,18 +71,18 @@
 # which rsync does not require but a reader of this file reasonably expects.
 lib	signlab_signcollect-lib	main
 menu_beta	signlab_signCollect-v2	main
-zin	signlab_zin	main
+zin	signlab_zinnen-annotation	main
 zin/api	signlab_signCollect-API-TYD	main
-videoFix	signlab_videoFix	main
-studioIndex	signlab_studioIndex	main
-studio_beta	signlab_studio_beta	main
-hh	signlab_hh	master
+videoFix	signlab_crop-fix-manager	main
+studioIndex	signlab_studio-archive	main
+studio_beta	signlab_camera-control	main
+hh	signlab_patient-info	master
 annotation-tool	signlab_annotation-tool	main
 annotation-editors	signlab_annotation-editors	main
-animMIDI	signlab_sC-Animation-PP	main
+animMIDI	signlab_mocap-postprocessing	main
 mocap_site	signlab_mocap_site	main
 mocapStudio	signlab_mocapStudio	main
 mocap	signlab_mocap	main
 viconDashboard	signlab_viconDashboard	main
 gebarenoverleg_media	signlab_demo-media	main
-blendBaking	signlab_blendAnims	main
+blendBaking	signlab_blendbaking	main
