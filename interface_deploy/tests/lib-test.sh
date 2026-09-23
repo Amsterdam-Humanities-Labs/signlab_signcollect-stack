@@ -201,7 +201,7 @@ has "hh/get_begrippen.php returns a page of rows" "$r" '"total"'
 req GET "/hh/save_subtitle.php" "$ACOOK" >/dev/null;   is "hh/save_subtitle.php past config" 200 405
 
 for p in "/studio_beta/lookups.php?what=labels" "/studio_beta/lookups.php?what=thema" \
-         /studio_beta/fetch_all2.php "/studio_beta/lookups.php?what=nmm_themas" \
+         /studio_beta/fetch_glosses.php "/studio_beta/lookups.php?what=nmm_themas" \
          "/studio_beta/lookups.php?what=users"; do
   r=$(req GET "$p" "$ACOOK")
   is "studio_beta consumer: $p" 200
