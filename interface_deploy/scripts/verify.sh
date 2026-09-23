@@ -40,7 +40,7 @@ for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
 # activity.html replaces it and reads the activity_log table live, so the old
 # file is gone and must stay gone.
 chk /stats.html 404
-# /api is the signlab_sCAPI submodule - a separate service, out of scope for
+# /api is the signlab_signCollect-API-TYD submodule - a separate service, out of scope for
 # an interface-only deploy. One endpoint (/zin/api/getSamVideos.php) is called
 # from two places and will not work without it.
 # sCAPI, deployed into zin/api as its own component and served at /api.
