@@ -4,6 +4,9 @@ This page explains what the install does. Read it when a deploy goes wrong, or
 when you add something to it. The commands to type are in
 [install.md](install.md) and nowhere else.
 
+This page covers demo hosts only. Production (the core server) is updated by
+hand: see [production.md](production.md).
+
 The scripts are in [`interface_deploy/`](../interface_deploy). It is a
 `git subtree` copy of a separate repository. Read the scripts here, but change
 them upstream.

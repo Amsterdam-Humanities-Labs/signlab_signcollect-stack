@@ -7,13 +7,14 @@ repo's own README says what it does.
 
 | Doc | Read it when you want to know |
 |---|---|
-| [docs/architecture.md](docs/architecture.md) How the repos fit together (diagram), and the main database tables |
-| [docs/machines.md](docs/machines.md) What runs on each machine, and the unit, timer or cron name it runs as |
-| [docs/runbook.md](docs/runbook.md) What to do when something breaks: first checks, unit names, blast radius, restarts, disk full |
-| [docs/schema.md](docs/schema.md) What each database table holds, and which repos write and read it |
-| [docs/install.md](docs/install.md) How to set up a demo or test host (the only install doc) |
-| [docs/deploy.md](docs/deploy.md) How a deploy works, and how to add a component repo |
-| [docs/readme-template.md](docs/readme-template.md) Which README skeleton every repo follows |
+| [docs/architecture.md](docs/architecture.md) | How the repos fit together (diagram), and the main database tables |
+| [docs/machines.md](docs/machines.md) | What runs on each machine, and the unit, timer or cron name it runs as |
+| [docs/runbook.md](docs/runbook.md) | What to do when something breaks: first checks, unit names, blast radius, restarts, disk full |
+| [docs/schema.md](docs/schema.md) | What each database table holds, and which repos write and read it |
+| [docs/install.md](docs/install.md) | How to set up a demo or test host (the only install doc) |
+| [docs/deploy.md](docs/deploy.md) | How a deploy works, and how to add a component repo |
+| [docs/production.md](docs/production.md) | How the core server is laid out: what is checked out where, how it is updated, pending switch-overs |
+| [docs/readme-template.md](docs/readme-template.md) | Which README skeleton every repo follows |
 
 All repos are in the [Amsterdam-Humanities-Labs](https://github.com/orgs/Amsterdam-Humanities-Labs/repositories?q=signlab_)
 organisation, with a `signlab_` prefix. Every member has access. All repos are
