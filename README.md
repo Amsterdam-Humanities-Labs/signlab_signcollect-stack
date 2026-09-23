@@ -94,3 +94,10 @@ Older specs name `dev` (100.72.57.25). It is offline.
 [`interface_deploy/`](interface_deploy) is a `git subtree` copy of a separate
 repository. Read it here, but commit changes upstream. Edits made here are lost
 on the next sync.
+
+## Archiving on Figshare
+
+`scripts/figshare-repos.py` puts every public `signlab_*` repo on Figshare as a
+software item (a zip of the default branch, CC BY 4.0) with a reserved DOI, in
+the collection "SignCollect: source code". It runs as a dry run unless you
+pass `--apply`, and publishes only with `--publish`. It needs `FIGSHARE_TOKEN`.
