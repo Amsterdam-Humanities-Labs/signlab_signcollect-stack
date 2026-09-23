@@ -15,6 +15,7 @@ repo's own README says what it does.
 | [docs/deploy.md](docs/deploy.md) | How a deploy works, and how to add a component repo |
 | [docs/production.md](docs/production.md) | How the core server is laid out: what is checked out where, how it is updated, pending switch-overs |
 | [docs/readme-template.md](docs/readme-template.md) | Which README skeleton every repo follows |
+| [docs/data-storage.md](docs/data-storage.md) | Which datasets go to UvA LVS instead of git, and how to package them |
 
 All repos are in the [Amsterdam-Humanities-Labs](https://github.com/orgs/Amsterdam-Humanities-Labs/repositories?q=signlab_)
 organisation, with a `signlab_` prefix. Every member has access. All repos are
