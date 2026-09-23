@@ -29,6 +29,9 @@ Reports on the host every check the install depends on, and changes nothing.'
 sc_parse_common "$@"
 sc_require_host
 
+# Repos an anonymous client cannot read. Empty: no GitHub login anywhere.
+PRIVATE_REPOS=$(sc_private_repos)
+
 fails=0; warns=0
 ok()   { printf '  ok    %-22s %s\n' "$1" "${2:-}"; }
 warn() { printf '  warn  %-22s %s\n' "$1" "${2:-}"; warns=$((warns+1)); }
@@ -57,19 +60,21 @@ else
     command -v "$t" >/dev/null 2>&1 || bad "workstation $t" "not installed" \
       "install $t on this machine, or run the installer on the host with --local"
   done
-  if command -v gh >/dev/null 2>&1; then
-    if gh auth token >/dev/null 2>&1; then
-      ok "workstation gh" "logged in as $(gh api user -q .login 2>/dev/null || echo '?')"
+  if [ -n "$PRIVATE_REPOS" ]; then
+    if command -v gh >/dev/null 2>&1; then
+      if gh auth token >/dev/null 2>&1; then
+        ok "workstation gh" "logged in as $(gh api user -q .login 2>/dev/null || echo '?')"
+      else
+        bad "workstation gh" "installed but not logged in" \
+          "The host is given a token taken from this machine's gh login." \
+          "Fix:  gh auth login"
+      fi
     else
-      bad "workstation gh" "installed but not logged in" \
-        "The host is given a token taken from this machine's gh login." \
-        "Fix:  gh auth login"
+      bad "workstation gh" "not installed" \
+        "The host clones ~17 private repositories and is authorised with a token" \
+        "from your gh login, so this machine needs one." \
+        "Fix:  brew install gh && gh auth login     (or apt install gh)"
     fi
-  else
-    bad "workstation gh" "not installed" \
-      "The host clones ~17 private repositories and is authorised with a token" \
-      "from your gh login, so this machine needs one." \
-      "Fix:  brew install gh && gh auth login     (or apt install gh)"
   fi
   if [ -d .git ] && git rev-parse HEAD >/dev/null 2>&1; then
     ok "deploy tree" "$(git rev-parse --short HEAD) overlays onto the host"
@@ -191,32 +196,36 @@ esac
 # or from a script) needs it done beforehand.
 local_asks=0
 [ "${SC_LOCAL:-0}" = "1" ] && [ -t 0 ] && [ -t 1 ] && local_asks=1
-case "$local_asks:$(g gh)" in
-  1:absent)
-    ok "host gh" "absent - installed at step 3, then you log in in the browser" ;;
-  1:unauthed)
-    ok "host gh" "not logged in - you log in in the browser at step 3" ;;
-  *:absent)
-    if [ "${SC_LOCAL:-0}" = "1" ]; then
-      bad "host gh" "not installed, and --local has no workstation to borrow a login from" \
-        "Fix, in order:" \
-        "  scripts/host-auth.sh --local     # installs gh" \
-        "  gh auth login                    # your own GitHub account" \
-        "  scripts/install.sh $(sc_retry_args)"
-    else
-      ok "host gh" "absent - host-auth.sh will install it and hand it your token"
-    fi ;;
-  *:unauthed)
-    if [ "${SC_LOCAL:-0}" = "1" ]; then
-      bad "host gh" "installed but not logged in" \
-        "With --local the host is the only machine in the picture, so it needs" \
-        "its own GitHub login for the ~17 private repositories." \
-        "Fix:  gh auth login"
-    else
-      ok "host gh" "not logged in - host-auth.sh will hand it your token"
-    fi ;;
-  *) ok "host gh" "logged in as $(g gh)" ;;
-esac
+if [ -z "$PRIVATE_REPOS" ]; then
+  ok "github access" "every repo is public - no GitHub login needed"
+else
+  case "$local_asks:$(g gh)" in
+    1:absent)
+      ok "host gh" "absent - installed at step 3, then you log in in the browser" ;;
+    1:unauthed)
+      ok "host gh" "not logged in - you log in in the browser at step 3" ;;
+    *:absent)
+      if [ "${SC_LOCAL:-0}" = "1" ]; then
+        bad "host gh" "not installed, and --local has no workstation to borrow a login from" \
+          "Fix, in order:" \
+          "  scripts/host-auth.sh --local     # installs gh" \
+          "  gh auth login                    # your own GitHub account" \
+          "  scripts/install.sh $(sc_retry_args)"
+      else
+        ok "host gh" "absent - host-auth.sh will install it and hand it your token"
+      fi ;;
+    *:unauthed)
+      if [ "${SC_LOCAL:-0}" = "1" ]; then
+        bad "host gh" "installed but not logged in" \
+          "With --local the host is the only machine in the picture, so it needs" \
+          "its own GitHub login for the ~17 private repositories." \
+          "Fix:  gh auth login"
+      else
+        ok "host gh" "not logged in - host-auth.sh will hand it your token"
+      fi ;;
+    *) ok "host gh" "logged in as $(g gh)" ;;
+  esac
+fi
 
 # The domain. Derived from tailscale unless given, because `tailscale cert`
 # issues for that name and no other - a name we guessed could not have a cert.

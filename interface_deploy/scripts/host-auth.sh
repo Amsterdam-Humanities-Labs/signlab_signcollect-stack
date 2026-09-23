@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Give a demo host read access to the private GitHub repos, using YOUR gh login.
+# Skipped when every repo the host clones is public (sc_private_repos).
 #
 # The deploy no longer rsyncs a built tree up - the host clones from GitHub
 # itself - so every host needs credentials for ~17 private repos. This
@@ -41,6 +42,14 @@ SC_USAGE='usage: scripts/host-auth.sh [--host <ssh-target> | --local]'
 sc_parse_common "$@"
 sc_require_host
 sc_on_error "scripts/host-auth.sh $(sc_retry_args)"
+
+# Nothing to log in for when every repo the host clones is public.
+private=$(sc_private_repos)
+if [ -z "$private" ]; then
+  echo "  all repos are public - the host needs no GitHub login"
+  exit 0
+fi
+echo "  still private, so the host needs a login: $(echo $private)"
 
 # --- 1. gh on the host ---------------------------------------------------
 # From GitHub's own apt repo; Ubuntu's archive does not carry gh.

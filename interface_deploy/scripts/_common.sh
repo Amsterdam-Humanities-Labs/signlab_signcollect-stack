@@ -180,6 +180,19 @@ sc_fail() {               # sc_fail <what> <why...>
   exit 1
 }
 
+# The repos a demo host clones (scripts/repos.tsv, read from the current
+# directory - every script cd's to the tree root - plus the stack) that an anonymous
+# client cannot read, one per line. Empty means everything is public and the
+# host needs no GitHub login at all. Credential helpers are switched off so a
+# logged-in workstation does not make a private repo look public.
+sc_private_repos() {
+  local org=${ORG:-Amsterdam-Humanities-Labs}
+  { echo signlab_signcollect-stack
+    awk -F'\t' '!/^#/ && NF >= 2 { print $2 }' scripts/repos.tsv
+  } | sort -u | xargs -P 8 -I{} sh -c \
+      'GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote --exit-code "https://github.com/$0/{}" HEAD >/dev/null 2>&1 || echo {}' "$org"
+}
+
 # Ask the host what it is called. Only run when the caller did not say.
 sc_resolve_domain() {
   [ -z "${DOMAIN:-}" ] || { export DOMAIN; return 0; }
