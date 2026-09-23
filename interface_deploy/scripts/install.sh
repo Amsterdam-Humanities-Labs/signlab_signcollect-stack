@@ -18,7 +18,7 @@
 # and rsync 500MB up on every run. rsync is not installed on the new demo
 # host and is not going to be; the workstation was a single point of failure
 # for a deploy anybody should be able to run; and macOS, being
-# case-insensitive, silently dropped two of signlab_hh's 7661 files on every
+# case-insensitive, silently dropped two of signlab_patient-info's 7661 files on every
 # single deploy because it tracks vitamine-D.json and vitamine-d.json side by
 # side. Cloning on the host fixes all three at once.
 #

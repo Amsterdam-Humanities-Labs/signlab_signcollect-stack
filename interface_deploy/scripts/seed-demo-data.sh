@@ -57,7 +57,7 @@
 #     Docroot-relative, so /web/gebarenoverleg_media/... on the host. This is
 #     what actually plays: signCollect-v2 js/main.js and js/table.js build
 #     exactly this URL from matched_transcriptions.m_file (stem + .mp4, post/
-#     when post_processed=1, raw/ otherwise), and signlab_zin getZinnen.php
+#     when post_processed=1, raw/ otherwise), and signlab_zinnen-annotation getZinnen.php
 #     hardcodes the same two prefixes. It is also why signlab_demo-media is
 #     laid out as studioFilesMini/{raw,post}/ and mapped onto
 #     /web/gebarenoverleg_media - the repository holds production's own paths,
@@ -67,8 +67,8 @@
 #     apache/signcollect-mounts.conf aliases /media to /web/media_stub,
 #     standing in for media.signcollect.nl - whose DocumentRoot on production
 #     is studioFilesMini/post. So /media/X.mp4 and .../post/X.mp4 are the same
-#     file there, and several components (signlab_zin zinnenVideoStatus and
-#     zinCrop, signlab_hh, signlab_mocapStudio, signlab_videoFix) reach for
+#     file there, and several components (signlab_zinnen-annotation zinnenVideoStatus and
+#     zinCrop, signlab_patient-info, signlab_mocapStudio, signlab_crop-fix-manager) reach for
 #     the /media spelling. They are hard-linked rather than copied: one inode,
 #     both names, no second 34MB on disk and no reliance on FollowSymLinks
 #     being inherited into the media_stub Directory block. The linking stays

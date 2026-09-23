@@ -15,13 +15,13 @@
 --
 --   matched_transcriptions.m_transcription  -> sentences.ID     when zOg='Zin'
 --                                           -> form_data.id     when zOg='Glos'
---     (signlab_zin/getZinnen.php fetchVideos/fetchDeletedVideos join on the
+--     (signlab_zinnen-annotation/getZinnen.php fetchVideos/fetchDeletedVideos join on the
 --      first; signCollect-v2 php_api/glosses_list.php joins on the second with
 --      CAST(mt.m_transcription AS UNSIGNED) = fd.id, and datasets.php pins the
 --      zOg values per dataset: extern IS NULL -> mt.zOg='Glos'.)
 --
 --   CameraRecords.glosId -> the same two targets, again split by CameraRecords.zOg
---     (signlab_zin/getRows.php: "WHERE zOg='Zin' AND glosId = <sentences.ID>";
+--     (signlab_zinnen-annotation/getRows.php: "WHERE zOg='Zin' AND glosId = <sentences.ID>";
 --      studio_beta/save_video_studio.php writes the row against form_data.id.)
 --
 -- So a "recording" is a CameraRecords row, and it hangs off either a sentence
@@ -136,7 +136,7 @@ ON DUPLICATE KEY UPDATE
   `glosStatus` = VALUES(`glosStatus`);
 
 -- 10 sentences. Parents of the zOg='Zin' recordings. video_count is a
--- cache signlab_zin keeps in sync itself; seeded as 1 because exactly one
+-- cache signlab_zinnen-annotation keeps in sync itself; seeded as 1 because exactly one
 -- matched_transcriptions take per sentence is copied.
 INSERT INTO `sentences`
   (`ID`,`zinID`,`glosArray`,`enabled`,`zinArray`,`thema`,`sortArray`,`comments`,`status_annotatie`,`status_glos`,`status_video`,`mcp_status_postprocessing`,`mcp_status_tijd_annotatie`,`mcp_status_tijd_annotatie_gvg`,`zinString`,`zinStringEAF`,`glosses`,`lemmaList`,`search_lemma`,`gvg`,`label`,`ai_Occurences`,`lemma_processed`,`lemma_processed_at`,`lemma_error`,`eaf_synced_at`,`eaf_sync_status`,`eaf_sync_error`,`status_gvg`,`videoTop`, `userId`, `video_count`)
