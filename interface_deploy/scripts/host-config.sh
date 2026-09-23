@@ -107,6 +107,8 @@ echo "  $WEBROOT/signbank_data ready (www-data:www-data 2775, $HOST deploy user 
 # copies still at the old in-checkout path here before its reset.
 ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo install -d -o www-data -g www-data -m 2775 $WEBROOT/annotation_data/clusters'
 echo "  $WEBROOT/annotation_data/clusters ready (www-data:www-data 2775)"
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo install -d -o www-data -g www-data -m 2775 $WEBROOT/videofix_data'
+echo "  $WEBROOT/videofix_data ready (www-data:www-data 2775)"
 
 # Group membership is read at login, so the usermod above reaches the
 # scheduled job (systemd starts it with a fresh group list) but not this run.
