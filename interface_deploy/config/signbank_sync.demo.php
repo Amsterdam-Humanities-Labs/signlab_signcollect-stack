@@ -18,29 +18,18 @@
  * should not block it - the isolation that matters is from the production
  * instance, not from the outside world.
  *
- * This file DOES carry a credential, deliberately: the demo Signbank key, so
- * that a fresh checkout deploys a working connector with no manual step. It is
- * a demo key for a demo instance and is treated as public.
- *
- * The production Signbank credential must never be committed anywhere. Note
- * signbank_sync/config.production.php in signlab_signCollect-v2 already
- * violates that - it is tracked and holds a live token. That is a known leak
- * awaiting rotation, not a precedent to follow.
- *
- * A key installed at <state_dir>/.signbank_key - by scripts/host-config.sh or
- * typed into the connector page by an admin - overrides the one here at
- * runtime (key_source 'runtime'). That is how a host uses a different key
- * without editing tracked files.
+ * This file carries no credential. The Signbank key comes from
+ * SIGNBANK_API_KEY (environment or the gitignored secrets.env), which
+ * scripts/host-config.sh installs at <state_dir>/.signbank_key, or an admin
+ * types it into the connector page. Either overrides the placeholder here at
+ * runtime (key_source 'runtime'). Never commit a key: these repos are public.
  */
 return [
     'base_url'         => 'https://signbank.cls.ru.nl',
     'public_url'       => 'https://signbank.cls.ru.nl',
-    // The demo Signbank key, committed deliberately so a fresh checkout
-    // deploys a working connector with no manual step. It is a demo key for
-    // signbank.cls.ru.nl, not the production credential - that one must never
-    // be committed. An admin-set key in <state_dir>/.signbank_key overrides
-    // this at runtime; see signbank_config() in signbank_sync/client.php.
-    'api_key'          => 'NiJzO6etgbVGgX8c',
+    // Not a key: the inert placeholder signbank_key_placeholders() knows, so
+    // page loads work before a key is installed (see the header).
+    'api_key'          => 'demo-instance-no-signbank-access',
     'auth_scheme'      => 'bearer',
     'dataset_id'       => '5',
     'dataset_acronym'  => 'NGT',
