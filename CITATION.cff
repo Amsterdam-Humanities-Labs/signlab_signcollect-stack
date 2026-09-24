@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "signlab_signcollect-stack: Index of the SignCollect / Zin repositories \u2014 what each one does and how they connect"
+authors:
+  - given-names: Gomer
+    family-names: Otterspeer
+    affiliation: University of Amsterdam
+  - given-names: Berit
+    family-names: Janssen
+  - given-names: Stijn
+    name-particle: van
+    family-names: Hannen
+license: Apache-2.0
+repository-code: "https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack"
+doi: "10.21942/uva.33980386"
+keywords:
+  - "sign language"
+  - "NGT"
+  - "SignCollect"

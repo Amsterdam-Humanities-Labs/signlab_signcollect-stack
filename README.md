@@ -101,3 +101,10 @@ on the next sync.
 software item (a zip of the default branch, CC BY 4.0) with a reserved DOI, in
 the collection "SignCollect: source code". It runs as a dry run unless you
 pass `--apply`, and publishes only with `--publish`. It needs `FIGSHARE_TOKEN`.
+
+## License and citation
+
+Apache License 2.0, copyright University of Amsterdam: see [LICENSE](LICENSE) and
+[NOTICE](NOTICE). You may use it, also commercially, as long as you credit
+Gomer Otterspeer / University of Amsterdam as the source. To cite it, use
+[CITATION.cff](CITATION.cff) (the *Cite this repository* button on GitHub) or the DOI [10.21942/uva.33980386](https://doi.org/10.21942/uva.33980386).
