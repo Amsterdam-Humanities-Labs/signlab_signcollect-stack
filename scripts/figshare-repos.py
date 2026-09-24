@@ -53,7 +53,10 @@ def req(method, path, **kw):
         if r.status_code in (403, 429) or r.status_code >= 500:
             last = f"{r.status_code} {r.text[:100]}"; time.sleep(min(60, 2 ** attempt)); continue
         r.raise_for_status()
-        return r.json() if r.content else {}
+        try:
+            return r.json()
+        except ValueError:  # part PUTs and some POSTs answer with an empty or plain body
+            return {}
     raise RuntimeError(f"{method} {url}: {last}")
 
 
@@ -174,8 +177,8 @@ def main():
         "categories": [CATEGORY_ID], "tags": TAGS}))
     have = {a["id"] for a in pages(f"/account/collections/{cid}/articles")}
     new = [s["id"] for s in state.values() if s["id"] not in have]
-    if new:
-        req("POST", f"/account/collections/{cid}/articles", json={"articles": new})
+    for i in range(0, len(new), 10):  # the API takes at most 10 ids per call
+        req("POST", f"/account/collections/{cid}/articles", json={"articles": new[i:i + 10]})
     cdoi = req("GET", f"/account/collections/{cid}").get("doi") or \
            req("POST", f"/account/collections/{cid}/reserve_doi")["doi"]
     print(f"collection {cid} ({COLLECTION}): +{len(new)} items, DOI {cdoi}")
