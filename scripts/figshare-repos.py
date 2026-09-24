@@ -37,6 +37,7 @@ COLLECTION_DESC = ("Source code of SignCollect, the Signlab (UvA/AUAS) platform 
 LICENSE_NAME = "CC BY 4.0"
 CATEGORY_ID = 58319  # Language, Communication and Culture, as in figshareZNN
 TAGS = ["sign language", "NGT", "SignCollect", "Signlab", "source code"]
+RETENTION_PERIOD = "2036-09-24"  # mandatory UvA item field (not on collections); ten years, as figshareZNN
 STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figshare-repos.json")
 
 
@@ -123,6 +124,7 @@ def metadata(repo, sha, license_id):
         "categories": [CATEGORY_ID],
         "tags": TAGS,
         "references": [url],
+        "custom_fields": {"Retention period": RETENTION_PERIOD},
     }
 
 
@@ -152,7 +154,9 @@ def main():
             meta = metadata(repo, sha, licenses[LICENSE_NAME])
             aid = state.get(name, {}).get("id") or items.get(meta["title"])
             if state.get(name, {}).get("sha") == sha:
-                if args.apply:  # same code: refresh the metadata only
+                # Same code: refresh the metadata of drafts only. Editing a
+                # published item would stage a new version for no code change.
+                if args.apply and not req("GET", f"/account/articles/{aid}").get("is_public"):
                     req("PUT", f"/account/articles/{aid}", json=meta)
                 print(f"  {name}: code up to date ({state[name].get('doi')})"); continue
             print(f"  {name}: {'update item ' + str(aid) if aid else 'new item'}, "
@@ -189,6 +193,9 @@ def main():
 
     if args.publish:
         for name, s in sorted(state.items()):
+            a = req("GET", f"/account/articles/{s['id']}")
+            if a.get("is_public") and not a.get("modified_date", "") > a.get("published_date", ""):
+                continue  # publishing an unchanged item again would only mint a new version
             req("POST", f"/account/articles/{s['id']}/publish"); print(f"  published {name}")
         req("POST", f"/account/collections/{cid}/publish"); print("  published collection")
 
