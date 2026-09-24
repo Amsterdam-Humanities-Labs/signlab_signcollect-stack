@@ -1,0 +1,167 @@
+{
+ "signlab_BabylonSignLab": {
+  "doi": "10.21942/uva.33980281",
+  "id": 33980281,
+  "sha": "cbefb756c420428d49271e04d1f9a1a376466c48"
+ },
+ "signlab_annotation-editors": {
+  "doi": "10.21942/uva.33980293",
+  "id": 33980293,
+  "sha": "8f5c677cdc11e49c08f82dc00f808bd3017c2914"
+ },
+ "signlab_annotation-tool": {
+  "doi": "10.21942/uva.33980296",
+  "id": 33980296,
+  "sha": "f31e0011feb466e96909d554ccae1731b9753c86"
+ },
+ "signlab_background-fix": {
+  "doi": "10.21942/uva.33980299",
+  "id": 33980299,
+  "sha": "a77b6c0d7d2f41a8027b1b1697c90c5dce61e0b5"
+ },
+ "signlab_blackmagic_RD_sync": {
+  "doi": "10.21942/uva.33980302",
+  "id": 33980302,
+  "sha": "d0b08294b9564b717ccb9438808e598fe4a4c3ee"
+ },
+ "signlab_blackmagic_control": {
+  "doi": "10.21942/uva.33980305",
+  "id": 33980305,
+  "sha": "3652f44b4957903865ef72feb71c831c2858e210"
+ },
+ "signlab_blendbaking": {
+  "doi": "10.21942/uva.33980308",
+  "id": 33980308,
+  "sha": "0338979695beb04aabe94a82c73591bc0b132e58"
+ },
+ "signlab_body-animation-viewer": {
+  "doi": "10.21942/uva.33980311",
+  "id": 33980311,
+  "sha": "cceab1f875c1ca5f7566a114572a5f71befe0917"
+ },
+ "signlab_camera-control": {
+  "doi": "10.21942/uva.33980314",
+  "id": 33980314,
+  "sha": "8050be0eabd8d24ade0f9a58ad1894bd6d4196d6"
+ },
+ "signlab_client_monitor_api": {
+  "doi": "10.21942/uva.33980317",
+  "id": 33980317,
+  "sha": "d117f2cd5559dde50919e60f7e8224fcf82789ec"
+ },
+ "signlab_client_monitor_dashboard": {
+  "doi": "10.21942/uva.33980320",
+  "id": 33980320,
+  "sha": "65223d34fe716646ecb4d1dc99f4859fdbb7c1d3"
+ },
+ "signlab_crop-fix-manager": {
+  "doi": "10.21942/uva.33980323",
+  "id": 33980323,
+  "sha": "e5c159065b3290315521b77088ecc7aa7962add7"
+ },
+ "signlab_docs": {
+  "doi": "10.21942/uva.33980326",
+  "id": 33980326,
+  "sha": "f77c4046166110320c3c79a7dabe2d5218b9148e"
+ },
+ "signlab_drs-pipeline": {
+  "doi": "10.21942/uva.33980332",
+  "id": 33980332,
+  "sha": "c5b79dd1849efef10d4646084d24da89d0dd9932"
+ },
+ "signlab_helpScripts": {
+  "doi": "10.21942/uva.33980335",
+  "id": 33980335,
+  "sha": "090fe5d77c8545945d687a20fdb0177bd5f039e8"
+ },
+ "signlab_josBoard": {
+  "doi": "10.21942/uva.33980338",
+  "id": 33980338,
+  "sha": "b771acb74ab1fc14400bcd3afda8c181a5588337"
+ },
+ "signlab_mocap": {
+  "doi": "10.21942/uva.33980341",
+  "id": 33980341,
+  "sha": "45d26f615dc46af0e217bcb1bfb901a350ad06b3"
+ },
+ "signlab_mocap-postprocessing": {
+  "doi": "10.21942/uva.33980344",
+  "id": 33980344,
+  "sha": "ceaaa9eda271f79c24f0f052d9cd3686aefe715b"
+ },
+ "signlab_mocapOverview": {
+  "doi": "10.21942/uva.33980347",
+  "id": 33980347,
+  "sha": "c37525f0b8df8997d32c2ed1115563872dc72737"
+ },
+ "signlab_mocapStudio": {
+  "doi": "10.21942/uva.33980353",
+  "id": 33980353,
+  "sha": "257c0ee529049c17d67d22fa8f4e6ec11e0145a5"
+ },
+ "signlab_mocap_site": {
+  "doi": "10.21942/uva.33980356",
+  "id": 33980356,
+  "sha": "aa7c8e9b6fa42908649b7f8b94369224a8a0c8c3"
+ },
+ "signlab_patient-info": {
+  "doi": "10.21942/uva.33980359",
+  "id": 33980359,
+  "sha": "336e3993ac3a1b0b21c828a136d23125979c1631"
+ },
+ "signlab_pythonCron": {
+  "doi": "10.21942/uva.33980362",
+  "id": 33980362,
+  "sha": "2ed34ef5a2258968dc73685de51e957893512fd0"
+ },
+ "signlab_qr": {
+  "doi": "10.21942/uva.33980368",
+  "id": 33980368,
+  "sha": "918ca7bbebb085295611aef6eb27b492347258a1"
+ },
+ "signlab_sam3d-body-queue": {
+  "doi": "10.21942/uva.33980371",
+  "id": 33980371,
+  "sha": "97c51ed741743d4635293db07283f6af9520910b"
+ },
+ "signlab_signCollect-API-TYD": {
+  "doi": "10.21942/uva.33980374",
+  "id": 33980374,
+  "sha": "e1f564675e29db28e4a37d852bb2a181aa634ba9"
+ },
+ "signlab_signCollect-v2": {
+  "doi": "10.21942/uva.33980380",
+  "id": 33980380,
+  "sha": "77e692fc0ef7ab56df95f1b2141aef35b00d9dec"
+ },
+ "signlab_signcollect-lib": {
+  "doi": "10.21942/uva.33980383",
+  "id": 33980383,
+  "sha": "30d2d4c41820cbbd8768291315060f35e539f052"
+ },
+ "signlab_signcollect-stack": {
+  "doi": "10.21942/uva.33980386",
+  "id": 33980386,
+  "sha": "1bc12a82b5e4aae6beb4839bc7506941c8a57b8f"
+ },
+ "signlab_studio-archive": {
+  "doi": "10.21942/uva.33980392",
+  "id": 33980392,
+  "sha": "d42d5ddb974d47a7a263ebd82fa4dced5c534fd1"
+ },
+ "signlab_viconDashboard": {
+  "doi": "10.21942/uva.33980395",
+  "id": 33980395,
+  "sha": "e1b7f84e5b1f20611f3cd0dafbef521a1fd8ad6e"
+ },
+ "signlab_viconSync": {
+  "doi": "10.21942/uva.33980398",
+  "id": 33980398,
+  "sha": "732924061aa0304b57d474bab3945b717ed125c4"
+ },
+ "signlab_zinnen-annotation": {
+  "doi": "10.21942/uva.33980401",
+  "id": 33980401,
+  "sha": "684045efe66846cc1794a15be9baf5f1a44abd08"
+ }
+}
