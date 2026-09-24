@@ -109,6 +109,11 @@ ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo install -d -o www-data -g www-dat
 echo "  $WEBROOT/annotation_data/clusters ready (www-data:www-data 2775)"
 ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo install -d -o www-data -g www-data -m 2775 $WEBROOT/videofix_data'
 echo "  $WEBROOT/videofix_data ready (www-data:www-data 2775)"
+# The Zinnen editors save EAF and SRT files to zin/eaf/zin/. It is gitignored
+# in the zin checkout (production keeps its data there), so a clone never has
+# it and every editor save fails until the web server can write it.
+ssh "$HOST" "export WEBROOT='$WEBROOT'; "'sudo install -d -o www-data -g www-data -m 2775 $WEBROOT/zin/eaf $WEBROOT/zin/eaf/zin'
+echo "  $WEBROOT/zin/eaf/zin ready (www-data:www-data 2775)"
 
 # Group membership is read at login, so the usermod above reaches the
 # scheduled job (systemd starts it with a fresh group list) but not this run.

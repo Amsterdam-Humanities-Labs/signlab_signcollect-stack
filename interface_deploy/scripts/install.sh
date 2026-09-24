@@ -12,7 +12,7 @@
 # through this workstation any more:
 #
 #   workstation:  push to GitHub  ->  ssh host, run the bootstrap
-#   host:         clone 17 repos  ->  rewrite-urls.sh  ->  purge  ->  serve
+#   host:         clone 20 repos  ->  rewrite-urls.sh  ->  purge  ->  serve
 #
 # It used to clone the components here, rewrite their production URLs here,
 # and rsync 500MB up on every run. rsync is not installed on the new demo
@@ -209,7 +209,8 @@ else
 fi
 
 # --- 3. credentials ---------------------------------------------------------
-# The host clones ~17 private org repos now, so it needs a login of its own.
+# The host clones the org repos itself. They are public, so host-auth.sh
+# normally skips; it only logs in when one of them is private again.
 say "host-auth - a GitHub login for the host"
 scripts/host-auth.sh
 
@@ -222,7 +223,7 @@ scripts/host-src.sh
 
 # --- 5. the docroot ---------------------------------------------------------
 # Clone, rewrite, purge, place - all on the host.
-say "bootstrap - clone 17 components, rewrite URLs, place vendored files"
+say "bootstrap - clone 20 components, rewrite URLs, place vendored files"
 ssh "$HOST" "DOMAIN='$DOMAIN' WEBROOT='$WEBROOT' $SRCDIR/scripts/host-bootstrap.sh"
 
 # --- 6. isolation -----------------------------------------------------------

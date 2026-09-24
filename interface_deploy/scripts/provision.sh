@@ -75,7 +75,7 @@ ssh "$HOST" 'set -e
   # naming rather than inheriting.
   for p in apache2 php libapache2-mod-php php-mysql php-mbstring php-curl \
            php-gd php-xml php-zip php-bz2 mysql-server git curl nftables \
-           composer python3-psutil; do
+           composer python3-psutil zip; do
     dpkg -s "$p" >/dev/null 2>&1 || need="$need $p"
   done
   if [ -n "$need" ]; then

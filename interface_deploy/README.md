@@ -23,8 +23,8 @@ apache, php, mysql, git, composer, gh and nftables are all installed for you:
        echo 'gomer ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/gomer
        chmod 440 /etc/sudoers.d/gomer
 
-3. **Outbound HTTPS to github.com.** The host clones about seventeen private
-   repositories itself. Nothing else needs to be reachable.
+3. **Outbound HTTPS to github.com.** The host clones about twenty public
+   repositories itself; no GitHub account is needed. Nothing else needs to be reachable.
 4. **Tailscale joined and logged in** - `sudo tailscale up`. That is where the
    demo's hostname and its TLS certificate come from. Without it, supply both
    yourself: `--domain <name>` and a certificate at
@@ -87,7 +87,7 @@ clone that would refuse a non-empty directory, and migrations are recorded in
 A failure names the step it stopped at, the host it was talking to, and the
 command to retry - the step alone, or the whole install:
 
-    === install FAILED at step 5/11: bootstrap - clone 17 components ===
+    === install FAILED at step 5/11: bootstrap - clone 20 components ===
         host: gomer@demo1 (over ssh)   webroot: /web
 
 ### The options
@@ -130,7 +130,7 @@ merely redirected, and both say so where they happen:
 ## How a deploy works
 
     workstation:  push to GitHub  ->  ssh host, run the bootstrap
-    host:         clone 17 repos  ->  rewrite-urls.sh  ->  purge  ->  serve
+    host:         clone 20 repos  ->  rewrite-urls.sh  ->  purge  ->  serve
 
 `install.sh` is an SSH orchestrator; no file of the deployed tree passes
 through the workstation. The host clones each component straight into its

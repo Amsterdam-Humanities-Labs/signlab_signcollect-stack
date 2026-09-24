@@ -63,8 +63,8 @@
 # main.js and getZinnen.php already look. The post cuts still get hard-linked
 # into /web/media_stub afterwards by scripts/seed-demo-data.sh, because that
 # is a second name for the same inodes and not a second copy to deploy.
-# The repository is private and stays private: it is video of identifiable
-# research participants.
+# The repository is public (2026-09-24), like the rest; it is video of
+# research participants, so publish new media there only with their consent.
 #
 # signlab_signcollect-lib is not a page, it is /web/lib - the one place the
 # database credentials are read from, and the first thing anything else
