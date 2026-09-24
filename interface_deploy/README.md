@@ -40,33 +40,27 @@ one of them, changes nothing, and prints the command that fixes each:
 
 ### Then, the one command
 
-**From your workstation, over ssh** - your own `gh` login is what authorises
-the host, so `gh auth login` here first:
+**From your workstation, over ssh:**
 
     scripts/install.sh --host gomer@demo1
 
 **On the demo host itself, no ssh at all.** Open a terminal on the machine
 and paste this, all of it at once:
 
-    sudo apt update && sudo apt install -y git gh
-    gh auth login --hostname github.com --git-protocol https --web
-    gh repo clone Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
+    sudo apt update && sudo apt install -y git
+    git clone https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack ~/signcollect-deploy
     ~/signcollect-deploy/interface_deploy/scripts/install.sh --local
 
-The second line is the only one that needs you: it prints a one-time code and
-opens the browser (or, on a machine without one, go to
-<https://github.com/login/device> on any computer and type the code there).
-No personal access token to create first - the stack repository is private,
-and `gh` is what makes cloning it a browser login instead of a password
-prompt. Ubuntu 24.04 ships `gh` in `universe`, so the plain apt line gets it.
+**No GitHub login is needed** once every repo the demo clones is public:
+`host-auth.sh` checks each one anonymously and skips itself. While any is
+still private it names them, and then needs a `gh` login: over ssh it copies
+your workstation's (`gh auth login` there first); with `--local` it installs
+`gh` and runs the browser login at step 3.
 
 When it finishes it prints the demo's address. Apache, php, mysql, composer
 and nftables are all installed by the installer itself.
 
-Redeploying later is the last line again. If you run `install.sh --local` on a
-host that has never logged in to GitHub, it asks for that login itself at
-step 3 - it only stops and tells you to run `gh auth login` first when there
-is no terminal to ask on (piped, or run from another script).
+Redeploying later is the last line again.
 
 That is the whole thing, in either mode. It takes a bare Ubuntu box to a
 working demo at `https://<host>.<tailnet>.ts.net`, log in as `gomer` / `123`,
@@ -126,7 +120,8 @@ merely redirected, and both say so where they happen:
   second machine a copy of this tree; there is no second machine, and doing
   it anyway would `git reset --hard` the checkout the running scripts are
   being read out of.
-- `host-auth.sh` **cannot fabricate a login** under `--local`. Over ssh it
+- `host-auth.sh` does nothing when every repo is public. Otherwise it
+  **cannot fabricate a login** under `--local`. Over ssh it
   hands the host a token from your workstation's `gh`; on the host itself
   there is no other account, so it installs `gh` and runs the browser login
   with you at the terminal - or, with no terminal to ask on, tells you to run
