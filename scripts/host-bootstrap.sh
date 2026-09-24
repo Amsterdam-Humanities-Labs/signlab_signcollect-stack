@@ -271,12 +271,12 @@ if [ ${#composer_dirs[@]} -gt 0 ]; then
   done
 fi
 
-# mocapStudio and animMIDI resolve mysql_config.php next to themselves rather
+# mocapStudio, animMIDI and videoFix resolve mysql_config.php next to themselves rather
 # than at the docroot, and it is gitignored upstream in each, so a clone never
 # has it. Symlinked, not copied, so the host keeps exactly one credential
 # file. Re-made every run: the clean above removes them (they are untracked
 # and not ignored) and this puts them straight back.
-for c in mocapStudio animMIDI; do
+for c in mocapStudio animMIDI videoFix; do
   [ -d "$WEBROOT/$c" ] || continue
   ln -sfn "$WEBROOT/mysql_config.php" "$WEBROOT/$c/mysql_config.php"
   printf '  %-24s -> %s/mysql_config.php\n' "$c/mysql_config.php" "$WEBROOT"
