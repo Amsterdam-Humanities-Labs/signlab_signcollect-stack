@@ -34,7 +34,10 @@ COLLECTION = "SignCollect: source code"
 COLLECTION_DESC = ("Source code of SignCollect, the Signlab (UvA/AUAS) platform for recording, "
                    "annotating and publishing sign language data (Zin in NGT, BAK, 3DLEX), "
                    "one item per GitHub repository.")
-LICENSE_NAME = "CC BY 4.0"
+LICENSE_NAME = "Apache 2.0"  # the licence in every repo's LICENSE file
+# Main author first; the same people as in each repo's CITATION.cff.
+AUTHORS = ["Gomer Otterspeer", "Berit Janssen", "Stijn van Hannen"]
+EXTRA_AUTHORS = {"signlab_BabylonSignLab": ["Jari Andersen"]}  # fork of his repo
 CATEGORY_ID = 58319  # Language, Communication and Culture, as in figshareZNN
 TAGS = ["sign language", "NGT", "SignCollect", "Signlab", "source code"]
 RETENTION_PERIOD = "2036-09-24"  # mandatory UvA item field (not on collections); ten years, as figshareZNN
@@ -51,6 +54,8 @@ def req(method, path, **kw):
             r = requests.request(method, url, headers=headers, timeout=600, **kw)
         except requests.RequestException as e:
             last = e; time.sleep(min(60, 2 ** attempt)); continue
+        if r.status_code == 409 and method == "PUT" and "/upload/" in url:
+            return {}  # a retried part that had already arrived: Figshare says Conflict
         if r.status_code in (403, 429) or r.status_code >= 500:
             last = f"{r.status_code} {r.text[:100]}"; time.sleep(min(60, 2 ** attempt)); continue
         r.raise_for_status()
@@ -118,7 +123,11 @@ def metadata(repo, sha, license_id):
                         f"<p>Snapshot of <a href=\"{url}\">{url}</a> at commit "
                         f"<code>{sha}</code>. Part of SignCollect, Signlab (UvA/AUAS).</p>"
                         f"<p>For the most up-to-date code, see the GitHub repository: "
-                        f"<a href=\"{url}\">{url}</a></p>"),
+                        f"<a href=\"{url}\">{url}</a></p>"
+                        f"<p>Apache License 2.0, copyright University of Amsterdam. Free to use, "
+                        f"also commercially; credit Gomer Otterspeer / University of Amsterdam "
+                        f"as the source (see the NOTICE file).</p>"),
+        "authors": [{"name": n} for n in AUTHORS[:1] + EXTRA_AUTHORS.get(repo["name"], []) + AUTHORS[1:]],
         "defined_type": "software",
         "license": license_id,
         "categories": [CATEGORY_ID],
@@ -187,6 +196,7 @@ def main():
     new = [s["id"] for s in state.values() if s["id"] not in have]
     for i in range(0, len(new), 10):  # the API takes at most 10 ids per call
         req("POST", f"/account/collections/{cid}/articles", json={"articles": new[i:i + 10]})
+    req("PUT", f"/account/collections/{cid}", json={"authors": [{"name": n} for n in AUTHORS]})
     cdoi = req("GET", f"/account/collections/{cid}").get("doi") or \
            req("POST", f"/account/collections/{cid}/reserve_doi")["doi"]
     print(f"collection {cid} ({COLLECTION}): +{len(new)} items, DOI {cdoi}")
