@@ -37,7 +37,13 @@ for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
 # videoFix/api.php requires mysql_config.php next to itself; without the
 # symlink host-bootstrap.sh makes, every search answers 500 and the page shows
 # "Unexpected end of JSON input".
-chk "/videoFix/api.php?action=get_unresolved" 200
+# It also wants a login (or the DRS token): without either it answers 401.
+chk "/videoFix/api.php?action=get_unresolved" 401
+# Camera Control: the camera list example, the QR screen page at the address
+# production uses, and the server-side logs that must never be served.
+chk /studio_beta/cameras.example.json 200
+chk /opnameLR.html 200
+chk /studio_beta/logs/fx30_debug.log 403
 # /stats.html was a one-off static Chart.js report of media-server download
 # logs, generated 2026-07-06 and never regenerated, reached from a menu entry
 # labelled "Gebruikersactiviteit" - which is not what it showed. menu_beta's
