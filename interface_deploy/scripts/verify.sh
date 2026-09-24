@@ -34,6 +34,10 @@ for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
          /downloadVideos/downloadThemaVideo.html /menu_beta/users.html \
          /menu_beta/labels_add.html /menu_beta/batch_add.html \
          /menu_beta/activity.html; do chk "$p" 200; done
+# videoFix/api.php requires mysql_config.php next to itself; without the
+# symlink host-bootstrap.sh makes, every search answers 500 and the page shows
+# "Unexpected end of JSON input".
+chk "/videoFix/api.php?action=get_unresolved" 200
 # /stats.html was a one-off static Chart.js report of media-server download
 # logs, generated 2026-07-06 and never regenerated, reached from a menu entry
 # labelled "Gebruikersactiviteit" - which is not what it showed. menu_beta's
