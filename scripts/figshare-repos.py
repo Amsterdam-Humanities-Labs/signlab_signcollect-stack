@@ -115,7 +115,9 @@ def metadata(repo, sha, license_id):
         "title": f"{repo['name']} (source code)",
         "description": (f"<p>{repo['description'] or repo['name']}</p>"
                         f"<p>Snapshot of <a href=\"{url}\">{url}</a> at commit "
-                        f"<code>{sha}</code>. Part of SignCollect, Signlab (UvA/AUAS).</p>"),
+                        f"<code>{sha}</code>. Part of SignCollect, Signlab (UvA/AUAS).</p>"
+                        f"<p>For the most up-to-date code, see the GitHub repository: "
+                        f"<a href=\"{url}\">{url}</a></p>"),
         "defined_type": "software",
         "license": license_id,
         "categories": [CATEGORY_ID],
@@ -150,7 +152,9 @@ def main():
             meta = metadata(repo, sha, licenses[LICENSE_NAME])
             aid = state.get(name, {}).get("id") or items.get(meta["title"])
             if state.get(name, {}).get("sha") == sha:
-                print(f"  {name}: up to date ({state[name].get('doi')})"); continue
+                if args.apply:  # same code: refresh the metadata only
+                    req("PUT", f"/account/articles/{aid}", json=meta)
+                print(f"  {name}: code up to date ({state[name].get('doi')})"); continue
             print(f"  {name}: {'update item ' + str(aid) if aid else 'new item'}, "
                   f"{os.path.getsize(zip_path) // 1024} KB at {sha[:7]}")
             if not args.apply:
