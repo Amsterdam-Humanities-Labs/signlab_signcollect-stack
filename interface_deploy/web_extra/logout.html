@@ -107,14 +107,15 @@
 <script>
     $(document).ready(function () {
         $('#logout-button').click(function () {
-            // Clear the session cookie under every domain variant we may
-            // have set it under historically (no-domain, @DOMAIN@,
-            // @DOMAIN@) — otherwise a leftover copy survives and
-            // login.html's checkSession() bounces straight back to the menu.
+            // Clear this host's session cookie with and without a domain
+            // attribute, the two ways it has been set, or a leftover copy
+            // survives. The host name is read at run time: written into the
+            // file, the deploy's URL rewrite collapsed both variants into one.
+            // Parent-domain cookies are left alone - they belong to another
+            // site, and login.html clears them only when the user logs in here.
             var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
             document.cookie = expired;
-            document.cookie = expired + '; domain=@DOMAIN@';
-            document.cookie = expired + '; domain=@DOMAIN@';
+            document.cookie = expired + '; domain=' + window.location.hostname;
             sessionStorage.clear();
             // ?fresh=1 tells login.html to stay put even if a cookie copy
             // we couldn't see/clear is still lingering somehow.

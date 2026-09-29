@@ -142,19 +142,14 @@
 
 <script>
   (function () {
-    var cookies = decodeURIComponent(document.cookie || '');
-    var sessionCookie = cookies.split('; ').find(function (row) { return row.startsWith('sessionObject='); });
-    var loggedIn = false;
-    if (sessionCookie) {
-      try {
-        var raw = sessionCookie.split('=').slice(1).join('=');
-        var s = JSON.parse(raw);
-        if (s && s.userId) loggedIn = true;
-      } catch (e) {}
-    }
-    if (!loggedIn) {
-      window.location.replace('/login.html');
-    }
+    function toLogin() { window.location.replace('/login.html'); }
+    if ((document.cookie || '').indexOf('sessionObject=') === -1) { toLogin(); return; }
+    // A cookie that parses is not enough: it may be another host's, set on a
+    // parent domain (production's reaches a demo on test.signcollect.nl).
+    // Ask the server, which checks it the way every API does.
+    fetch('/session_check.php', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { if (!r.ok) toLogin(); })
+      .catch(toLogin);
   })();
 </script>
 

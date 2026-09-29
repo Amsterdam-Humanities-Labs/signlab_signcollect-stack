@@ -107,6 +107,13 @@ echo "== login (users is the one deliberately non-empty table) =="
 r=$(curl -sS --connect-timeout 12 --max-time 30 -X POST -d "username=gomer&password=123" "$B/login_sc.php" 2>/dev/null)
 case "$r" in *'"status":"success"'*) echo "  ok   gomer/123 authenticates" ;;
              *) echo "  FAIL login: $r"; fail=1 ;; esac
+# session_check.php is what index.html and login.html ask before trusting a
+# cookie. The login response is the cookie login.html sets, as JSON.
+chk /session_check.php 401
+got=$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 12 --max-time 30 \
+      -H "Cookie: sessionObject=$r" "$B/session_check.php" 2>/dev/null)
+if [ "$got" = 200 ]; then echo "  ok   session_check.php accepts that login"
+else echo "  FAIL session_check.php with the login cookie: got $got want 200"; fail=1; fi
 r=$(curl -sS --connect-timeout 12 --max-time 30 -X POST -d "username=gomer&password=wrong" "$B/login_sc.php" 2>/dev/null)
 case "$r" in *'"status":"failure"'*) echo "  ok   wrong password rejected" ;;
              *) echo "  FAIL bad password not rejected: $r"; fail=1 ;; esac

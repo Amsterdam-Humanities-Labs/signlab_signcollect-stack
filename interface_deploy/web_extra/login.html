@@ -127,45 +127,54 @@
     function getRedirectUrl() {
         var params = new URLSearchParams(window.location.search);
         var redirect = params.get('redirect');
-        // Only honor explicit ?redirect= when it points back into @DOMAIN@
-        // AND isn't the legacy /menu.html landing page (we always land on the
-        // hub /index.html now; users pick the interface they want from there).
-        if (redirect
-            && redirect.indexOf('@DOMAIN@') !== -1
-            && !/\/menu\.html(?:[?#]|$)/.test(redirect)) {
-            return redirect;
+        // Honor ?redirect= only when it resolves to this origin, whether it
+        // came as a full URL (userProtect.js) or a bare path (menu_beta's
+        // api.js). A substring test for the host name dropped the bare paths
+        // and let https://elsewhere/?x=<host> through. The legacy /menu.html
+        // landing page is still skipped: users pick an interface from the hub.
+        if (redirect) {
+            try {
+                var u = new URL(redirect, window.location.origin);
+                if (u.origin === window.location.origin
+                    && !/\/menu\.html$/.test(u.pathname)) {
+                    return u.pathname + u.search + u.hash;
+                }
+            } catch (e) {}
         }
         return '/index.html';
     }
 
+    // Expire sessionObject on this host, and with includeParents also on
+    // every parent domain (test.example.nl -> example.nl). Computed from
+    // location.hostname at run time rather than written into the file, so the
+    // deploy's URL rewrite cannot collapse the variants into one.
+    function clearSessionCookies(includeParents) {
+        var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+        var labels = window.location.hostname.split('.');
+        document.cookie = expired;
+        var last = includeParents ? labels.length - 2 : 0;
+        for (var i = 0; i <= last; i++) {
+            document.cookie = expired + '; domain=' + labels.slice(i).join('.');
+        }
+    }
+
     function checkSession() {
         // If the user just logged out, stay on the login form even if some
-        // copy of the cookie is still lingering — and aggressively clear it
-        // under every domain variant so the next page load is clean.
+        // copy of the cookie is still lingering, and clear this host's copies
+        // so the next page load is clean.
         var freshLogout = new URLSearchParams(window.location.search).get('fresh') === '1';
         if (freshLogout) {
-            var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
-            document.cookie = expired;
-            document.cookie = expired + '; domain=@DOMAIN@';
-            document.cookie = expired + '; domain=@DOMAIN@';
+            clearSessionCookies(false);
             return;
         }
 
-        var cookies = decodeURIComponent(document.cookie);
-        var sessionCookie = cookies.split('; ').find(row => row.startsWith('sessionObject='));
-        if (sessionCookie) {
-            try {
-                var rawValue = sessionCookie.split('=').slice(1).join('=');
-                var sessionData = JSON.parse(rawValue);
-                if (sessionData.userId) {
-                    // Delete old cookie (without domain) and re-set with domain for subdomains
-                    document.cookie = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
-                    var expires = sessionData.expiresAt || new Date(Date.now() + 365*24*60*60*1000).toUTCString();
-                    document.cookie = 'sessionObject=' + encodeURIComponent(JSON.stringify(sessionData)) + '; expires=' + expires + '; path=/; domain=@DOMAIN@';
-                    window.location.href = getRedirectUrl();
-                }
-            } catch (e) {}
-        }
+        // Only skip the form when the server accepts the cookie. A cookie
+        // that merely parses may be another host's: production's is set on
+        // the parent domain and so also reaches a demo on a subdomain, where
+        // every API refuses it.
+        if (document.cookie.indexOf('sessionObject=') === -1) return;
+        $.ajax({ url: '/session_check.php', cache: false })
+            .done(function () { window.location.href = getRedirectUrl(); });
     }
 
     function showError(msg) {
@@ -204,6 +213,12 @@
                         expiresAt: expiresAt,
                         sig: data.sig || ''
                     };
+                    // A same-named cookie on a parent domain is older, so the
+                    // browser sends it first, and PHP keeps only the first of
+                    // two same-named cookies: it would hide the one set below.
+                    // On a demo under production's domain this logs the browser
+                    // out of production.
+                    clearSessionCookies(true);
                     document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expiresAt}; path=/; domain=@DOMAIN@`;
                     window.location.href = getRedirectUrl();
                 } else if (data.status === 'blocked') {
