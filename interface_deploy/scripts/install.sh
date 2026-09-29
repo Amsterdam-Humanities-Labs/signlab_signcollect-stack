@@ -117,6 +117,10 @@ trap 'rc=$?; [ $rc -eq 0 ] || {
 }' EXIT
 
 # --- 1. preflight -----------------------------------------------------------
+# preflight reads DOMAIN from the environment. --domain only set a shell
+# variable, and the export below comes after preflight, so without this a
+# host with no tailscale failed "no --domain given" although one was.
+[ -z "${DOMAIN:-}" ] || export DOMAIN
 say "preflight - checking the host before anything is changed"
 scripts/preflight.sh || exit 1
 
