@@ -34,10 +34,17 @@ for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
          /downloadVideos/downloadThemaVideo.html /menu_beta/users.html \
          /menu_beta/labels_add.html /menu_beta/batch_add.html \
          /menu_beta/activity.html; do chk "$p" 200; done
-# videoFix/api.php requires mysql_config.php next to itself; without the
+# videoFix/api.php requires a login (require_auth.php): anonymous is 401.
+# Logged in, it also needs mysql_config.php next to itself; without the
 # symlink host-bootstrap.sh makes, every search answers 500 and the page shows
-# "Unexpected end of JSON input".
-chk "/videoFix/api.php?action=get_unresolved" 200
+# "Unexpected end of JSON input". The login response is the cookie login.html
+# sets, as JSON.
+chk "/videoFix/api.php?action=get_unresolved" 401
+vf_login=$(curl -sS --connect-timeout 12 --max-time 30 -X POST -d "username=gomer&password=123" "$B/login_sc.php" 2>/dev/null)
+got=$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 12 --max-time 30 \
+      -H "Cookie: sessionObject=$vf_login" "$B/videoFix/api.php?action=get_unresolved" 2>/dev/null)
+if [ "$got" = 200 ]; then printf '  ok   %-32s %s (logged in)\n' "/videoFix/api.php?action=get_unresolved" "$got"
+else printf '  FAIL %-32s got %s want 200 (logged in)\n' "/videoFix/api.php?action=get_unresolved" "$got"; fail=1; fi
 # /stats.html was a one-off static Chart.js report of media-server download
 # logs, generated 2026-07-06 and never regenerated, reached from a menu entry
 # labelled "Gebruikersactiviteit" - which is not what it showed. menu_beta's
