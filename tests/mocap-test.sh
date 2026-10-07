@@ -30,7 +30,8 @@ HOST=${HOST:-}
 pass=0; fail=0; skip=0
 declare -a FAILURES
 
-case "$BASE" in *signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
+# Production itself, never. A demo on a subdomain (test.signcollect.nl) is fine.
+case "$BASE" in *://signcollect.nl|*://signcollect.nl[:/]*|*://www.signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
 
 # --- helpers ------------------------------------------------------------
 # Same shape as interface-test.sh: the body goes to stdout and the HTTP code
