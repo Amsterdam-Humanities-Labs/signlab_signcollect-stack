@@ -7,8 +7,8 @@
 # run spent its time SSHing at a machine that no longer exists and then
 # reported the timeout as a failure of the demo.
 #
-# Usage: scripts/verify.sh --host gomer@demo1 https://demo1.example.org
-#        scripts/verify.sh --host gomer@demo1            # base URL from --domain
+# Usage: scripts/verify.sh --host deploy@demo1 https://demo1.example.org
+#        scripts/verify.sh --host deploy@demo1            # base URL from --domain
 set -uo pipefail
 
 cd "$(dirname "$0")/.."
@@ -37,7 +37,10 @@ for p in /videoFix/index.html /studioIndex/ /hh/index.html /nmm/fastView.html \
 # videoFix/api.php requires mysql_config.php next to itself; without the
 # symlink host-bootstrap.sh makes, every search answers 500 and the page shows
 # "Unexpected end of JSON input".
-# It also wants a login (or the DRS token): without either it answers 401.
+# It also wants a login (or the DRS token): without either it answers 401,
+# before it gets as far as mysql_config.php. So anonymously this only proves
+# that auth is enforced; the symlink is proven after the login check below,
+# where the same request is repeated with a session and must answer 200.
 chk "/videoFix/api.php?action=get_unresolved" 401
 # Camera Control: the camera list example, the QR screen page at the address
 # production uses, and the server-side logs that must never be served.
@@ -113,9 +116,29 @@ echo "== login (users is the one deliberately non-empty table) =="
 r=$(curl -sS --connect-timeout 12 --max-time 30 -X POST -d "username=gomer&password=123" "$B/login_sc.php" 2>/dev/null)
 case "$r" in *'"status":"success"'*) echo "  ok   gomer/123 authenticates" ;;
              *) echo "  FAIL login: $r"; fail=1 ;; esac
+login=$r
 r=$(curl -sS --connect-timeout 12 --max-time 30 -X POST -d "username=gomer&password=wrong" "$B/login_sc.php" 2>/dev/null)
 case "$r" in *'"status":"failure"'*) echo "  ok   wrong password rejected" ;;
              *) echo "  FAIL bad password not rejected: $r"; fail=1 ;; esac
+# videoFix again, logged in. The cookie is built the way login.html builds it:
+# the five fields of login_sc.php's answer as one JSON object, URL-encoded.
+# expiresAt and sig are the server's signed payload, so they are passed on
+# untouched. 200 here is what proves the mysql_config.php symlink; 500 is the
+# symlink missing, 401 is the session not being accepted.
+echo "== videoFix, logged in =="
+jf() { printf '%s' "$login" | sed -nE "s/.*\"$1\":\"?([^\"]*[^\",}])\"?[,}].*/\1/p"; }
+p="/videoFix/api.php?action=get_unresolved"
+if [ -z "$(jf sig)" ]; then
+  printf '  FAIL %-32s no session to send: the login above returned no signature\n' "$p"; fail=1
+else
+  cookie=$(printf '{"userId":%s,"username":"%s","role":"%s","expiresAt":"%s","sig":"%s"}' \
+             "$(jf userId)" "$(jf username)" "$(jf role)" "$(jf expiresAt)" "$(jf sig)" |
+           sed -e 's/%/%25/g' -e 's/ /%20/g' -e 's/"/%22/g' -e 's/,/%2C/g' -e 's/;/%3B/g' -e 's/+/%2B/g')
+  got=$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 12 --max-time 30 \
+          -b "sessionObject=$cookie" "$B$p" 2>/dev/null)
+  if [ "$got" = "200" ]; then printf '  ok   %-32s %s\n' "$p" "$got"
+  else printf '  FAIL %-32s got %s want 200\n' "$p" "$got"; fail=1; fi
+fi
 # 98 from db/schema.sql, plus schema_migrations, which scripts/migrate.sh
 # creates to record what it has applied.
 echo "== database: 99 objects =="

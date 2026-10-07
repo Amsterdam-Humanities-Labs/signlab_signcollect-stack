@@ -32,7 +32,7 @@
 # order died with "gh is not installed on this workstation" before the step
 # that installs gh had run.
 #
-# Usage: scripts/host-auth.sh --host gomer@dev2
+# Usage: scripts/host-auth.sh --host deploy@dev2
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

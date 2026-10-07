@@ -206,8 +206,8 @@ repository history** and should be rotated and purged there.
 
 ## Config file ownership
 
-Configs are `640 gomer:www-data`. Apache runs as `www-data`; a PHP-CLI test as
-`gomer` will pass even when the web server cannot read the file, so this must be
+Configs are `640 <deploy user>:www-data`. Apache runs as `www-data`; a PHP-CLI test as
+that user will pass even when the web server cannot read the file, so this must be
 verified as `www-data`.
 
 ## Verification

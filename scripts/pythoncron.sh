@@ -88,7 +88,7 @@
 # directory outside the docroot - it must not be served - and is rewritten
 # there before being copied into the root-owned /opt tree.
 #
-# Usage: scripts/pythoncron.sh --host gomer@demo1
+# Usage: scripts/pythoncron.sh --host deploy@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

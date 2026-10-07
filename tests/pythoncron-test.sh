@@ -35,7 +35,7 @@
 # Needs ssh to the host as well as HTTP: most of this is not observable from
 # outside, and the parts that are were the parts that already worked.
 #
-# Usage: HOST=gomer@dev2 BASE=https://dev2.taila8bdbd.ts.net tests/pythoncron-test.sh
+# Usage: HOST=deploy@dev2 BASE=https://dev2.taila8bdbd.ts.net tests/pythoncron-test.sh
 set -uo pipefail
 
 BASE=${BASE:-https://dev2.taila8bdbd.ts.net}

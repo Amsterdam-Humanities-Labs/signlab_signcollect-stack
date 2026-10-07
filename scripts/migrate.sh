@@ -13,7 +13,7 @@
 # Applied migrations are recorded in schema_migrations so re-running is safe.
 # The migrations themselves are not all idempotent, so the table is the guard.
 #
-# Usage: scripts/migrate.sh --host gomer@demo1
+# Usage: scripts/migrate.sh --host deploy@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
