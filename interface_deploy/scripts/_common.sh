@@ -62,7 +62,7 @@ sc_require_host() {
 "no host given.
 
 Either name the machine to deploy to:
-    --host <ssh-target>      e.g. --host gomer@demo1
+    --host <ssh-target>      e.g. --host deploy@demo1
 or say that this machine IS the demo host:
     --local"
   fi
@@ -90,6 +90,15 @@ Run:  scripts/install.sh $(sc_retry_args) --dry-run"
 
   sc_resolve_srcdir
   export WEBROOT SC_LOCAL HOST SRCROOT SRCDIR
+  # --domain too, when it was given: install.sh runs preflight.sh before it
+  # resolves the domain, and an unexported DOMAIN never reached it - so a host
+  # without tailscale failed at step 1 with "no --domain given". Remembered
+  # once, at the top-level script, so the retry hints can repeat the flag.
+  if [ -z "${SC_DOMAIN_GIVEN:-}" ]; then
+    if [ -n "${DOMAIN:-}" ]; then SC_DOMAIN_GIVEN=1; else SC_DOMAIN_GIVEN=0; fi
+  fi
+  export SC_DOMAIN_GIVEN
+  [ -z "${DOMAIN:-}" ] || export DOMAIN
 }
 
 # --- where this repo's tree lives, as the host sees it ---------------------
@@ -124,6 +133,7 @@ sc_where() {
 sc_retry_args() {
   local a
   if [ "${SC_LOCAL:-0}" = "1" ]; then a="--local"; else a="--host ${HOST:-<ssh-target>}"; fi
+  [ "${SC_DOMAIN_GIVEN:-0}" != "1" ] || [ -z "${DOMAIN:-}" ] || a="$a --domain $DOMAIN"
   [ "${WEBROOT:-/web}" = "/web" ] || a="$a --webroot $WEBROOT"
   printf '%s' "$a"
 }
@@ -244,6 +254,90 @@ ssh() {
   else
     command ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
                 -o SetEnv=LC_ALL=C.UTF-8 "$@"
+  fi
+}
+
+# --- a sudo that asks for a password -----------------------------------------
+#
+# Every privileged step runs unattended, so sudo is asked for its password
+# ONCE, by sudo itself on a terminal - the password never passes through these
+# scripts, an argument or a file.
+#
+#   --local   `sudo -v`, then a background loop keeps that timestamp fresh.
+#   over ssh  a timestamp does not carry from one ssh connection to the next,
+#             so one `ssh -t` step installs a temporary NOPASSWD rule for the
+#             login user. sc_sudo_release removes it again; a systemd timer on
+#             the host removes it after 2 hours if this side never gets there.
+#
+# install.sh calls sc_sudo_prepare after preflight and sc_sudo_release from
+# its exit trap. Passwordless sudo returns at the first line: nothing changes.
+SC_SUDO_RULE=/etc/sudoers.d/zz-signcollect-install   # no dot: sudo skips names with one
+SC_SUDO_KEEPALIVE=""
+SC_SUDO_TEMP=0
+sc_sudo_prepare() {
+  ssh "$HOST" 'sudo -n true' >/dev/null 2>&1 && return 0
+  if ! { [ -t 0 ] && [ -t 1 ]; }; then
+    sc_fail "sudo needs a password, and there is no terminal to ask on" \
+"Run the install from a terminal, or give the user passwordless sudo."
+  fi
+  if [ "${SC_LOCAL:-0}" = "1" ]; then
+    echo "  sudo needs a password - asking once; it stays valid until the install ends."
+    sudo -v || sc_fail "sudo did not accept the password" \
+"Check that $(id -un) may use sudo:  sudo -l"
+    sudo -n true 2>/dev/null || sc_fail "sudo asks for the password every time" \
+"This host does not remember a sudo password (timestamp_timeout=0), so an
+unattended install cannot use it. Give $(id -un) passwordless sudo instead."
+    ( while sleep 50; do sudo -n -v 2>/dev/null || exit 0; done ) &
+    SC_SUDO_KEEPALIVE=$!
+  elif [ "${SC_DRY:-0}" = "1" ]; then
+    echo "  sudo on $HOST needs a password. A dry run changes nothing, so it does not"
+    echo "  ask - the database lines below could not be read and show as empty."
+  else
+    echo "  sudo on $HOST needs a password - asking once, on the host."
+    echo "  A temporary sudo rule ($SC_SUDO_RULE) lets the rest run"
+    echo "  unattended. It is removed when the install ends - and by a timer on the"
+    echo "  host after 2 hours, should this machine never get that far."
+    SC_SUDO_TEMP=1
+    command ssh -t -o LogLevel=error -o ConnectTimeout=15 -o SetEnv=LC_ALL=C.UTF-8 "$HOST" \
+      "sudo -p 'sudo password for %u on %h: ' sh -c '
+         set -e
+         f=$SC_SUDO_RULE
+         trap \"rm -f \$f.tmp\" EXIT
+         umask 227
+         printf \"%s ALL=(ALL) NOPASSWD:ALL\\n\" \"\$SUDO_USER\" > \$f.tmp
+         visudo -cf \$f.tmp >/dev/null
+         mv \$f.tmp \$f
+         systemctl stop signcollect-sudo-cleanup.timer signcollect-sudo-cleanup.service 2>/dev/null || true
+         systemd-run --quiet --collect --unit=signcollect-sudo-cleanup --on-active=2h rm -f \$f 2>/dev/null || true
+       '" || sc_fail "could not get sudo on the host" \
+"sudo refused, or the rule did not validate. Nothing was installed.
+Check on the host:  ssh -t $HOST 'sudo -l'"
+    ssh "$HOST" 'sudo -n true' >/dev/null 2>&1 || sc_fail "the temporary sudo rule did not take effect" \
+"$SC_SUDO_RULE was written but sudo still asks for a password.
+Does /etc/sudoers on the host include /etc/sudoers.d ?"
+  fi
+}
+sc_sudo_release() {
+  if [ -n "${SC_SUDO_KEEPALIVE:-}" ]; then
+    kill "$SC_SUDO_KEEPALIVE" 2>/dev/null || true
+    SC_SUDO_KEEPALIVE=""
+  fi
+  if [ "${SC_SUDO_TEMP:-0}" = "1" ]; then
+    SC_SUDO_TEMP=0
+    # "absent": sudo still asks, so the rule never went in (a mistyped password).
+    local state
+    state=$(ssh "$HOST" "
+      if sudo -n true 2>/dev/null; then
+        sudo -n sh -c 'rm -f $SC_SUDO_RULE; systemctl stop signcollect-sudo-cleanup.timer 2>/dev/null; true'
+        sudo -n true 2>/dev/null && echo still || echo gone
+      else echo absent; fi" 2>/dev/null) || state=unknown
+    case "$state" in
+      gone)   echo "  temporary sudo rule removed from $HOST" ;;
+      absent) ;;
+      *) echo "  WARNING: could not confirm the temporary sudo rule is gone from $HOST." >&2
+         echo "  It removes itself within 2 hours. To do it now:" >&2
+         echo "    ssh -t $HOST 'sudo rm -f $SC_SUDO_RULE'" >&2 ;;
+    esac
   fi
 }
 

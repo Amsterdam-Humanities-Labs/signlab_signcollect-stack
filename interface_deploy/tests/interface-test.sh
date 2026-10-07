@@ -23,7 +23,8 @@ TESTGLOS="ITEST_GLOS_$TS"
 pass=0; fail=0; skip=0
 declare -a FAILURES
 
-case "$BASE" in *signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
+# Production itself, never. A demo on a subdomain (test.signcollect.nl) is fine.
+case "$BASE" in *://signcollect.nl|*://signcollect.nl[:/]*|*://www.signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
 
 # --- helpers ------------------------------------------------------------
 # req/form print the body on stdout and leave the HTTP code in $STATUS.

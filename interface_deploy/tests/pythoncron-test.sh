@@ -35,7 +35,7 @@
 # Needs ssh to the host as well as HTTP: most of this is not observable from
 # outside, and the parts that are were the parts that already worked.
 #
-# Usage: HOST=gomer@dev2 BASE=https://dev2.taila8bdbd.ts.net tests/pythoncron-test.sh
+# Usage: HOST=deploy@dev2 BASE=https://dev2.taila8bdbd.ts.net tests/pythoncron-test.sh
 set -uo pipefail
 
 BASE=${BASE:-https://dev2.taila8bdbd.ts.net}
@@ -53,7 +53,8 @@ API=/menu_beta/php_api/signbank_admin.php
 pass=0; fail=0
 declare -a FAILURES
 
-case "$BASE" in *signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
+# Production itself, never. A demo on a subdomain (test.signcollect.nl) is fine.
+case "$BASE" in *://signcollect.nl|*://signcollect.nl[:/]*|*://www.signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
 
 ok()  { pass=$((pass+1)); printf '  \033[32mok\033[0m   %s\n' "$1"; }
 bad() { fail=$((fail+1)); FAILURES+=("$1"); printf '  \033[31mFAIL\033[0m %s\n' "$1"; }

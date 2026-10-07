@@ -282,4 +282,12 @@ for c in mocapStudio animMIDI videoFix; do
   printf '  %-24s -> %s/mysql_config.php\n' "$c/mysql_config.php" "$WEBROOT"
 done
 
+# The QR screen page lives in camera-control (studio_beta/opnameLR.html), but
+# production serves it from the web root and the studio controller app opens
+# it there. A symlink keeps that address.
+if [ -f "$WEBROOT/studio_beta/opnameLR.html" ]; then
+  ln -sfn studio_beta/opnameLR.html "$WEBROOT/opnameLR.html"
+  printf '  %-24s -> %s\n' "opnameLR.html" "studio_beta/opnameLR.html"
+fi
+
 echo "== docroot built =="

@@ -25,7 +25,7 @@
 # Read-only: nothing here writes to the host outside /tmp, and no test
 # changes the deployed root. Never point it at production anyway.
 #
-# Usage: BASE=https://dev2.taila8bdbd.ts.net HOST=gomer@dev2 tests/path-test.sh
+# Usage: BASE=https://dev2.taila8bdbd.ts.net HOST=deploy@dev2 tests/path-test.sh
 #
 # HOST is optional. Without it the on-host half is skipped and reported as
 # such, the same way mocap-test.sh handles its egress checks.
@@ -38,7 +38,8 @@ WEBROOT=${WEBROOT:-/web}
 pass=0; fail=0; skip=0
 declare -a FAILURES
 
-case "$BASE" in *signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
+# Production itself, never. A demo on a subdomain (test.signcollect.nl) is fine.
+case "$BASE" in *://signcollect.nl|*://signcollect.nl[:/]*|*://www.signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
 
 ok()   { pass=$((pass+1)); printf '  \033[32mok\033[0m   %s\n' "$1"; }
 bad()  { fail=$((fail+1)); FAILURES+=("$1"); printf '  \033[31mFAIL\033[0m %s\n' "$1"; }

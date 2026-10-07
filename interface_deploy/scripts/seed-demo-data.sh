@@ -75,8 +75,8 @@
 #     here rather than moving into the bootstrap because it is a second name
 #     for files the clone has already placed, not a second thing to place.
 #
-# Usage: scripts/seed-demo-data.sh --host gomer@demo1
-#        SQL_ONLY=1 scripts/seed-demo-data.sh --host gomer@demo1   # skip media
+# Usage: scripts/seed-demo-data.sh --host deploy@demo1
+#        SQL_ONLY=1 scripts/seed-demo-data.sh --host deploy@demo1   # skip media
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
