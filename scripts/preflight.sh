@@ -131,7 +131,9 @@ probe=$(ssh "$HOST" '
   echo "os:${PRETTY_NAME:-unknown}"
   echo "user:$(id -un)"
   command -v apt-get >/dev/null && echo "apt:yes" || echo "apt:no"
-  sudo -n true 2>/dev/null && echo "sudo:yes" || echo "sudo:no"
+  if ! command -v sudo >/dev/null; then echo "sudo:absent"
+  elif sudo -n true 2>/dev/null; then echo "sudo:yes"
+  else echo "sudo:password"; fi
   command -v systemctl >/dev/null && echo "systemd:yes" || echo "systemd:no"
   command -v python3   >/dev/null && echo "python3:yes" || echo "python3:no"
   command -v curl      >/dev/null && echo "curl:yes" || echo "curl:no"
@@ -164,14 +166,26 @@ g() { printf '%s\n' "$probe" | sed -n "s/^$1://p" | head -1; }
 
 ok   "host" "$(g os) as $(g user)"
 
+# A sudo that asks for a password is fine when somebody is at a terminal to
+# type it: install.sh asks once, right after this (sc_sudo_prepare).
+u=$(g user)
+nopasswd_fix() { printf '%s\n' "  echo '$u ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$u" "  chmod 440 /etc/sudoers.d/$u"; }
 case "$(g sudo)" in
-  yes) ok "passwordless sudo" "$(g user) can sudo without a password" ;;
-  *)   bad "passwordless sudo" "sudo -n failed for $(g user)" \
-         "Everything privileged here runs non-interactively, so a sudo that asks" \
-         "for a password stops the install dead half way through." \
-         "Fix, as root on the host:" \
-         "  echo '$(g user) ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$(g user)" \
-         "  chmod 440 /etc/sudoers.d/$(g user)" ;;
+  yes) ok "passwordless sudo" "$u can sudo without a password" ;;
+  password)
+    if ! { [ -t 0 ] && [ -t 1 ]; }; then
+      bad "sudo" "needs a password for $u, and there is no terminal to ask on" \
+        "Either run the install from a terminal - it asks for the password once -" \
+        "or give $u passwordless sudo, as root on the host:" \
+        "$(nopasswd_fix)"
+    elif [ "${SC_LOCAL:-0}" = "1" ]; then
+      ok "sudo" "needs a password - the install asks for it once, at the start"
+    else
+      ok "sudo" "needs a password - the install asks once, then uses a temporary sudo rule it removes again"
+    fi ;;
+  *)   bad "sudo" "not installed on the host" \
+         "Every privileged step goes through sudo. As root on the host:" \
+         "  apt-get install -y sudo && usermod -aG sudo $u" ;;
 esac
 
 case "$(g apt)" in

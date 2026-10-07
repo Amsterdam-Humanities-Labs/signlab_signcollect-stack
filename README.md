@@ -16,9 +16,23 @@ Before the first install it needs exactly four things, and nothing else -
 apache, php, mysql, git, composer, gh and nftables are all installed for you:
 
 1. **A normal user you can log in as** - `ssh deploy@demo1` works, by key.
-2. **Passwordless sudo for that user.** Everything privileged runs
-   non-interactively, so a `sudo` that stops to ask for a password stops the
-   install half way through. As root on the host, with the user's name for `<user>`:
+2. **sudo for that user.** Passwordless or not - both work.
+
+   With a sudo that asks for a password, run the install from a terminal. It
+   asks once, at the start, and sudo itself reads the password: the installer
+   never sees or stores it.
+
+   - `--local`: the password is kept valid until the install ends.
+   - over ssh: a sudo password does not carry from one ssh connection to the
+     next, so the install writes a temporary rule,
+     `/etc/sudoers.d/zz-signcollect-install`, and removes it when it ends -
+     also when it fails or is interrupted. A timer on the host removes it
+     after 2 hours if the workstation never gets that far.
+
+   Without a terminal (cron, CI) nothing can ask, and preflight fails. Give
+   the user passwordless sudo instead; that also lets the single scripts
+   (`verify.sh`, `migrate.sh`, ...) run over ssh on their own. As root on the
+   host, with the user's name for `<user>`:
 
        echo '<user> ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/<user>
        chmod 440 /etc/sudoers.d/<user>
