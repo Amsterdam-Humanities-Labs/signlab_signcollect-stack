@@ -127,13 +127,21 @@
     function getRedirectUrl() {
         var params = new URLSearchParams(window.location.search);
         var redirect = params.get('redirect');
-        // Only honor explicit ?redirect= when it points back into @DOMAIN@
-        // AND isn't the legacy /menu.html landing page (we always land on the
-        // hub /index.html now; users pick the interface they want from there).
-        if (redirect
-            && redirect.indexOf('@DOMAIN@') !== -1
-            && !/\/menu\.html(?:[?#]|$)/.test(redirect)) {
-            return redirect;
+        // Only honor ?redirect= when it resolves to this origin, as a full URL
+        // (userProtect.js) or a bare path (menu_beta's api.js), AND isn't the
+        // legacy /menu.html landing page (we always land on the hub
+        // /index.html now; users pick the interface they want from there).
+        // Only the path part is returned, with its leading slashes collapsed:
+        // <origin>//elsewhere/ is same-origin, but its path alone would be read
+        // as //elsewhere/, another host.
+        if (redirect) {
+            try {
+                var u = new URL(redirect, window.location.origin);
+                if (u.origin === window.location.origin
+                    && !/\/menu\.html$/.test(u.pathname)) {
+                    return u.pathname.replace(/^\/+/, '/') + u.search + u.hash;
+                }
+            } catch (e) {}
         }
         return '/index.html';
     }
