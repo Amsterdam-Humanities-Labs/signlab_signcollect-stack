@@ -7,8 +7,8 @@
 # run spent its time SSHing at a machine that no longer exists and then
 # reported the timeout as a failure of the demo.
 #
-# Usage: scripts/verify.sh --host gomer@demo1 https://demo1.example.org
-#        scripts/verify.sh --host gomer@demo1            # base URL from --domain
+# Usage: scripts/verify.sh --host deploy@demo1 https://demo1.example.org
+#        scripts/verify.sh --host deploy@demo1            # base URL from --domain
 set -uo pipefail
 
 cd "$(dirname "$0")/.."

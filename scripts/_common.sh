@@ -62,7 +62,7 @@ sc_require_host() {
 "no host given.
 
 Either name the machine to deploy to:
-    --host <ssh-target>      e.g. --host gomer@demo1
+    --host <ssh-target>      e.g. --host deploy@demo1
 or say that this machine IS the demo host:
     --local"
   fi

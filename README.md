@@ -15,13 +15,13 @@ A demo host is an ordinary Ubuntu box (24.04 is what these are tested on).
 Before the first install it needs exactly four things, and nothing else -
 apache, php, mysql, git, composer, gh and nftables are all installed for you:
 
-1. **A normal user you can log in as** - `ssh gomer@demo1` works, by key.
+1. **A normal user you can log in as** - `ssh deploy@demo1` works, by key.
 2. **Passwordless sudo for that user.** Everything privileged runs
    non-interactively, so a `sudo` that stops to ask for a password stops the
-   install half way through. As root on the host:
+   install half way through. As root on the host, with the user's name for `<user>`:
 
-       echo 'gomer ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/gomer
-       chmod 440 /etc/sudoers.d/gomer
+       echo '<user> ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/<user>
+       chmod 440 /etc/sudoers.d/<user>
 
 3. **Outbound HTTPS to github.com.** The host clones about twenty public
    repositories itself; no GitHub account is needed. Nothing else needs to be reachable.
@@ -36,13 +36,13 @@ installer cannot invent - see below.
 You do not have to remember any of this. `scripts/preflight.sh` checks every
 one of them, changes nothing, and prints the command that fixes each:
 
-    scripts/preflight.sh --host gomer@demo1
+    scripts/preflight.sh --host deploy@demo1
 
 ### Then, the one command
 
 **From your workstation, over ssh:**
 
-    scripts/install.sh --host gomer@demo1
+    scripts/install.sh --host deploy@demo1
 
 **On the demo host itself, no ssh at all.** Open a terminal on the machine
 and paste this, all of it at once:
@@ -68,7 +68,7 @@ and it is equally the normal way to redeploy an already-running one.
 
 ### Before you commit to it
 
-    scripts/install.sh --host gomer@demo1 --dry-run
+    scripts/install.sh --host deploy@demo1 --dry-run
 
 Runs the preflight checks and then reports, from the host's actual state,
 what each of the eleven steps would change - which packages are missing, how
@@ -88,7 +88,7 @@ A failure names the step it stopped at, the host it was talking to, and the
 command to retry - the step alone, or the whole install:
 
     === install FAILED at step 5/11: bootstrap - clone 20 components ===
-        host: gomer@demo1 (over ssh)   webroot: /web
+        host: deploy@demo1 (over ssh)   webroot: /web
 
 ### The options
 

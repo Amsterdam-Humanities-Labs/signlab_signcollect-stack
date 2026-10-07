@@ -25,7 +25,7 @@
 # Read-only: nothing here writes to the host outside /tmp, and no test
 # changes the deployed root. Never point it at production anyway.
 #
-# Usage: BASE=https://dev2.taila8bdbd.ts.net HOST=gomer@dev2 tests/path-test.sh
+# Usage: BASE=https://dev2.taila8bdbd.ts.net HOST=deploy@dev2 tests/path-test.sh
 #
 # HOST is optional. Without it the on-host half is skipped and reported as
 # such, the same way mocap-test.sh handles its egress checks.

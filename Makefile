@@ -2,7 +2,7 @@
 # scripts do not already do; see README.md for what each step means.
 #
 #   make install                  on the demo host itself (--local)
-#   make install HOST=gomer@dev2  from a workstation, over ssh
+#   make install HOST=deploy@dev2 from a workstation, over ssh
 #   make dry-run  | preflight | verify | test
 #
 # BASE is the demo's URL for verify/test; it defaults to the host's tailnet name.

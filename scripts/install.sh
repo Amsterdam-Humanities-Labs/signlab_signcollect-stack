@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One command to stand the SignCollect demo up on a VPS - this one or a new one.
 #
-#   scripts/install.sh --host gomer@demo1
+#   scripts/install.sh --host deploy@demo1
 #
 # That is the whole thing. See README.md for what a host needs first (ssh
 # access, passwordless sudo, tailscale joined, GitHub reachable).
@@ -55,7 +55,7 @@ cd "$(dirname "$0")/.."
 SC_USAGE='usage: scripts/install.sh (--host <ssh-target> | --local) [--domain <name>]
                           [--webroot <path>] [--no-provision] [--dry-run]
 
-  --host    <target> ssh target for the demo host, e.g. gomer@demo1
+  --host    <target> ssh target for the demo host, e.g. deploy@demo1
   --local            run everything on this machine instead of over ssh. Use
                      it when you are already on the demo host: clone the stack
                      repo, cd into interface_deploy, and run this.
@@ -77,16 +77,16 @@ LETSENCRYPT_EMAIL=<address>, with a public --domain on a host without
 tailscale, gets the certificate from letsencrypt.org.
 
 Example, taking a bare Ubuntu box to a working demo:
-  scripts/install.sh --host gomer@100.69.94.19
+  scripts/install.sh --host deploy@100.69.94.19
 
   Somewhere other than /web:
-    scripts/install.sh --host gomer@100.69.94.19 --webroot /srv/signcollect/web
+    scripts/install.sh --host deploy@100.69.94.19 --webroot /srv/signcollect/web
 
   Run on the demo host itself, no ssh:
     scripts/install.sh --local --webroot /srv/signcollect/web
 
   See what it would do, without doing it:
-    scripts/install.sh --host gomer@100.69.94.19 --dry-run'
+    scripts/install.sh --host deploy@100.69.94.19 --dry-run'
 # shellcheck source=scripts/_common.sh
 . scripts/_common.sh
 

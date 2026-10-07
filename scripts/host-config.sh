@@ -13,7 +13,7 @@
 # here. That is not tidiness - assets/glosses_transformed.json is 11MB, and
 # it was the last thing in this script that a workstation had to carry.
 #
-# Usage: scripts/host-config.sh --host gomer@demo1
+# Usage: scripts/host-config.sh --host deploy@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -81,7 +81,7 @@ fi
 # $WEBROOT/signbank_data - everything the Signbank connector owns and writes: the
 # runtime API key, the refresh schedule and state, and the gloss dump itself.
 #
-# It exists because $WEBROOT is gomer:staff 755 and the web server is www-data:
+# It exists because $WEBROOT is <deploy user>:staff 755 and the web server is www-data:
 # rewriting the dump atomically means renaming a temp file over it, and
 # rename(2) needs write permission on the *directory*. Making $WEBROOT itself
 # writable by www-data would let any PHP bug drop a file at the docroot root,

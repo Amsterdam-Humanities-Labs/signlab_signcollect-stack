@@ -19,7 +19,7 @@
 # nothing to clean up. It still refuses to run against production.
 #
 # Usage: BASE=https://dev2.taila8bdbd.ts.net tests/mocap-test.sh
-#        HOST=gomer@dev2 BASE=... tests/mocap-test.sh   (adds the egress check)
+#        HOST=deploy@dev2 BASE=... tests/mocap-test.sh   (adds the egress check)
 set -uo pipefail
 
 BASE=${BASE:-https://dev2.taila8bdbd.ts.net}

@@ -16,7 +16,7 @@
 # and starts nothing, so it is also the safe thing to run against a host you
 # are not sure about.
 #
-# Usage: scripts/preflight.sh --host gomer@demo1
+# Usage: scripts/preflight.sh --host deploy@demo1
 #        scripts/preflight.sh --local --webroot /srv/signcollect/web
 set -uo pipefail
 
