@@ -13,7 +13,7 @@
 # here. That is not tidiness - assets/glosses_transformed.json is 11MB, and
 # it was the last thing in this script that a workstation had to carry.
 #
-# Usage: scripts/host-config.sh --host gomer@demo1
+# Usage: scripts/host-config.sh --host deploy@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -81,7 +81,7 @@ fi
 # $WEBROOT/signbank_data - everything the Signbank connector owns and writes: the
 # runtime API key, the refresh schedule and state, and the gloss dump itself.
 #
-# It exists because $WEBROOT is gomer:staff 755 and the web server is www-data:
+# It exists because $WEBROOT is <deploy user>:staff 755 and the web server is www-data:
 # rewriting the dump atomically means renaming a temp file over it, and
 # rename(2) needs write permission on the *directory*. Making $WEBROOT itself
 # writable by www-data would let any PHP bug drop a file at the docroot root,
@@ -194,4 +194,15 @@ if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'grep -q "^SC_UPLOAD_TOKEN=" $WEBROO
 else
   ssh "$HOST" "export WEBROOT='$WEBROOT'; "'printf "SC_UPLOAD_TOKEN=%s\n" "$(openssl rand -hex 24)" >> $WEBROOT/.env'
   echo "  SC_UPLOAD_TOKEN generated in .env (value not shown)"
+fi
+
+# VIDEOFIX_TOKEN - what the DRS crop-fix service sends as X-Api-Token to
+# videoFix/api.php. Browsers use their login session instead; the token is
+# for the machine client only, and api.php refuses token requests when it is
+# unset. A demo gets a random one, once, like SC_UPLOAD_TOKEN.
+if ssh "$HOST" "export WEBROOT='$WEBROOT'; "'grep -q "^VIDEOFIX_TOKEN=" $WEBROOT/.env'; then
+  echo "  VIDEOFIX_TOKEN already in .env - left alone"
+else
+  ssh "$HOST" "export WEBROOT='$WEBROOT'; "'printf "VIDEOFIX_TOKEN=%s\n" "$(openssl rand -hex 24)" >> $WEBROOT/.env'
+  echo "  VIDEOFIX_TOKEN generated in .env (value not shown)"
 fi

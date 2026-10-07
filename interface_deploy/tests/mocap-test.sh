@@ -19,7 +19,7 @@
 # nothing to clean up. It still refuses to run against production.
 #
 # Usage: BASE=https://dev2.taila8bdbd.ts.net tests/mocap-test.sh
-#        HOST=gomer@dev2 BASE=... tests/mocap-test.sh   (adds the egress check)
+#        HOST=deploy@dev2 BASE=... tests/mocap-test.sh   (adds the egress check)
 set -uo pipefail
 
 BASE=${BASE:-https://dev2.taila8bdbd.ts.net}
@@ -30,7 +30,8 @@ HOST=${HOST:-}
 pass=0; fail=0; skip=0
 declare -a FAILURES
 
-case "$BASE" in *signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
+# Production itself, never. A demo on a subdomain (test.signcollect.nl) is fine.
+case "$BASE" in *://signcollect.nl|*://signcollect.nl[:/]*|*://www.signcollect.nl*) echo "refusing to run against production"; exit 2 ;; esac
 
 # --- helpers ------------------------------------------------------------
 # Same shape as interface-test.sh: the body goes to stdout and the HTTP code

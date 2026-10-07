@@ -127,45 +127,65 @@
     function getRedirectUrl() {
         var params = new URLSearchParams(window.location.search);
         var redirect = params.get('redirect');
-        // Only honor explicit ?redirect= when it points back into @DOMAIN@
-        // AND isn't the legacy /menu.html landing page (we always land on the
-        // hub /index.html now; users pick the interface they want from there).
-        if (redirect
-            && redirect.indexOf('@DOMAIN@') !== -1
-            && !/\/menu\.html(?:[?#]|$)/.test(redirect)) {
-            return redirect;
+        // Only honor ?redirect= when it resolves to this origin, as a full URL
+        // (userProtect.js) or a bare path (menu_beta's api.js), AND isn't the
+        // legacy /menu.html landing page (we always land on the hub
+        // /index.html now; users pick the interface they want from there).
+        // Only the path part is returned, with its leading slashes collapsed:
+        // <origin>//elsewhere/ is same-origin, but its path alone would be read
+        // as //elsewhere/, another host.
+        if (redirect) {
+            try {
+                var u = new URL(redirect, window.location.origin);
+                if (u.origin === window.location.origin
+                    && !/\/menu\.html$/.test(u.pathname)) {
+                    return u.pathname.replace(/^\/+/, '/') + u.search + u.hash;
+                }
+            } catch (e) {}
         }
         return '/index.html';
     }
 
+    // Expire sessionObject on this host and on every parent domain
+    // (demo.example.org -> example.org). A cookie set on a parent domain by
+    // another site there also reaches this host, and being older it is sent
+    // first: PHP keeps the first of two same-named cookies, so it would hide
+    // the one a login sets here. The names come from location.hostname at run
+    // time - nothing here is a literal the deploy's URL rewrite could change.
+    // The browser ignores the names it may not set (a public suffix, an IP).
+    function clearSessionCookies() {
+        var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+        var host = window.location.hostname;
+        var labels = /^[\d.]+$/.test(host) || host.indexOf(':') !== -1 ? [host] : host.split('.');
+        document.cookie = expired;
+        for (var i = 0; i === 0 || i <= labels.length - 2; i++) {
+            document.cookie = expired + '; domain=' + labels.slice(i).join('.');
+        }
+    }
+
     function checkSession() {
         // If the user just logged out, stay on the login form even if some
-        // copy of the cookie is still lingering — and aggressively clear it
-        // under every domain variant so the next page load is clean.
+        // copy of the cookie is still lingering — and clear it under every
+        // domain variant so the next page load is clean.
         var freshLogout = new URLSearchParams(window.location.search).get('fresh') === '1';
         if (freshLogout) {
-            var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
-            document.cookie = expired;
-            document.cookie = expired + '; domain=@DOMAIN@';
-            document.cookie = expired + '; domain=@DOMAIN@';
+            clearSessionCookies();
             return;
         }
 
-        var cookies = decodeURIComponent(document.cookie);
-        var sessionCookie = cookies.split('; ').find(row => row.startsWith('sessionObject='));
-        if (sessionCookie) {
-            try {
-                var rawValue = sessionCookie.split('=').slice(1).join('=');
-                var sessionData = JSON.parse(rawValue);
-                if (sessionData.userId) {
-                    // Delete old cookie (without domain) and re-set with domain for subdomains
-                    document.cookie = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
-                    var expires = sessionData.expiresAt || new Date(Date.now() + 365*24*60*60*1000).toUTCString();
-                    document.cookie = 'sessionObject=' + encodeURIComponent(JSON.stringify(sessionData)) + '; expires=' + expires + '; path=/; domain=@DOMAIN@';
-                    window.location.href = getRedirectUrl();
-                }
-            } catch (e) {}
-        }
+        // Skip the form only when the server accepts the cookie, the way
+        // every API checks it. One that merely parses may be another site's,
+        // inherited from a parent domain: the APIs refuse it, and trusting it
+        // here bounced between this page and the hub without showing the form.
+        if (document.cookie.indexOf('sessionObject=') === -1) return;
+        $.ajax({ url: '/menu_beta/php_api/current_user.php', cache: false })
+            .done(function () {
+                window.location.href = getRedirectUrl();
+            })
+            .fail(function (xhr) {
+                // 401: refused. Remove it, or it shadows the next login.
+                if (xhr.status === 401) clearSessionCookies();
+            });
     }
 
     function showError(msg) {
@@ -204,7 +224,9 @@
                         expiresAt: expiresAt,
                         sig: data.sig || ''
                     };
-                    document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expiresAt}; path=/; domain=@DOMAIN@`;
+                    // Clear first, parent domains included: see clearSessionCookies().
+                    clearSessionCookies();
+                    document.cookie = `sessionObject=${encodeURIComponent(JSON.stringify(sessionObject))}; expires=${expiresAt}; path=/; domain=${window.location.hostname}`;
                     window.location.href = getRedirectUrl();
                 } else if (data.status === 'blocked') {
                     showError('Uw account is geblokkeerd. Neem contact op met een beheerder.');

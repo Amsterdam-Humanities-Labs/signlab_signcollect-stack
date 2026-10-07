@@ -45,7 +45,7 @@
 # _common.sh already resolved SRCDIR to this directory, which is the only
 # answer the rest of the install needs from here.
 #
-# Usage: scripts/host-src.sh --host gomer@demo1
+# Usage: scripts/host-src.sh --host deploy@demo1
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

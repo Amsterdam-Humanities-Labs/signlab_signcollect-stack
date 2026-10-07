@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # One command to stand the SignCollect demo up on a VPS - this one or a new one.
 #
-#   scripts/install.sh --host gomer@demo1
+#   scripts/install.sh --host deploy@demo1
 #
 # That is the whole thing. See README.md for what a host needs first (ssh
-# access, passwordless sudo, tailscale joined, GitHub reachable).
+# access, sudo, tailscale joined, GitHub reachable).
 #
 # WHAT THIS IS NOW
 #
@@ -41,7 +41,7 @@
 # NOTHING IS TOUCHED BEFORE PREFLIGHT PASSES
 #
 # Step 1 asks the host every question the other ten depend on - can we log in,
-# does sudo work without a password, can it reach github.com, is there a
+# does sudo work (and does it ask for a password), can it reach github.com, is there a
 # certificate name to be had, is there disk, is anything already sitting on
 # 443 - and reports all of them at once, with the command that fixes each. It
 # changes nothing, so it is also the safe thing to run against a host you are
@@ -55,7 +55,7 @@ cd "$(dirname "$0")/.."
 SC_USAGE='usage: scripts/install.sh (--host <ssh-target> | --local) [--domain <name>]
                           [--webroot <path>] [--no-provision] [--dry-run]
 
-  --host    <target> ssh target for the demo host, e.g. gomer@demo1
+  --host    <target> ssh target for the demo host, e.g. deploy@demo1
   --local            run everything on this machine instead of over ssh. Use
                      it when you are already on the demo host: clone the stack
                      repo, cd into interface_deploy, and run this.
@@ -73,18 +73,20 @@ SC_USAGE='usage: scripts/install.sh (--host <ssh-target> | --local) [--domain <n
                      stop without changing anything.
 
 HOST and DOMAIN are still honoured as environment variables.
+LETSENCRYPT_EMAIL=<address>, with a public --domain on a host without
+tailscale, gets the certificate from letsencrypt.org.
 
 Example, taking a bare Ubuntu box to a working demo:
-  scripts/install.sh --host gomer@100.69.94.19
+  scripts/install.sh --host deploy@100.69.94.19
 
   Somewhere other than /web:
-    scripts/install.sh --host gomer@100.69.94.19 --webroot /srv/signcollect/web
+    scripts/install.sh --host deploy@100.69.94.19 --webroot /srv/signcollect/web
 
   Run on the demo host itself, no ssh:
     scripts/install.sh --local --webroot /srv/signcollect/web
 
   See what it would do, without doing it:
-    scripts/install.sh --host gomer@100.69.94.19 --dry-run'
+    scripts/install.sh --host deploy@100.69.94.19 --dry-run'
 # shellcheck source=scripts/_common.sh
 . scripts/_common.sh
 
@@ -107,7 +109,12 @@ NSTEPS=11
 step=0
 say() { step=$((step+1)); STEPNAME=$1; printf '\n[%d/%d] %s\n' "$step" "$NSTEPS" "$1"; }
 STEPNAME=startup
-trap 'rc=$?; [ $rc -eq 0 ] || {
+# sc_sudo_release first: it takes back whatever sc_sudo_prepare set up for a
+# sudo that asks for a password, and has to happen however the run ends -
+# hence the signal traps, which turn Ctrl-C into an ordinary exit.
+trap 'exit 130' INT
+trap 'exit 143' TERM HUP
+trap 'rc=$?; trap "" INT TERM HUP; sc_sudo_release; [ $rc -eq 0 ] || {
   printf "\n=== install FAILED at step %d/%d: %s ===\n" "$step" "$NSTEPS" "$STEPNAME" >&2
   printf "    host: %s   webroot: %s\n\n" "$(sc_where)" "$WEBROOT" >&2
   printf "    Nothing after this step ran. The steps that did run are idempotent,\n" >&2
@@ -119,6 +126,11 @@ trap 'rc=$?; [ $rc -eq 0 ] || {
 # --- 1. preflight -----------------------------------------------------------
 say "preflight - checking the host before anything is changed"
 scripts/preflight.sh || exit 1
+
+# A sudo that asks for a password is asked once, here, after preflight has
+# said so and before the first step that needs it. See _common.sh.
+STEPNAME="getting sudo for the install"
+sc_sudo_prepare
 
 # Asks the host its own MagicDNS name unless --domain said otherwise. Getting
 # this wrong does not fail loudly - DOMAIN lands in cookie domains and in the
@@ -194,7 +206,6 @@ if [ "${SC_DRY:-0}" = "1" ]; then
   echo "  Nothing above has been changed. To do it:"
   echo "    scripts/install.sh $(sc_retry_args)"
   echo
-  trap - EXIT
   exit 0
 fi
 
@@ -294,7 +305,7 @@ if scripts/verify.sh --host "$HOST" "https://$DOMAIN"; then
 else
   verdict="=== demo installed at https://$DOMAIN, but verify.sh reported failures above ==="
 fi
-trap - EXIT
+STEPNAME="finishing up"
 echo
 echo "$verdict"
 echo "  log in as gomer / 123"
