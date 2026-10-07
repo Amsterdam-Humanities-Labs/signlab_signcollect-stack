@@ -90,6 +90,15 @@ Run:  scripts/install.sh $(sc_retry_args) --dry-run"
 
   sc_resolve_srcdir
   export WEBROOT SC_LOCAL HOST SRCROOT SRCDIR
+  # --domain too, when it was given: install.sh runs preflight.sh before it
+  # resolves the domain, and an unexported DOMAIN never reached it - so a host
+  # without tailscale failed at step 1 with "no --domain given". Remembered
+  # once, at the top-level script, so the retry hints can repeat the flag.
+  if [ -z "${SC_DOMAIN_GIVEN:-}" ]; then
+    if [ -n "${DOMAIN:-}" ]; then SC_DOMAIN_GIVEN=1; else SC_DOMAIN_GIVEN=0; fi
+  fi
+  export SC_DOMAIN_GIVEN
+  [ -z "${DOMAIN:-}" ] || export DOMAIN
 }
 
 # --- where this repo's tree lives, as the host sees it ---------------------
@@ -124,6 +133,7 @@ sc_where() {
 sc_retry_args() {
   local a
   if [ "${SC_LOCAL:-0}" = "1" ]; then a="--local"; else a="--host ${HOST:-<ssh-target>}"; fi
+  [ "${SC_DOMAIN_GIVEN:-0}" != "1" ] || [ -z "${DOMAIN:-}" ] || a="$a --domain $DOMAIN"
   [ "${WEBROOT:-/web}" = "/web" ] || a="$a --webroot $WEBROOT"
   printf '%s' "$a"
 }

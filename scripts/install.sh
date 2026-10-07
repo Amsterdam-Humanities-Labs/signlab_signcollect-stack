@@ -73,6 +73,8 @@ SC_USAGE='usage: scripts/install.sh (--host <ssh-target> | --local) [--domain <n
                      stop without changing anything.
 
 HOST and DOMAIN are still honoured as environment variables.
+LETSENCRYPT_EMAIL=<address>, with a public --domain on a host without
+tailscale, gets the certificate from letsencrypt.org.
 
 Example, taking a bare Ubuntu box to a working demo:
   scripts/install.sh --host gomer@100.69.94.19
