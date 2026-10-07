@@ -10,10 +10,15 @@
 #             code. None are executed here; the egress block covers them.
 #
 # The target hostname is NOT hardcoded and has no default - a redeploy onto a
-# different VPS only needs a different DOMAIN. It ends up in cookie domains
-# and redirect allow-lists in login.html / logout.html, so a wrong value does
-# not fail, it silently breaks sign-in. A default here would be exactly that
-# wrong value on every host but one, so there is none.
+# different VPS only needs a different DOMAIN. It ends up wherever a component
+# names the host on its own - a cookie domain, an allow-list - so a wrong value
+# does not fail, it silently breaks that page. A default here would be exactly
+# that wrong value on every host but one, so there is none.
+#
+# web_extra's login.html / logout.html no longer depend on it: they take the
+# cookie domain and its parent domains from location.hostname. Rule 4 folds
+# "signcollect.nl" and ".signcollect.nl" into the one DOMAIN, so a page that
+# has to tell the host from its parent cannot spell either as a literal.
 #
 # This normally runs ON the demo host, from scripts/host-bootstrap.sh, over
 # the docroot's own git checkouts. It still takes plain directories, so it is
@@ -53,8 +58,8 @@ for tree in "$@"; do
       s{wss?://signcollect\.nl}{ws://127.0.0.1:9102}g;
       # 3. same-origin absolute -> relative.
       s{https?://signcollect\.nl}{}g;
-      # 4. bare hostname last - cookie domains and redirect allow-lists in
-      #    login.html / logout.html, which would silently break sign-in.
+      # 4. bare hostname last - cookie domains and host allow-lists, with or
+      #    without the leading dot.
       s{(?<![/\w])\.?signcollect\.nl}{$ENV{DOMAIN}}g;
       # 5. explicit placeholder in the demo-only files. These have no
       #    signcollect.nl left to match on, so without this they would keep

@@ -107,14 +107,19 @@
 <script>
     $(document).ready(function () {
         $('#logout-button').click(function () {
-            // Clear the session cookie under every domain variant we may
-            // have set it under historically (no-domain, @DOMAIN@,
-            // @DOMAIN@) — otherwise a leftover copy survives and
-            // login.html's checkSession() bounces straight back to the menu.
+            // Clear the session cookie on this host and on every parent
+            // domain (demo.example.org -> example.org) — otherwise a leftover
+            // or inherited copy survives and shadows the next login. The
+            // names come from location.hostname at run time, so the deploy's
+            // URL rewrite has no literal here to change. Same loop as
+            // clearSessionCookies() in login.html.
             var expired = 'sessionObject=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+            var host = window.location.hostname;
+            var labels = /^[\d.]+$/.test(host) || host.indexOf(':') !== -1 ? [host] : host.split('.');
             document.cookie = expired;
-            document.cookie = expired + '; domain=@DOMAIN@';
-            document.cookie = expired + '; domain=@DOMAIN@';
+            for (var i = 0; i === 0 || i <= labels.length - 2; i++) {
+                document.cookie = expired + '; domain=' + labels.slice(i).join('.');
+            }
             sessionStorage.clear();
             // ?fresh=1 tells login.html to stay put even if a cookie copy
             // we couldn't see/clear is still lingering somehow.
